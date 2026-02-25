@@ -1,0 +1,24 @@
+{
+	"name": "book-selling-mern",
+	"version": "1.0.0",
+	"description": "Book selling website",
+	"keywords": [
+		"book",
+		"book-selling"
+	],
+	"homepage": "https://github.com/Zookegger/book-selling-MERN#readme",
+	"bugs": {
+		"url": "https://github.com/Zookegger/book-selling-MERN/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Zookegger/book-selling-MERN.git"
+	},
+	"license": "ISC",
+	"author": "Nguyen Duc Trung, Nguyen Huu Thinh, Vu Duc Toan, Nguyen Thanh Tai, Nguyen Huu Manh",
+	"type": "module",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	}
+}

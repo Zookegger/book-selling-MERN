@@ -1,0 +1,41 @@
+{
+	"name": "books-selling-client",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"dev:test": "vite --host 127.0.0.1 --port 5173",
+		"build": "tsc -b && vite build",
+		"lint": "eslint .",
+		"preview": "vite preview",
+		"test": "npm run test:e2e",
+		"test:e2e:run": "cypress run",
+		"test:e2e:run:headless": "cypress run --headless",
+		"test:e2e": "start-server-and-test dev:test http://127.0.0.1:5173 test:e2e:run",
+		"test:e2e:open": "cypress open",
+		"test:e2e:ci": "start-server-and-test dev:test http://127.0.0.1:5173 test:e2e:run:headless"
+	},
+	"dependencies": {
+		"@emotion/react": "^11.11.4",
+		"@emotion/styled": "^11.11.5",
+		"@mui/icons-material": "^7.3.8",
+		"@mui/material": "^7.3.8",
+		"axios": "^1.7.2",
+		"lucide-react": "^0.575.0",
+		"react": "^19.2.4",
+		"react-dom": "^19.2.4",
+		"react-router-dom": "^7.13.1"
+	},
+	"devDependencies": {
+		"@types/react": "^19.2.14",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^5.1.4",
+		"cypress": "^15.10.0",
+		"eslint": "^10.0.2",
+		"eslint-plugin-cypress": "^6.1.0",
+		"start-server-and-test": "^2.1.2",
+		"typescript": "^5.5.3",
+		"vite": "^7.3.1"
+	}
+}
