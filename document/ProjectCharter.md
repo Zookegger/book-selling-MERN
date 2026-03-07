@@ -14,7 +14,7 @@ LuminaBooks is a high-performance, professional-grade e-commerce platform design
 
 ### 2.1 User Management
 
-- **Authentication:** Secure registration and login using JWT and HTTP-only cookies.
+- **Authentication:** Secure registration and login using JWT.
 - **Authorization:** Role-Based Access Control (RBAC) distinguishing between "Customer" and "Admin" roles.
 - **Profile:** Users can view their order history and manage shipping details.
 

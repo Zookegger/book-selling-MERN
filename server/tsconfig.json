@@ -1,14 +1,79 @@
 {
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "skipLibCheck": true
-  },
-  "include": ["src"]
+	"compilerOptions": {
+		"target": "ES2020",
+		"module": "commonjs",
+		"baseUrl": "./src",
+		"paths": {
+			"@config": [
+				"config"
+			],
+			"@config/*": [
+				"config/*"
+			],
+			"@controllers": [
+				"controllers"
+			],
+			"@controllers/*": [
+				"controllers/*"
+			],
+			"@middleware": [
+				"middleware"
+			],
+			"@middleware/*": [
+				"middleware/*"
+			],
+			"@models": [
+				"models"
+			],
+			"@models/*": [
+				"models/*"
+			],
+			"@routes": [
+				"routes"
+			],
+			"@routes/*": [
+				"routes/*"
+			],
+			"@services": [
+				"services"
+			],
+			"@services/*": [
+				"services/*"
+			],
+			"@utils": [
+				"utils"
+			],
+			"@utils/*": [
+				"utils/*"
+			],
+			"@templates": [
+				"templates"
+			],
+			"@templates/*": [
+				"templates/*"
+			],
+			"@schemas": [
+				"schemas"
+			],
+			"@schemas/*": [
+				"schemas/*"
+			],
+			"@shared": [
+				"../shared/src/index"
+			],
+			"@shared/*": [
+				"../shared/src/*"
+			],
+		},
+		"outDir": "./dist",
+		"rootDir": "./src",
+		"strict": true,
+		"esModuleInterop": true,
+		"moduleResolution": "node",
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+	},
+	"include": [
+		"src"
+	]
 }
