@@ -101,5 +101,44 @@ describe("Mô hình người dùng (User Model)", () => {
 			// Hash không được thay đổi
 			expect(user.password).toBe(firstHash);
 		});
+
+		it("trả về thông báo lỗi validate số điện thoại khi phoneNumber không hợp lệ", async () => {
+			const user = new UserModel({
+				firstName: "Tran",
+				lastName: "Binh",
+				email: "phone-check@example.com",
+				password: "Password123!",
+				addresses: [
+					{
+						recipientName: "Tran Binh",
+						phoneNumber: "invalid-phone",
+						provinceOrCity: "HCM",
+						district: "District 1",
+						ward: "Ben Nghe",
+						streetDetails: "123 Street",
+					},
+				],
+			});
+
+			const err = user.validateSync();
+			expect(err).toBeDefined();
+			expect(err!.errors["addresses.0.phoneNumber"].message).toContain("is not a valid phone number");
+		});
+
+		it("toJSON thêm id và loại bỏ _id, __v", async () => {
+			const user = new UserModel({
+				firstName: "Json",
+				lastName: "User",
+				email: "json-user@example.com",
+				password: "Password123!",
+			});
+
+			await user.save();
+
+			const json = user.toJSON() as unknown as Record<string, unknown>;
+			expect(json.id).toBeDefined();
+			expect(json._id).toBeUndefined();
+			expect(json.__v).toBeUndefined();
+		});
 	});
 });

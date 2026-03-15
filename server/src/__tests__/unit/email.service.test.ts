@@ -155,6 +155,14 @@ describe("EmailService - Constructor", () => {
 
 		expect(mockedNodemailer.createTransport).toHaveBeenCalledWith(expect.objectContaining({ secure: false }));
 	});
+
+	test("SMTP_PORT env không phải số → fallback về 587", () => {
+		process.env.SMTP_PORT = "not-a-number";
+
+		new EmailService();
+
+		expect(mockedNodemailer.createTransport).toHaveBeenCalledWith(expect.objectContaining({ port: 587 }));
+	});
 });
 
 // ============================================================

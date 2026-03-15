@@ -97,6 +97,11 @@ describe("Object Utilities", () => {
 			const merged = deepMerge({ a: { b: { c: 1 } } }, { a: { b: { d: 2 } } });
 			expect(merged).toEqual({ a: { b: { c: 1, d: 2 } } });
 		});
+
+		test("Nên bỏ qua tham số không phải object", () => {
+			const merged = deepMerge({ a: 1 }, null as any, 123 as any, "x" as any, { b: 2 });
+			expect(merged).toEqual({ a: 1, b: 2 });
+		});
 	});
 
 	describe("get(obj, path, defaultValue):", () => {
@@ -186,6 +191,10 @@ describe("Object Utilities", () => {
 			set(obj, "c", 3);
 			expect(obj.a).toBe(1);
 			expect(obj.b).toBe(2);
+		});
+
+		test("Nên trả về nguyên giá trị đầu vào nếu obj không phải object", () => {
+			expect(set(5 as any, "a.b", 1)).toBe(5);
 		});
 	});
 
@@ -318,6 +327,11 @@ describe("Object Utilities", () => {
 		test("Nên không thay đổi key không chứa dấu chấm", () => {
 			const unflat = unflatten({ a: 1, b: 2 });
 			expect(unflat).toEqual({ a: 1, b: 2 });
+		});
+
+		test("Nên trả về object rỗng khi đầu vào không phải object", () => {
+			expect(unflatten(null as any)).toEqual({});
+			expect(unflatten(123 as any)).toEqual({});
 		});
 	});
 });

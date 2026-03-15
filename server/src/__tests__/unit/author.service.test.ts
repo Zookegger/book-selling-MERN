@@ -80,6 +80,14 @@ describe("createAuthor()", () => {
 		expect(author.createdAt).toBeDefined();
 		expect(author.updatedAt).toBeDefined();
 	});
+
+	it("rethrows unexpected persistence errors", async () => {
+		const saveSpy = jest.spyOn(Author.prototype, "save").mockRejectedValueOnce(new Error("db boom"));
+
+		await expect(createAuthor({ name: "Broken", email: "broken@example.com" })).rejects.toThrow("db boom");
+
+		saveSpy.mockRestore();
+	});
 });
 
 // ─── listAuthors ──────────────────────────────────────────────────────────────
@@ -209,6 +217,10 @@ describe("updateAuthor()", () => {
 		await expect(updateAuthor(created.id.toString(), { website: "bad-url" })).rejects.toMatchObject({
 			statusCode: 400,
 		});
+	});
+
+	it("throws 400 when ID is invalid", async () => {
+		await expect(updateAuthor("not-an-id", { name: "Nope" })).rejects.toMatchObject({ statusCode: 400 });
 	});
 });
 

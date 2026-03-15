@@ -94,6 +94,17 @@ describe("Thêm người dùng - addUser()", () => {
 		expect(user.wishList).toEqual([]);
 		expect(user.digitalLibrary).toEqual([]);
 	});
+
+	it("báo lỗi 400 khi payload không hợp lệ", async () => {
+		await expect(
+			addUser({
+				firstName: "",
+				lastName: "User",
+				email: "invalid",
+				password: "short",
+			} as any),
+		).rejects.toBeInstanceOf(HttpError);
+	});
 });
 
 // ─── getUser ──────────────────────────────────────────────────────────────────
@@ -230,6 +241,15 @@ describe("Cập nhật hồ sơ cá nhân - updateProfile()", () => {
 	it("ném lỗi khi không tìm thấy người dùng", async () => {
 		const fakeId = new mongoose.Types.ObjectId().toString();
 		await expect(updateProfile(fakeId, { firstName: "Ghost" })).rejects.toThrow("User not found");
+	});
+
+	it("báo lỗi 400 khi dữ liệu hồ sơ không hợp lệ", async () => {
+		const created = await makeUser();
+		await expect(
+			updateProfile(created._id.toString(), {
+				email: "not-an-email",
+			} as any),
+		).rejects.toBeInstanceOf(HttpError);
 	});
 
 	// ── address management ──
@@ -388,6 +408,32 @@ describe("Đổi mật khẩu - changePassword()", () => {
 			}),
 		).rejects.toThrow("User not found");
 	});
+
+	it("báo lỗi 400 khi payload đổi mật khẩu không hợp lệ", async () => {
+		const user = await makeUserWithRealPassword();
+		await expect(
+			changePassword(user._id.toString(), {
+				currentPassword: "",
+				newPassword: "weak",
+			} as any),
+		).rejects.toBeInstanceOf(HttpError);
+	});
+
+	it("báo lỗi khi user biến mất trước bước cập nhật mật khẩu", async () => {
+		const user = await makeUserWithRealPassword();
+		const updateSpy = jest.spyOn(User, "findByIdAndUpdate").mockReturnValueOnce({
+			exec: jest.fn().mockResolvedValueOnce(null),
+		} as any);
+
+		await expect(
+			changePassword(user._id.toString(), {
+				currentPassword: CURRENT_PW,
+				newPassword: NEW_PW,
+			}),
+		).rejects.toThrow("User not found after update");
+
+		updateSpy.mockRestore();
+	});
 });
 
 // ─── addAddress ───────────────────────────────────────────────────────────────
@@ -449,6 +495,16 @@ describe("Thêm địa chỉ - addAddress()", () => {
 		const fakeId = new mongoose.Types.ObjectId().toString();
 		await expect(addAddress(fakeId, sampleAddress)).rejects.toThrow();
 	});
+
+	it("báo lỗi 400 khi payload địa chỉ không hợp lệ", async () => {
+		const user = await makeUser();
+		await expect(
+			addAddress(user._id.toString(), {
+				recipientName: "",
+				phoneNumber: "abc",
+			} as any),
+		).rejects.toBeInstanceOf(HttpError);
+	});
 });
 
 // ─── updateAddress ────────────────────────────────────────────────────────────
@@ -506,6 +562,17 @@ describe("Cập nhật địa chỉ - updateAddress()", () => {
 	it("ném lỗi không tìm thấy khi người dùng không tồn tại", async () => {
 		const fakeId = new mongoose.Types.ObjectId().toString();
 		await expect(updateAddress(fakeId, 0, { streetDetails: "X" })).rejects.toThrow();
+	});
+
+	it("báo lỗi 400 khi payload cập nhật địa chỉ không hợp lệ", async () => {
+		const user = await makeUser();
+		await seedAddresses(user._id.toString());
+
+		await expect(
+			updateAddress(user._id.toString(), 0, {
+				phoneNumber: "not-numeric",
+			} as any),
+		).rejects.toBeInstanceOf(HttpError);
 	});
 });
 

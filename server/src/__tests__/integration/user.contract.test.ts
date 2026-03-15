@@ -81,6 +81,41 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 	});
 
 	// ---------------------------------------------------------------------------
+	// GET /api/users/profile — Get Profile
+	// ---------------------------------------------------------------------------
+
+	describe("GET /api/users/profile — Lấy hồ sơ", () => {
+		it("trả về 200 và hồ sơ người dùng hiện tại", async () => {
+			const { token, payload } = await registerAndLogin();
+			const res = await request(app).get(PROFILE).set("Authorization", `Bearer ${token}`);
+
+			expect(res.status).toBe(200);
+			expect(res.body.email).toBe(payload.email);
+		});
+
+		it("phản hồi không chứa trường mật khẩu", async () => {
+			const { token } = await registerAndLogin();
+			const res = await request(app).get(PROFILE).set("Authorization", `Bearer ${token}`);
+
+			expect(res.status).toBe(200);
+			expect(res.body).not.toHaveProperty("password");
+		});
+
+		it("trả về 404 khi user đã bị xóa sau khi phát hành token", async () => {
+			const { token, payload } = await registerAndLogin();
+			await User.findOneAndDelete({ email: payload.email.toLowerCase() });
+
+			const res = await request(app).get(PROFILE).set("Authorization", `Bearer ${token}`);
+			expect(res.status).toBe(404);
+		});
+
+		it("trả về 401 khi không có header Authorization", async () => {
+			const res = await request(app).get(PROFILE);
+			expect(res.status).toBe(401);
+		});
+	});
+
+	// ---------------------------------------------------------------------------
 	// PUT /api/users/profile — Profile Management
 	// ---------------------------------------------------------------------------
 
@@ -285,6 +320,18 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 				.set("Authorization", `Bearer ${token}`)
 				.send({ currentPassword: BASE_PW });
 			expect(res.status).toBe(400);
+		});
+
+		it("trả về 404 khi user không còn tồn tại nhưng token vẫn hợp lệ", async () => {
+			const { token, payload } = await registerAndLogin();
+			await User.findOneAndDelete({ email: payload.email.toLowerCase() });
+
+			const res = await request(app)
+				.put(CHANGE_PASSWORD)
+				.set("Authorization", `Bearer ${token}`)
+				.send({ currentPassword: BASE_PW, newPassword: NEW_PW, confirmNewPassword: NEW_PW });
+
+			expect(res.status).toBe(404);
 		});
 
 		// --- authentication ---

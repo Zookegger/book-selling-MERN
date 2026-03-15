@@ -518,6 +518,10 @@ describe("forgotPassword", () => {
 		mockedEmailService.mockImplementation(() => mockEmailInstance as any);
 	});
 
+	it("thêm HttpError 400 khi email không hợp lệ", async () => {
+		await expect(authServices.forgotPassword({ email: "" })).rejects.toMatchObject({ statusCode: 400 });
+	});
+
 	it("tạo token đặt lại mật khẩu và gửi email khi người dùng tồn tại", async () => {
 		const mockUserWithSave = {
 			...mockUser,

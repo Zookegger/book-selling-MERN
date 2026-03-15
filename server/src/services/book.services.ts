@@ -294,7 +294,7 @@ export const addFormat = async (bookId: string, dto: AddBookFormatInput | Record
 		const updatedBook = await Book.findByIdAndUpdate(
 			bookId,
 			{ $push: { formats: parsed.data } },
-			{ new: true, runValidators: true },
+			{ returnDocument: "after", runValidators: true },
 		).exec();
 		return updatedBook;
 	} catch (error: any) {

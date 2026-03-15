@@ -117,7 +117,7 @@ export const updatePublisher = async (id: string, dto: UpdatePublisherInput): Pr
 		}
 	}
 
-	return await Publisher.findByIdAndUpdate(id, parsed.data, { new: true }).exec();
+	return await Publisher.findByIdAndUpdate(id, parsed.data, { returnDocument: "after" }).exec();
 };
 
 /**

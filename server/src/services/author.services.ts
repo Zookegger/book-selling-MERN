@@ -112,7 +112,7 @@ export const updateAuthor = async (id: string, dto: UpdateAuthorInput): Promise<
 		}
 	}
 
-	return await Author.findByIdAndUpdate(id, parsed.data, { new: true }).exec();
+	return await Author.findByIdAndUpdate(id, parsed.data, { returnDocument: "after" }).exec();
 };
 
 /**

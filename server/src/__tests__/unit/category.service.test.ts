@@ -57,8 +57,18 @@ describe("createCategory()", () => {
 	});
 
 	it("throws 409 when slug already exists", async () => {
-		await makeCategory();
-		await expect(makeCategory()).rejects.toMatchObject({ statusCode: 409 });
+		await Category.syncIndexes();
+		await createCategory({ name: "Sci Fi" });
+		await expect(createCategory({ name: "Sci-Fi" })).rejects.toMatchObject({
+			statusCode: 409,
+		});
+	});
+
+	it("throws 404 when parent is not found", async () => {
+		const missingParentId = new mongoose.Types.ObjectId().toString();
+		await expect(createCategory({ name: "Child", parent: missingParentId })).rejects.toMatchObject({
+			statusCode: 404,
+		});
 	});
 
 	it("stores createdAt and updatedAt timestamps", async () => {
@@ -201,6 +211,14 @@ describe("getCategoryTree()", () => {
 		const tree = await getCategoryTree();
 		expect(tree).toEqual([]);
 	});
+
+	it("treats a category as root when its parent reference does not exist", async () => {
+		const ghostParent = new mongoose.Types.ObjectId();
+		await Category.create({ name: "Orphan", slug: "orphan", parent: ghostParent });
+
+		const tree = await getCategoryTree();
+		expect(tree.some((c) => c.slug === "orphan")).toBe(true);
+	});
 });
 
 // ─── updateCategory ───────────────────────────────────────────────────────────
@@ -234,6 +252,57 @@ describe("updateCategory()", () => {
 		await expect(updateCategory(created._id.toString(), { slug: "non-fiction" })).rejects.toMatchObject({
 			statusCode: 409,
 		});
+	});
+
+	it("throws 400 when update payload is invalid", async () => {
+		const created = await makeCategory();
+
+		await expect(updateCategory(created._id.toString(), { order: -1 } as any)).rejects.toMatchObject({
+			statusCode: 400,
+		});
+	});
+
+	it("throws 400 when setting category as its own parent", async () => {
+		const created = await makeCategory();
+
+		await expect(updateCategory(created._id.toString(), { parent: created._id.toString() })).rejects.toMatchObject({
+			statusCode: 400,
+		});
+	});
+
+	it("throws 404 when moving under a non-existing parent", async () => {
+		const created = await makeCategory();
+		const missingParentId = new mongoose.Types.ObjectId().toString();
+
+		await expect(updateCategory(created._id.toString(), { parent: missingParentId })).rejects.toMatchObject({
+			statusCode: 404,
+		});
+	});
+
+	it("throws 400 when moving a category under its descendant", async () => {
+		const root = await createCategory({ name: "Root" });
+		const child = await createCategory({ name: "Child", parent: root._id.toString() });
+
+		await expect(updateCategory(root._id.toString(), { parent: child._id.toString() })).rejects.toMatchObject({
+			statusCode: 400,
+		});
+	});
+
+	it("updates descendants' ancestor chains when moving a subtree", async () => {
+		const root = await createCategory({ name: "Root" });
+		const child = await createCategory({ name: "Child", parent: root._id.toString() });
+		const grandchild = await createCategory({ name: "Grandchild", parent: child._id.toString() });
+		const newParent = await createCategory({ name: "New Parent" });
+
+		const moved = await updateCategory(child._id.toString(), { parent: newParent._id.toString() });
+		expect(moved).not.toBeNull();
+
+		const updatedGrandchild = await Category.findById(grandchild._id).lean();
+		expect(updatedGrandchild).not.toBeNull();
+		expect(updatedGrandchild!.ancestors.map(String)).toEqual([
+			newParent._id.toString(),
+			child._id.toString(),
+		]);
 	});
 });
 

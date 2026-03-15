@@ -74,6 +74,29 @@ describe("createPublisher()", () => {
 		expect(publisher.createdAt).toBeDefined();
 		expect(publisher.updatedAt).toBeDefined();
 	});
+
+	it("throws 409 when name already exists", async () => {
+		await makePublisher({ name: "Existing Name", contactEmail: "existing-name@example.com" });
+		await expect(
+			makePublisher({ name: "Existing Name", contactEmail: "new-email@example.com" }),
+		).rejects.toMatchObject({ statusCode: 409 });
+	});
+
+	it("throws 409 when contactEmail already exists", async () => {
+		await makePublisher({ name: "Publisher A", contactEmail: "shared@example.com" });
+		await expect(makePublisher({ name: "Publisher B", contactEmail: "shared@example.com" })).rejects.toMatchObject({
+			statusCode: 409,
+		});
+	});
+
+	it("throws 409 when unique slug is duplicated at save time", async () => {
+		await Publisher.syncIndexes();
+		await makePublisher({ name: "A B", contactEmail: "publisher-a@example.com" });
+
+		await expect(
+			makePublisher({ name: "A-B", contactEmail: "publisher-b@example.com" }),
+		).rejects.toMatchObject({ statusCode: 409 });
+	});
 });
 
 // ─── listPublishers ───────────────────────────────────────────────────────────
@@ -194,6 +217,15 @@ describe("updatePublisher()", () => {
 		const created = await makePublisher();
 		await expect(updatePublisher(created._id.toString(), { contactEmail: "bad-email" })).rejects.toMatchObject({
 			statusCode: 400,
+		});
+	});
+
+	it("throws 409 when updating slug to one that already exists", async () => {
+		await makePublisher({ name: "Slug One", contactEmail: "slug-one@example.com", slug: "slug-one" });
+		const created = await makePublisher({ name: "Slug Two", contactEmail: "slug-two@example.com", slug: "slug-two" });
+
+		await expect(updatePublisher(created._id.toString(), { slug: "slug-one" })).rejects.toMatchObject({
+			statusCode: 409,
 		});
 	});
 });

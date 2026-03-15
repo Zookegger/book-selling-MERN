@@ -34,6 +34,15 @@ const config: Config = {
 	testPathIgnorePatterns: ["/dist/", "/node_modules/"],
 	testTimeout: 20000,
 	verbose: true,
+	collectCoverage: true,
+	coverageThreshold: {
+		global: {
+			branches: 80, // IF/ELSE statements, switch cases, ternary operators
+			functions: 85, // Every declared function must be called
+			lines: 90, // Total lines of code executed
+			statements: 90, // Total statements executed (similar to lines, but catches multi-statement lines)
+		},
+	},
 };
 
 export default config;

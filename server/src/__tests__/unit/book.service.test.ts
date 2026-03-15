@@ -4,6 +4,7 @@ import {
 	createBook,
 	listBooks,
 	getBook,
+	replaceBook,
 	updateBook,
 	deleteBook,
 	addFormat,
@@ -238,6 +239,81 @@ describe("getBook()", () => {
 	});
 });
 
+// ─── replaceBook ──────────────────────────────────────────────────────────────
+
+describe("replaceBook()", () => {
+	it("replaces an existing book and returns the replaced document", async () => {
+		const created = await makeBook({ isbn: "978-0000000001" });
+		const replaced = await replaceBook(created.id.toString(), {
+			title: "Animal Farm",
+			description: "Political satire",
+			publicationDate: new Date("1945-08-17"),
+			language: "en",
+			isbn: "978-0000000002",
+		});
+
+		expect(replaced!.title).toBe("Animal Farm");
+		expect(replaced!.isbn).toBe("978-0000000002");
+	});
+
+	it("throws 404 when replacing a non-existing book", async () => {
+		const fakeId = new mongoose.Types.ObjectId().toString();
+		await expect(
+			replaceBook(fakeId, {
+				title: "Ghost",
+				description: "Ghost",
+				publicationDate: new Date(),
+				language: "en",
+			}),
+		).rejects.toMatchObject({ statusCode: 404 });
+	});
+
+	it("throws 400 when replace payload is invalid", async () => {
+		const created = await makeBook();
+		await expect(
+			replaceBook(created.id.toString(), {
+				title: "",
+				description: "Invalid",
+				publicationDate: new Date(),
+				language: "en",
+			} as any),
+		).rejects.toMatchObject({ statusCode: 400 });
+	});
+
+	it("throws 409 when ISBN conflicts with another book", async () => {
+		const existing = await makeBook({ isbn: "978-1111111111" });
+		const target = await makeBook({ isbn: "978-2222222222", title: "Target" });
+
+		await expect(
+			replaceBook(target.id.toString(), {
+				title: "Target Replaced",
+				description: "Target Replaced",
+				publicationDate: new Date(),
+				language: "en",
+				isbn: existing.isbn,
+			}),
+		).rejects.toMatchObject({ statusCode: 409 });
+	});
+
+	it("throws 409 when replacement creates duplicate format SKU", async () => {
+		await makeBook({
+			title: "Book A",
+			formats: [{ ...physicalFormat, sku: "SKU-DUP-REPLACE" }],
+		});
+		const target = await makeBook({ title: "Book B" });
+
+		await expect(
+			replaceBook(target.id.toString(), {
+				title: "Book B Replaced",
+				description: "Book B Replaced",
+				publicationDate: new Date(),
+				language: "en",
+				formats: [{ ...physicalFormat, sku: "SKU-DUP-REPLACE" }],
+			}),
+		).rejects.toMatchObject({ statusCode: 409 });
+	});
+});
+
 // ─── updateBook ───────────────────────────────────────────────────────────────
 
 describe("updateBook()", () => {
@@ -260,6 +336,34 @@ describe("updateBook()", () => {
 		await expect(updateBook(fakeId, { title: "Ghost Book" })).rejects.toMatchObject({
 			statusCode: 404,
 		});
+	});
+
+	it("throws 400 when update payload is invalid", async () => {
+		const created = await makeBook();
+		await expect(updateBook(created.id.toString(), { title: "" } as any)).rejects.toMatchObject({ statusCode: 400 });
+	});
+
+	it("throws 409 when updating ISBN to an existing ISBN", async () => {
+		await makeBook({ title: "Book A", isbn: "978-3333333333" });
+		const bookB = await makeBook({ title: "Book B", isbn: "978-4444444444" });
+
+		await expect(updateBook(bookB.id.toString(), { isbn: "978-3333333333" })).rejects.toMatchObject({
+			statusCode: 409,
+		});
+	});
+
+	it("throws 409 when updating formats to duplicate SKU", async () => {
+		await makeBook({
+			title: "Book A",
+			formats: [{ ...physicalFormat, sku: "SKU-DUP-UPDATE" }],
+		});
+		const bookB = await makeBook({ title: "Book B" });
+
+		await expect(
+			updateBook(bookB.id.toString(), {
+				formats: [{ ...physicalFormat, sku: "SKU-DUP-UPDATE" }],
+			}),
+		).rejects.toMatchObject({ statusCode: 409 });
 	});
 });
 
@@ -330,6 +434,22 @@ describe("addFormat()", () => {
 			addFormat(book.id.toString(), { ...digitalFormat, stockQuantity: 5 }),
 		).rejects.toMatchObject({ statusCode: 400 });
 	});
+
+	it("throws 400 when format payload is invalid", async () => {
+		const book = await makeBook();
+		await expect(
+			addFormat(book.id.toString(), { formatType: "physical", price: 12.5 } as any),
+		).rejects.toMatchObject({ statusCode: 400 });
+	});
+
+	it("throws 409 when adding a format with a duplicate global SKU", async () => {
+		await makeBook({ formats: [{ ...physicalFormat, sku: "SKU-DUP-ADD" }] });
+		const anotherBook = await makeBook({ title: "Another", isbn: "978-5555555555" });
+
+		await expect(
+			addFormat(anotherBook.id.toString(), { ...physicalFormat, sku: "SKU-DUP-ADD" }),
+		).rejects.toMatchObject({ statusCode: 409 });
+	});
 });
 
 // ─── updateFormat ─────────────────────────────────────────────────────────────
@@ -366,6 +486,40 @@ describe("updateFormat()", () => {
 		await expect(updateFormat(book.id.toString(), fakeFormatId, { price: 9.99 })).rejects.toMatchObject({
 			statusCode: 404,
 		});
+	});
+
+	it("throws 400 when format update payload is invalid", async () => {
+		const book = await makeBook({ formats: [physicalFormat] });
+		const formatId = book.formats[0].id!.toString();
+
+		await expect(updateFormat(book.id.toString(), formatId, { price: -1 } as any)).rejects.toMatchObject({
+			statusCode: 400,
+		});
+	});
+
+	it("throws 400 when update violates digital-format business rules", async () => {
+		const book = await makeBook({ formats: [digitalFormat] });
+		const formatId = book.formats[0].id!.toString();
+
+		await expect(updateFormat(book.id.toString(), formatId, { stockQuantity: 5 } as any)).rejects.toMatchObject({
+			statusCode: 400,
+		});
+	});
+
+	it("throws 409 when updating a format SKU to a duplicate global SKU", async () => {
+		await makeBook({
+			title: "Book A",
+			formats: [{ ...physicalFormat, sku: "SKU-DUP-FORMAT" }],
+		});
+		const bookB = await makeBook({
+			title: "Book B",
+			formats: [{ ...physicalFormat, sku: "SKU-UNIQUE-FORMAT" }],
+		});
+		const formatId = bookB.formats[0].id!.toString();
+
+		await expect(
+			updateFormat(bookB.id.toString(), formatId, { sku: "SKU-DUP-FORMAT" }),
+		).rejects.toMatchObject({ statusCode: 409 });
 	});
 });
 
