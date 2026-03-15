@@ -9,12 +9,7 @@ export const bookFormatSchema = z
 		isbn: z.string().optional(),
 		price: z.number().min(0, "Price must be non-negative"),
 		discountedPrice: z.number().min(0).optional(),
-		currency: z
-			.string()
-			.length(3, "Currency must be a 3-letter code")
-			.toUpperCase()
-			.optional()
-			.default("USD"),
+		currency: z.string().length(3, "Currency must be a 3-letter code").toUpperCase().optional().default("USD"),
 		active: z.boolean().optional().default(true),
 		releaseDate: z.coerce.date().optional(),
 
@@ -30,17 +25,18 @@ export const bookFormatSchema = z
 		downloadLimit: z.number().min(1).optional(),
 		sampleFile: z.string().optional(),
 	})
-	.refine(
-		(data) => !(data.formatType === "physical" && data.file),
-		{ message: "Physical format cannot have a digital file", path: ["file"] },
-	)
-	.refine(
-		(data) => !(data.formatType === "digital" && data.stockQuantity != null),
-		{ message: "Digital format should not have stock quantity", path: ["stockQuantity"] },
-	);
+	.refine((data) => !(data.formatType === "physical" && data.file), {
+		message: "Physical format cannot have a digital file",
+		path: ["file"],
+	})
+	.refine((data) => !(data.formatType === "digital" && data.stockQuantity != null), {
+		message: "Digital format should not have stock quantity",
+		path: ["stockQuantity"],
+	});
 
-export const createBookSchema = z.object({
+export const bookSchema = z.object({
 	title: z.string().min(1, "Title is required"),
+	slug: z.string().optional(),
 	subtitle: z.string().optional().default(""),
 	description: z.string().min(1, "Description is required"),
 	isbn: z.string().optional(),
@@ -54,7 +50,8 @@ export const createBookSchema = z.object({
 	formats: z.array(bookFormatSchema).optional().default([]),
 });
 
-export const updateBookSchema = createBookSchema.partial();
+export const createBookSchema = bookSchema.partial();
+export const updateBookSchema = bookSchema.partial();
 
 export type BookFormatInput = z.infer<typeof bookFormatSchema>;
 export type CreateBookInput = z.infer<typeof createBookSchema>;

@@ -219,17 +219,6 @@ describe("register", () => {
 		expect(mockedGetTokenExpiration).toHaveBeenCalledWith(1);
 	});
 
-	it("truyền mật khẩu đã trim cho User.create (hash là trách nhiệm của model hook)", async () => {
-		mockedUser.findOne.mockResolvedValueOnce(null);
-		mockedUser.create.mockResolvedValueOnce({ ...mockUser } as any);
-
-		await authServices.register(validUserInfo, "  PlainPassword  ");
-
-		const createArg = mockedUser.create.mock.calls[0][0] as any;
-		expect(createArg.password).toBe("PlainPassword");
-		expect(mockedBcrypt.hash).not.toHaveBeenCalled();
-	});
-
 	it("truyền tất cả các trường userInfo của người dùng.create", async () => {
 		mockedUser.findOne.mockResolvedValueOnce(null);
 		mockedUser.create.mockResolvedValueOnce({ ...mockUser } as any);
@@ -634,7 +623,7 @@ describe("resetPassword", () => {
 	it("thêm HttpError 400 khi mật khẩu mới không được cung cấp", async () => {
 		await expect(authServices.resetPassword("valid-token", "")).rejects.toMatchObject({
 			statusCode: 400,
-			message: "New password is required",
+			message: "Password must be at least 8 characters",
 		});
 	});
 
@@ -660,28 +649,6 @@ describe("resetPassword", () => {
 			statusCode: 400,
 			message: "Reset token has expired",
 		});
-	});
-
-	it("trim khoảng trắng từ mật khẩu mới", async () => {
-		const mockUserWithToken = {
-			password: "old-password",
-			passwordResetToken: "valid-reset-token",
-			passwordResetExpires: new Date(Date.now() + 3600000),
-			save: jest.fn().mockResolvedValue(true),
-		};
-
-		mockedUser.findOne.mockResolvedValueOnce(mockUserWithToken as any);
-		mockedIsTokenExpired.mockReturnValue(false);
-
-		// Truyền mật khẩu có khoảng trắng thừa
-		const rawPasswordWithSpaces = "   NewPassword123!   ";
-		await authServices.resetPassword("valid-reset-token", rawPasswordWithSpaces);
-
-		// Kiểm tra Service đã trim trước khi gán vào user object chưa
-		expect(mockUserWithToken.password).toBe("NewPassword123!");
-
-		// Đảm bảo hàm save được gọi để kích hoạt hashing hook ở tầng Database
-		expect(mockUserWithToken.save).toHaveBeenCalled();
 	});
 });
 

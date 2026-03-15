@@ -44,6 +44,8 @@ export interface IUser extends Document {
 		formatIndex?: number;
 		purchasedAt: Date;
 	}[];
+	createdAt: Date;
+	updatedAt: Date;
 
 	/**
 	 * So sánh mật khẩu thô do người dùng nhập với mật khẩu đã băm lưu trong DB.
@@ -141,7 +143,7 @@ const userSchema = new Schema<IUser>(
 
 // userSchema.index({ email: "text", firstName: "text", lastName: "text" });
 
-userSchema.pre("save", async function () {
+userSchema.pre("validate", async function () {
 	if (!this.isModified("password")) return;
 
 	const salt = await bcrypt.genSalt(10);
@@ -153,5 +155,15 @@ userSchema.pre("save", async function () {
 userSchema.methods.comparePassword = async function (candidate: string): Promise<boolean> {
 	return bcrypt.compare(candidate, this.password);
 };
+
+userSchema.set("toJSON", {
+	transform: (_doc, ret: any) => {
+		ret.id = ret._id;
+
+		delete ret._id;
+		delete ret.__v;
+		return ret;
+	},
+});
 
 export default mongoose.model<IUser>("User", userSchema);

@@ -13,7 +13,14 @@ router.get("/health", (_req, res) => {
 	res.json({ status: "ok" });
 });
 
+import authorRouter from "./author.routes";
+import publisherRouter from "./publisher.routes";
+import categoryRouter from "./category.routes";
+
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
+router.use("/authors", authorRouter);
+router.use("/publishers", publisherRouter);
+router.use("/categories", categoryRouter);
 
 export default router;

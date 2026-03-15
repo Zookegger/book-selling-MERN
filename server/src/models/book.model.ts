@@ -2,6 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import { IPublisher } from "@models/publisher.model";
 import { IAuthor } from "./author.model";
 import { ICategory } from "./category.model";
+import slugify from "slugify";
 
 export type BookFormatType = "physical" | "digital" | "audiobook";
 
@@ -26,6 +27,9 @@ export interface IBookFormat {
 	fileSize?: number; // in bytes
 	downloadLimit?: number; // max number of downloads
 	sampleFile?: string; // path to a free sample
+
+	createdAt: Date;
+	updatedAt: Date;
 }
 
 const bookFormatSchema = new Schema<IBookFormat>(
@@ -35,8 +39,8 @@ const bookFormatSchema = new Schema<IBookFormat>(
 			enum: ["physical", "digital", "audiobook"],
 			required: true,
 		},
-		sku: { type: String, required: true, unique: true }, // SKU must be globally unique
-		isbn: { type: String, unique: true, sparse: true }, // sparse allows nulls/undefined
+		sku: { type: String, required: true },
+		isbn: { type: String },
 		price: { type: Number, required: true, min: 0 },
 		discountedPrice: { type: Number, min: 0 },
 		currency: { type: String, default: "USD", uppercase: true, minlength: 3, maxlength: 3 },
@@ -69,7 +73,9 @@ bookFormatSchema.pre<IBookFormat>("validate", function () {
 });
 
 export interface IBook extends Document {
+	id: string;
 	title: string;
+	slug: string;
 	subtitle?: string;
 	description: string;
 	isbn?: string;
@@ -88,6 +94,7 @@ export interface IBook extends Document {
 const bookSchema = new Schema<IBook>(
 	{
 		title: { type: String, required: true, index: true },
+		slug: { type: String, required: true, unique: true },
 		subtitle: { type: String, default: "" },
 		description: { type: String, required: true },
 		isbn: { type: String, unique: true, sparse: true }, // sparse: true to allow multiple null values while ensuring that any non‑null ISBN is unique across documents.
@@ -103,8 +110,43 @@ const bookSchema = new Schema<IBook>(
 	{ timestamps: true },
 );
 
-// bookSchema.index({ title: "text", description: "text" });
-// bookSchema.index({ "formats.sku": 1 }, { unique: true, partialFilterExpression: { "formats.sku": { $exists: true } } });
-// The unique index on sku inside the array requires MongoDB 4.2+ with partialFilterExpression to avoid nulls.
+bookSchema.index({ title: "text", description: "text" });
+
+bookSchema.index({ "formats.sku": 1 }, { unique: true }); // SKU must be globally unique
+bookSchema.index({ "formats.isbn": 1 }, { unique: true, sparse: true }); // sparse allows nulls/undefined
+
+bookSchema.set("toJSON", {
+	transform: (_doc, ret: any) => {
+		delete ret.__v;
+		return ret;
+	},
+});
+
+bookSchema.pre("validate", async function () {
+	// Only burn database cycles if the title was actually modified
+	if (this.isModified("title")) {
+		try {
+			let slugString = this.title;
+
+			// Grab the primary author's ID (assuming the first author in the array is primary)
+			const primaryAuthorId = this.authors[0];
+
+			if (primaryAuthorId) {
+				// Dynamically fetch the Author model to avoid circular dependency imports
+				const AuthorModel = mongoose.model("Author");
+				const authorDoc: any = await AuthorModel.findById(primaryAuthorId).select("name").lean().exec();
+
+				if (authorDoc) {
+					slugString = `${this.title}-${authorDoc.name}`;
+				}
+			}
+
+			// Generate the final clean string
+			this.slug = slugify(slugString, { lower: true, strict: true });
+		} catch (error: any) {
+			throw error;
+		}
+	}
+});
 
 export default mongoose.model<IBook>("Book", bookSchema);
