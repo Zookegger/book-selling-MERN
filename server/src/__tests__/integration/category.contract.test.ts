@@ -1,10 +1,3 @@
-/**
- * Contract tests for Category CRUD endpoints.
- *
- * These tests are in RED state — they define the expected HTTP contract.
- * Implementing the routes at /api/categories will make them GREEN.
- * DO NOT add mocks — tests must exercise real implementations.
- */
 import request from "supertest";
 import app from "../../app";
 import { connectTestDB, closeTestDB, clearTestDB } from "../utils/testDb";

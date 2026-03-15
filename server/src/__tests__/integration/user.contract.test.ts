@@ -4,16 +4,6 @@ import { connectTestDB, closeTestDB, clearTestDB } from "../utils/testDb";
 import User from "../../models/user.model";
 import { EmailService } from "../../services/email.service";
 
-/**
- * Contract tests for user profile management, address management,
- * and account deletion endpoints (TDD — RED state).
- *
- * These tests run against the real Express application. They currently
- * fail because the routes have not been implemented yet. Implementing
- * the routes will move the tests to GREEN.
- * DO NOT add mocks or stubs — tests must exercise real implementations.
- */
-
 describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 	const REGISTER = "/api/auth/register";
 	const LOGIN = "/api/auth/login";
@@ -65,9 +55,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		};
 		await request(app).post(REGISTER).send(payload);
 		await verifyUserEmail(payload.email);
-		const loginRes = await request(app)
-			.post(LOGIN)
-			.send({ email: payload.email, password: payload.password });
+		const loginRes = await request(app).post(LOGIN).send({ email: payload.email, password: payload.password });
 		return { token: loginRes.body.token as string, payload };
 	};
 
@@ -229,9 +217,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 				.put(CHANGE_PASSWORD)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ currentPassword: BASE_PW, newPassword: NEW_PW, confirmNewPassword: NEW_PW });
-			const loginRes = await request(app)
-				.post(LOGIN)
-				.send({ email: payload.email, password: NEW_PW });
+			const loginRes = await request(app).post(LOGIN).send({ email: payload.email, password: NEW_PW });
 			expect(loginRes.status).toBe(200);
 		});
 
@@ -241,9 +227,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 				.put(CHANGE_PASSWORD)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ currentPassword: BASE_PW, newPassword: NEW_PW, confirmNewPassword: NEW_PW });
-			const loginRes = await request(app)
-				.post(LOGIN)
-				.send({ email: payload.email, password: BASE_PW });
+			const loginRes = await request(app).post(LOGIN).send({ email: payload.email, password: BASE_PW });
 			expect(loginRes.status).toBe(401);
 		});
 
@@ -322,19 +306,13 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 
 		it("trả về 201 sau khi thêm địa chỉ mới", async () => {
 			const { token } = await registerAndLogin();
-			const res = await request(app)
-				.post(ADDRESSES)
-				.set("Authorization", `Bearer ${token}`)
-				.send(sampleAddress);
+			const res = await request(app).post(ADDRESSES).set("Authorization", `Bearer ${token}`).send(sampleAddress);
 			expect(res.status).toBe(201);
 		});
 
 		it("trả về mảng addresses đã cập nhật chứa mục mới", async () => {
 			const { token } = await registerAndLogin();
-			const res = await request(app)
-				.post(ADDRESSES)
-				.set("Authorization", `Bearer ${token}`)
-				.send(sampleAddress);
+			const res = await request(app).post(ADDRESSES).set("Authorization", `Bearer ${token}`).send(sampleAddress);
 			expect(Array.isArray(res.body.addresses)).toBe(true);
 			expect(res.body.addresses).toHaveLength(1);
 			expect(res.body.addresses[0].streetDetails).toBe(sampleAddress.streetDetails);
@@ -370,10 +348,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 
 		it("Content-Type là application/json", async () => {
 			const { token } = await registerAndLogin();
-			const res = await request(app)
-				.post(ADDRESSES)
-				.set("Authorization", `Bearer ${token}`)
-				.send(sampleAddress);
+			const res = await request(app).post(ADDRESSES).set("Authorization", `Bearer ${token}`).send(sampleAddress);
 			expect(res.headers["content-type"]).toMatch(/application\/json/);
 		});
 
@@ -415,10 +390,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		beforeEach(async () => {
 			const result = await registerAndLogin();
 			token = result.token;
-			await request(app)
-				.post(ADDRESSES)
-				.set("Authorization", `Bearer ${token}`)
-				.send(sampleAddress);
+			await request(app).post(ADDRESSES).set("Authorization", `Bearer ${token}`).send(sampleAddress);
 		});
 
 		// --- happy path ---
@@ -478,9 +450,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		// --- authentication ---
 
 		it("trả về 401 khi không cung cấp header Authorization", async () => {
-			const res = await request(app)
-				.put(`${ADDRESSES}/0`)
-				.send({ streetDetails: "Intruder" });
+			const res = await request(app).put(`${ADDRESSES}/0`).send({ streetDetails: "Intruder" });
 			expect(res.status).toBe(401);
 		});
 	});
@@ -495,25 +465,18 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		beforeEach(async () => {
 			const result = await registerAndLogin();
 			token = result.token;
-			await request(app)
-				.post(ADDRESSES)
-				.set("Authorization", `Bearer ${token}`)
-				.send(sampleAddress);
+			await request(app).post(ADDRESSES).set("Authorization", `Bearer ${token}`).send(sampleAddress);
 		});
 
 		// --- happy path ---
 
 		it("trả về 200 sau khi xóa một địa chỉ", async () => {
-			const res = await request(app)
-				.delete(`${ADDRESSES}/0`)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).delete(`${ADDRESSES}/0`).set("Authorization", `Bearer ${token}`);
 			expect(res.status).toBe(200);
 		});
 
 		it("địa chỉ bị xóa không còn xuất hiện trong phản hồi", async () => {
-			const res = await request(app)
-				.delete(`${ADDRESSES}/0`)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).delete(`${ADDRESSES}/0`).set("Authorization", `Bearer ${token}`);
 			expect(res.body.addresses).toHaveLength(0);
 		});
 
@@ -522,9 +485,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 				.post(ADDRESSES)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ ...sampleAddress, streetDetails: "Second St", isDefault: false });
-			const res = await request(app)
-				.delete(`${ADDRESSES}/0`)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).delete(`${ADDRESSES}/0`).set("Authorization", `Bearer ${token}`);
 			expect(res.body.addresses).toHaveLength(1);
 			expect(res.body.addresses[0].streetDetails).toBe("Second St");
 		});
@@ -532,9 +493,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		// --- validation ---
 
 		it("trả về 404 khi chỉ số (index) ngoài phạm vi", async () => {
-			const res = await request(app)
-				.delete(`${ADDRESSES}/99`)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).delete(`${ADDRESSES}/99`).set("Authorization", `Bearer ${token}`);
 			expect(res.status).toBe(404);
 		});
 
@@ -569,40 +528,30 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		// --- happy path ---
 
 		it("trả về 200 sau khi đặt địa chỉ mặc định", async () => {
-			const res = await request(app)
-				.patch(`${ADDRESSES}/1/default`)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).patch(`${ADDRESSES}/1/default`).set("Authorization", `Bearer ${token}`);
 			expect(res.status).toBe(200);
 		});
 
 		it("địa chỉ được chọn có isDefault là true sau khi thực hiện", async () => {
-			const res = await request(app)
-				.patch(`${ADDRESSES}/1/default`)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).patch(`${ADDRESSES}/1/default`).set("Authorization", `Bearer ${token}`);
 			expect(res.body.addresses[1].isDefault).toBe(true);
 		});
 
 		it("các địa chỉ khác có isDefault là false sau khi thực hiện", async () => {
-			const res = await request(app)
-				.patch(`${ADDRESSES}/1/default`)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).patch(`${ADDRESSES}/1/default`).set("Authorization", `Bearer ${token}`);
 			const defaults = res.body.addresses.filter((a: { isDefault: boolean }) => a.isDefault);
 			expect(defaults).toHaveLength(1);
 		});
 
 		it("địa chỉ trước đó không còn cờ isDefault", async () => {
-			const res = await request(app)
-				.patch(`${ADDRESSES}/1/default`)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).patch(`${ADDRESSES}/1/default`).set("Authorization", `Bearer ${token}`);
 			expect(res.body.addresses[0].isDefault).toBe(false);
 		});
 
 		// --- validation ---
 
 		it("trả về 404 khi chỉ số (index) ngoài phạm vi", async () => {
-			const res = await request(app)
-				.patch(`${ADDRESSES}/99/default`)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).patch(`${ADDRESSES}/99/default`).set("Authorization", `Bearer ${token}`);
 			expect(res.status).toBe(404);
 		});
 
@@ -623,17 +572,13 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 
 		it("trả về 200 sau khi xóa tài khoản thành công", async () => {
 			const { token } = await registerAndLogin();
-			const res = await request(app)
-				.delete(DELETE_ACCOUNT)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).delete(DELETE_ACCOUNT).set("Authorization", `Bearer ${token}`);
 			expect(res.status).toBe(200);
 		});
 
 		it("trả về thông báo xác nhận trong phần thân phản hồi", async () => {
 			const { token } = await registerAndLogin();
-			const res = await request(app)
-				.delete(DELETE_ACCOUNT)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).delete(DELETE_ACCOUNT).set("Authorization", `Bearer ${token}`);
 			expect(res.body).toHaveProperty("message");
 		});
 
@@ -647,19 +592,14 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		it("không thể đăng nhập bằng thông tin của tài khoản đã xóa", async () => {
 			const { token, payload } = await registerAndLogin();
 			await request(app).delete(DELETE_ACCOUNT).set("Authorization", `Bearer ${token}`);
-			const loginRes = await request(app)
-				.post(LOGIN)
-				.send({ email: payload.email, password: payload.password });
+			const loginRes = await request(app).post(LOGIN).send({ email: payload.email, password: payload.password });
 			expect(loginRes.status).toBe(401);
 		});
 
 		it("tất cả dữ liệu nhúng của người dùng (địa chỉ) được xóa cùng với tài khoản", async () => {
 			const { token } = await registerAndLogin();
 			// Add an address before deletion
-			await request(app)
-				.post(ADDRESSES)
-				.set("Authorization", `Bearer ${token}`)
-				.send(sampleAddress);
+			await request(app).post(ADDRESSES).set("Authorization", `Bearer ${token}`).send(sampleAddress);
 			await request(app).delete(DELETE_ACCOUNT).set("Authorization", `Bearer ${token}`);
 			// Ensure no user document remains
 			const users = await User.find({});
@@ -668,9 +608,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 
 		it("Content-Type là application/json", async () => {
 			const { token } = await registerAndLogin();
-			const res = await request(app)
-				.delete(DELETE_ACCOUNT)
-				.set("Authorization", `Bearer ${token}`);
+			const res = await request(app).delete(DELETE_ACCOUNT).set("Authorization", `Bearer ${token}`);
 			expect(res.headers["content-type"]).toMatch(/application\/json/);
 		});
 
@@ -682,15 +620,19 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		});
 
 		it("trả về 401 khi token không hợp lệ", async () => {
-			const res = await request(app)
-				.delete(DELETE_ACCOUNT)
-				.set("Authorization", "Bearer tampered.token.value");
+			const res = await request(app).delete(DELETE_ACCOUNT).set("Authorization", "Bearer tampered.token.value");
 			expect(res.status).toBe(401);
 		});
 
 		it("không thể xóa tài khoản của người khác bằng token hợp lệ của chính mình", async () => {
-			const { token: tokenA } = await registerAndLogin({ email: "usera@example.com", confirmPassword: "P455word123!@#" });
-			const { payload: payloadB } = await registerAndLogin({ email: "userb@example.com", confirmPassword: "P455word123!@#" });
+			const { token: tokenA } = await registerAndLogin({
+				email: "usera@example.com",
+				confirmPassword: "P455word123!@#",
+			});
+			const { payload: payloadB } = await registerAndLogin({
+				email: "userb@example.com",
+				confirmPassword: "P455word123!@#",
+			});
 
 			// User A deletes their own account
 			await request(app).delete(DELETE_ACCOUNT).set("Authorization", `Bearer ${tokenA}`);

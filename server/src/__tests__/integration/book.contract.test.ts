@@ -1,11 +1,3 @@
-/**
- * Contract tests for Book CRUD + format management endpoints.
- *
- * These tests are in RED state — they define the expected HTTP contract.
- * The book routes exist but controllers return "not implemented".
- * Implementing the controller/service functions will make them GREEN.
- * DO NOT add mocks — tests must exercise real implementations.
- */
 import request from "supertest";
 import app from "../../app";
 import { connectTestDB, closeTestDB, clearTestDB } from "../utils/testDb";
