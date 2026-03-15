@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { Category } from "@models";
 import { ICategory } from "@models/category.model";
 import { HttpError } from "@middleware/error.middleware";
-import { createCategorySchema, updateCategorySchema } from "@schemas";
+import { CreateCategoryInput, createCategorySchema, UpdateCategoryInput, updateCategorySchema } from "@schemas";
 import { getPagination } from "@utils";
 
 /**
@@ -16,7 +16,7 @@ import { getPagination } from "@utils";
  * @throws {HttpError} 400 khi dữ liệu không hợp lệ.
  * @throws {HttpError} 409 khi slug đã tồn tại.
  */
-export const createCategory = async (dto: Record<string, unknown>): Promise<ICategory> => {
+export const createCategory = async (dto: CreateCategoryInput): Promise<ICategory> => {
 	const parsed = createCategorySchema.safeParse(dto);
 
 	if (!parsed.success) {
@@ -161,7 +161,7 @@ export const getCategoryTree = async (): Promise<(ICategory & { children?: ICate
  * @throws {HttpError} 404 khi danh mục không tồn tại.
  * @throws {HttpError} 409 khi slug mới đã tồn tại.
  */
-export const updateCategory = async (id: string, dto: Record<string, unknown>): Promise<ICategory | null> => {
+export const updateCategory = async (id: string, dto: UpdateCategoryInput): Promise<ICategory | null> => {
 	if (!mongoose.Types.ObjectId.isValid(id)) throw new HttpError("Invalid ID", 400);
 
 	// Validate partial fields allowed by update schema
@@ -222,7 +222,7 @@ export const updateCategory = async (id: string, dto: Record<string, unknown>): 
 			await Category.findByIdAndUpdate(
 				id,
 				{ ...parsed.data, parent: newParentId, ancestors: newAncestors },
-				{ new: true, session },
+				{ returnDocument: "after", session },
 			);
 
 			// Update all descendants: replace the prefix of their `ancestors`
@@ -258,7 +258,7 @@ export const updateCategory = async (id: string, dto: Record<string, unknown>): 
 	}
 
 	// No parent change: simple update of given fields
-	return await Category.findByIdAndUpdate(id, parsed.data, { new: true }).exec();
+	return await Category.findByIdAndUpdate(id, parsed.data, { returnDocument: "after" }).exec();
 };
 
 /**

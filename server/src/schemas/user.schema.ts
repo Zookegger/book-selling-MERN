@@ -17,8 +17,6 @@ export const addressSchema = z.object({
 
 export const updateAddressSchema = addressSchema.partial();
 
-export type UpdateAddressInput = z.infer<typeof updateAddressSchema>;
-
 export const wishlistItemSchema = z.object({
 	book: z.string().min(1, "Book ID is required"),
 	addedAt: z.coerce.date().optional(),
@@ -51,6 +49,7 @@ export const updateUserSchema = z.object({
 	firstName: z.string().trim().min(1).optional(),
 	lastName: z.string().trim().min(1).optional(),
 	email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")).optional(),
+	role: userRoleSchema.optional(),
 	addresses: z.array(addressSchema).optional(),
 	wishList: z.array(wishlistItemSchema).optional(),
 });
@@ -67,55 +66,9 @@ export const changePasswordSchema = z.object({
 	newPassword: z.string().min(1, "New password is required"),
 });
 
-export const loginSchema = z.object({
-	email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")),
-	password: z.string().min(1, "Password is required"),
-});
-
-export const registerSchema = z.object({
-	firstName: z.string().trim().min(1, "First name is required"),
-	lastName: z.string().trim().min(1, "Last name is required"),
-	email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")),
-	password: z
-		.string()
-		.min(8, "Password must be at least 8 characters") // minLength
-		.regex(/[a-z]/, "Password must contain at least one lowercase letter")
-		.regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-		.regex(/[0-9]/, "Password must contain at least one number")
-		.regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
-});
-
-export const forgotPasswordSchema = z.object({
-	email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")),
-});
-
-export const resetPasswordSchema = z.object({
-	token: z.string().min(1, "Reset token is required"),
-	newPassword: z
-		.string()
-		.min(8, "Password must be at least 8 characters") // minLength
-		.regex(/[a-z]/, "Password must contain at least one lowercase letter")
-		.regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-		.regex(/[0-9]/, "Password must contain at least one number")
-		.regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
-});
-
-export const verifyEmailSchema = z.object({
-	token: z.string().min(1, "Verification token is required"),
-});
-
-export const resendVerificationSchema = z.object({
-	email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")),
-});
-
-export type CreateUserInput = z.infer<typeof createUserSchema>;
-export type UpdateUserInput = z.infer<typeof updateUserSchema>;
-export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
-export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
-export type LoginInput = z.infer<typeof loginSchema>;
-export type RegisterInput = z.infer<typeof registerSchema>;
-export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
-export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
-export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
-export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;
-export type AddressInput = z.infer<typeof addressSchema>;
+export type CreateUserInput = z.input<typeof createUserSchema>;
+export type UpdateUserInput = z.input<typeof updateUserSchema>;
+export type UpdateProfileInput = z.input<typeof updateProfileSchema>;
+export type AddAddressInput = z.input<typeof addressSchema>;
+export type UpdateAddressInput = z.infer<typeof updateAddressSchema>;
+export type ChangePasswordInput = z.input<typeof changePasswordSchema>;

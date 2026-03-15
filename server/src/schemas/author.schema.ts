@@ -13,5 +13,5 @@ export const createAuthorSchema = authorSchema;
 
 export const updateAuthorSchema = authorSchema.partial();
 
-export type CreateAuthorInput = z.infer<typeof createAuthorSchema>;
-export type UpdateAuthorInput = z.infer<typeof updateAuthorSchema>;
+export type CreateAuthorInput = z.input<typeof createAuthorSchema>;
+export type UpdateAuthorInput = z.input<typeof updateAuthorSchema>;

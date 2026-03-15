@@ -51,8 +51,7 @@ export async function changePassword(req: AuthRequest, res: Response, next: Next
 		const userId = req.userId;
 		if (!userId) return next(new HttpError("Unauthorized", 401));
 
-		const { currentPassword, newPassword } = req.body;
-		const updated = await userServices.changePassword(userId as string, currentPassword, newPassword);
+		const updated = await userServices.changePassword(userId as string, req.body);
 		return res.status(200).json(sanitizeUser(updated));
 	} catch (err) {
 		// service may throw 403 for invalid current password — map to 401 for API consistency

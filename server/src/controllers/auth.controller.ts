@@ -13,9 +13,7 @@ import mongoose from "mongoose";
  */
 export async function login(req: Request, res: Response, next: NextFunction) {
 	try {
-		const { email, password } = req.body;
-
-		const { user, token } = await authServices.login(email, password);
+		const { user, token } = await authServices.login(req.body);
 		if (!user) {
 			throw new HttpError("User not found", 404);
 		}
@@ -43,8 +41,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
  */
 export async function register(req: Request, res: Response, next: NextFunction) {
 	try {
-		const { firstName, lastName, email, password } = req.body;
-		const user = await authServices.register({ firstName, lastName, email }, password);
+		const user = await authServices.register(req.body);
 
 		if (!user) throw new HttpError("Something went wrong while signing up", 500);
 
@@ -67,10 +64,10 @@ export async function verifyEmail(req: Request, res: Response, next: NextFunctio
 		const { token } = req.query;
 
 		if (!token || typeof token !== "string") {
-			throw new HttpError("Verification token is required", 400);
+			throw new HttpError("Verification token is required and must be a string", 400);
 		}
 
-		const user = await authServices.verifyEmail(token);
+		const user = await authServices.verifyEmail({ token });
 
 		return res.status(200).json({
 			message: "Email verified successfully",
@@ -140,13 +137,7 @@ export async function logout(req: AuthRequest, res: Response, next: NextFunction
  */
 export async function forgotPassword(req: Request, res: Response, next: NextFunction) {
 	try {
-		const { email } = req.body;
-
-		if (!email) {
-			throw new HttpError("Email is required", 400);
-		}
-
-		await authServices.forgotPassword(email);
+		await authServices.forgotPassword(req.body);
 
 		// Always return success message to prevent email enumeration
 		return res.status(200).json({
@@ -165,13 +156,7 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
  */
 export async function resetPassword(req: Request, res: Response, next: NextFunction) {
 	try {
-		const { token, newPassword } = req.body;
-
-		if (!token || !newPassword) {
-			throw new HttpError("Token and new password are required", 400);
-		}
-
-		const user = await authServices.resetPassword(token, newPassword);
+		const user = await authServices.resetPassword(req.body);
 
 		return res.status(200).json({
 			message: "Password reset successfully",
@@ -195,13 +180,7 @@ export async function resetPassword(req: Request, res: Response, next: NextFunct
  */
 export async function resendVerificationEmail(req: Request, res: Response, next: NextFunction) {
 	try {
-		const { email } = req.body;
-
-		if (!email) {
-			throw new HttpError("Email is required", 400);
-		}
-
-		const user = await authServices.resendVerificationEmail(email);
+		const user = await authServices.resendVerificationEmail(req.body);
 
 		return res.status(200).json({
 			message: "Verification email has been sent",

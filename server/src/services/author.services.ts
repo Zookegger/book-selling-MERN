@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { Author, Category } from "@models";
 import { IAuthor } from "@models/author.model";
 import { HttpError } from "@middleware/error.middleware";
-import { createAuthorSchema, updateAuthorSchema } from "@schemas";
+import { CreateAuthorInput, createAuthorSchema, UpdateAuthorInput, updateAuthorSchema } from "@schemas";
 import { getPagination } from "@utils";
 
 /**
@@ -16,7 +16,7 @@ import { getPagination } from "@utils";
  * @throws {HttpError} 400 khi dữ liệu không hợp lệ.
  * @throws {HttpError} 409 khi email đã được sử dụng.
  */
-export const createAuthor = async (dto: Record<string, unknown>): Promise<IAuthor> => {
+export const createAuthor = async (dto: CreateAuthorInput): Promise<IAuthor> => {
 	const parsed = createAuthorSchema.safeParse(dto);
 
 	if (!parsed.success) {
@@ -92,7 +92,7 @@ export const getAuthor = async (identifier: string): Promise<IAuthor | null> => 
  * @throws {HttpError} 400 khi dữ liệu không hợp lệ.
  * @throws {HttpError} 404 khi tác giả không tồn tại.
  */
-export const updateAuthor = async (id: string, dto: Record<string, unknown>): Promise<IAuthor | null> => {
+export const updateAuthor = async (id: string, dto: UpdateAuthorInput): Promise<IAuthor | null> => {
 	if (!mongoose.Types.ObjectId.isValid(id)) throw new HttpError("Invalid ID", 400);
 
 	const parsed = updateAuthorSchema.safeParse(dto);

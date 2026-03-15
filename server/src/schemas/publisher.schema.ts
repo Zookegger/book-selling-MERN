@@ -14,7 +14,7 @@ export const publisherSchema = z.object({
 	contactEmail: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")).optional(),
 	website: z.string().pipe(z.url("Invalid website URL")).optional(),
 	logo: z.string().optional(),
-	isActive: z.boolean().optional().default(true),
+	isActive: z.boolean().default(true).optional(),
 });
 
 export const createPublisherSchema = publisherSchema;

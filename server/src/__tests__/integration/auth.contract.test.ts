@@ -35,13 +35,11 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 	};
 
 	// ---------------------------------------------------------------------------
-	// DB lifecycle — wraps all suites so connectTestDB is guaranteed to resolve
-	// before any beforeAll/beforeEach inside a nested describe runs.
+	// DB lifecycle
 	// ---------------------------------------------------------------------------
 
 	beforeAll(async () => {
 		await connectTestDB();
-		// Mock email service methods to avoid sending actual emails during tests
 		sendVerificationEmailSpy = jest
 			.spyOn(EmailService.prototype, "sendVerificationEmail")
 			.mockResolvedValue(undefined);
@@ -56,7 +54,6 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 
 	afterAll(async () => {
 		await closeTestDB();
-		// Restore all mocks
 		jest.restoreAllMocks();
 	});
 
@@ -81,6 +78,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			expect(res.body).not.toHaveProperty("token");
 		});
 
+		// Migrated from unit: register returns only message, no token or user keys
 		it("không trả về token trong phản hồi đăng ký", async () => {
 			const res = await request(app).post(REGISTER).send({
 				firstName: "Jwt",
@@ -104,6 +102,18 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			expect(res.status).toBe(201);
 			expect(res.body).not.toHaveProperty("password");
 			expect(res.body).not.toHaveProperty("user");
+		});
+
+		it("body phản hồi đăng ký chứa trường message", async () => {
+			const res = await request(app).post(REGISTER).send({
+				firstName: "Msg",
+				lastName: "Test",
+				email: "msgtest@example.com",
+				password: "P455word123!@#",
+				confirmPassword: "P455word123!@#",
+			});
+			expect(res.status).toBe(201);
+			expect(typeof res.body.message).toBe("string");
 		});
 
 		// --- input validation ---
@@ -162,6 +172,40 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			expect(res.status).toBe(400);
 		});
 
+		// Migrated from unit: password strength rules
+		it("trả về 400 khi password và confirmPassword không khớp với nhau", async () => {
+			const res = await request(app).post(REGISTER).send({
+				firstName: "Test",
+				lastName: "User",
+				email: "mismatch@example.com",
+				password: "P455word123!@#",
+				confirmPassword: "DifferentPass1!",
+			});
+			expect(res.status).toBe(400);
+		});
+
+		it("trả về 400 khi password yếu (không có chữ hoa)", async () => {
+			const res = await request(app).post(REGISTER).send({
+				firstName: "Weak",
+				lastName: "Pass",
+				email: "weak@example.com",
+				password: "password123!",
+				confirmPassword: "password123!",
+			});
+			expect(res.status).toBe(400);
+		});
+
+		it("trả về 400 khi password không có ký hiệu", async () => {
+			const res = await request(app).post(REGISTER).send({
+				firstName: "No",
+				lastName: "Symbol",
+				email: "nosymbol@example.com",
+				password: "Password123",
+				confirmPassword: "Password123",
+			});
+			expect(res.status).toBe(400);
+		});
+
 		// --- duplicate / conflict ---
 
 		it("trả về 409 khi email đã được đăng ký", async () => {
@@ -175,6 +219,21 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			await request(app).post(REGISTER).send(payload);
 			const res = await request(app).post(REGISTER).send(payload);
 			expect(res.status).toBe(409);
+		});
+
+		// Migrated from unit: service errors forward to next()
+		it("chuyển tiếp lỗi dịch vụ về next() — trả về 409 cho email trùng lặp", async () => {
+			const payload = {
+				firstName: "Fwd",
+				lastName: "Err",
+				email: "fwderr@example.com",
+				password: "P455word123!@#",
+				confirmPassword: "P455word123!@#",
+			};
+			await request(app).post(REGISTER).send(payload);
+			const res = await request(app).post(REGISTER).send(payload);
+			expect(res.status).toBe(409);
+			expect(typeof res.body.message).toBe("string");
 		});
 
 		// --- security ---
@@ -222,10 +281,8 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			confirmPassword: "P455word123!@#",
 		};
 
-		// Re-seed before each test because the module-level afterEach clears the DB.
 		beforeEach(async () => {
 			await request(app).post(REGISTER).send(USER);
-			// Verify email to allow login
 			await verifyUserEmail(USER.email);
 		});
 
@@ -235,6 +292,22 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			const res = await request(app).post(LOGIN).send({ email: USER.email, password: USER.password });
 			expect(res.status).toBe(200);
 			expect(res.body).toHaveProperty("token");
+		});
+
+		// Migrated from unit: response shape includes user object with id/email/firstName/lastName
+		it("trả về 200 với đúng hình dạng user và token khi thành công", async () => {
+			const res = await request(app).post(LOGIN).send({ email: USER.email, password: USER.password });
+			expect(res.status).toBe(200);
+			expect(res.body).toMatchObject({
+				message: "Login successful",
+				token: expect.any(String),
+				user: expect.objectContaining({
+					email: USER.email,
+					firstName: USER.firstName,
+					lastName: USER.lastName,
+				}),
+			});
+			expect(res.body.user).toHaveProperty("id");
 		});
 
 		it("JWT được trả về là JWT hợp lệ có thể xác minh được bằng JWT_SECRET", async () => {
@@ -249,145 +322,6 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			const ttl = (decoded.exp ?? 0) - Math.floor(Date.now() / 1000);
 			expect(ttl).toBeGreaterThan(0);
 			expect(ttl).toBeLessThanOrEqual(86_400);
-		});
-
-		// --- credential errors ---
-
-		it("trả về 401 cho email chính xác nhưng mật khẩu sai", async () => {
-			const res = await request(app).post(LOGIN).send({ email: USER.email, password: "WrongPass!" });
-			expect(res.status).toBe(401);
-		});
-
-		it("trả về 401 cho email không tồn tại", async () => {
-			const res = await request(app).post(LOGIN).send({ email: "ghost@example.com", password: "Password1!" });
-			expect(res.status).toBe(401);
-		});
-
-		// --- input validation ---
-
-		it("trả về 400 khi email bị thiếu", async () => {
-			const res = await request(app).post(LOGIN).send({ password: "Password1!" });
-			expect(res.status).toBe(400);
-		});
-
-		it("trả về 400 khi mật khẩu bị thiếu", async () => {
-			const res = await request(app).post(LOGIN).send({ email: USER.email });
-			expect(res.status).toBe(400);
-		});
-
-		it("trả về 400 cho một body request rỗng", async () => {
-			const res = await request(app).post(LOGIN).send({});
-			expect(res.status).toBe(400);
-		});
-
-		// --- security ---
-
-		it("không tiết lộ liệu email có tồn tại trong phản hồi lỗi", async () => {
-			const wrongPassRes = await request(app).post(LOGIN).send({ email: USER.email, password: "Wrong!" });
-			const unknownRes = await request(app).post(LOGIN).send({ email: "ghost@example.com", password: "Wrong!" });
-			expect(wrongPassRes.body.message).toBe(unknownRes.body.message);
-		});
-
-		// --- email verification required ---
-
-		it("trả về 403 cho người dùng chưa xác minh email", async () => {
-			// Create a new unverified user
-			const unverifiedUser = {
-				firstName: "Unverified",
-				lastName: "User",
-				email: "unverified@example.com",
-				password: "P455word123!@#",
-				confirmPassword: "P455word123!@#",
-			};
-			await request(app).post(REGISTER).send(unverifiedUser);
-
-			// Try to login without verifying email
-			const res = await request(app).post(LOGIN).send({
-				email: unverifiedUser.email,
-				password: unverifiedUser.password,
-			});
-			expect(res.status).toBe(403);
-		});
-	});
-
-	// ---------------------------------------------------------------------------
-	// GET /api/auth/session  (protected — requires valid JWT)
-	// ---------------------------------------------------------------------------
-
-	describe("GET /api/auth/session", () => {
-		const USER = {
-			firstName: "Session",
-			lastName: "User",
-			email: "sessionuser@example.com",
-			password: "P455word123!@#",
-			confirmPassword: "P455word123!@#",
-		};
-
-		let token: string;
-		let userId: string;
-
-		beforeEach(async () => {
-			await request(app).post(REGISTER).send(USER);
-			await verifyUserEmail(USER.email);
-			const res = await request(app).post(LOGIN).send({ email: USER.email, password: USER.password });
-			token = res.body.token;
-			userId = res.body.user.id;
-		});
-
-		// --- happy path ---
-
-		it("trả về 200 và hồ sơ người dùng hiện tại cho Bearer JWT hợp lệ", async () => {
-			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${token}`);
-			expect(res.status).toBe(200);
-		});
-
-		it("body phản hồi chứa userId trùng khớp với claim id của token", async () => {
-			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${token}`);
-			expect(res.body.userId ?? res.body._id).toBe(userId);
-		});
-
-		it("body phản hồi không bao gồm trường mật khẩu", async () => {
-			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${token}`);
-			expect(res.body).not.toHaveProperty("password");
-		});
-
-		// --- authentication failures ---
-
-		it("trả về 401 khi header Authorization vắng mặt", async () => {
-			const res = await request(app).get(SESSION);
-			expect(res.status).toBe(401);
-		});
-
-		it("trả về 401 cho JWT hết hạn", async () => {
-			const expired = jwt.sign({ userId: userId }, SECRET, { expiresIn: -1 });
-			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${expired}`);
-			expect(res.status).toBe(401);
-		});
-
-		it("trả về 401 cho một token được ký bằng một mật khẩu khác nhau", async () => {
-			const bad = jwt.sign({ userId: userId }, "wrong-secret");
-			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${bad}`);
-			expect(res.status).toBe(401);
-		});
-	});
-
-	// ---------------------------------------------------------------------------
-	// POST /api/auth/login — extended
-	// ---------------------------------------------------------------------------
-
-	describe("POST /api/auth/login — response contract", () => {
-		const USER = {
-			firstName: "Contract",
-			lastName: "Login",
-			email: "contractlogin@example.com",
-			password: "P455word123!@#",
-			confirmPassword: "P455word123!@#",
-		};
-
-		beforeEach(async () => {
-			await request(app).post(REGISTER).send(USER);
-			// Verify email to allow login
-			await verifyUserEmail(USER.email);
 		});
 
 		it("body phản hồi chứa user.email khớp với email đã đăng ký", async () => {
@@ -419,34 +353,117 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			expect(res.status).toBe(200);
 		});
 
+		// --- credential errors ---
+
+		it("trả về 401 cho email chính xác nhưng mật khẩu sai", async () => {
+			const res = await request(app).post(LOGIN).send({ email: USER.email, password: "WrongPass!" });
+			expect(res.status).toBe(401);
+		});
+
+		it("trả về 401 cho email không tồn tại", async () => {
+			const res = await request(app).post(LOGIN).send({ email: "ghost@example.com", password: "Password1!" });
+			expect(res.status).toBe(401);
+		});
+
 		it("body 401 có status và message cho mật khẩu sai", async () => {
 			const res = await request(app).post(LOGIN).send({ email: USER.email, password: "WrongPass1!" });
 			expect(res.status).toBe(401);
 			expect(res.body.status).toBe("fail");
 			expect(typeof res.body.message).toBe("string");
 		});
+
+		// --- input validation ---
+
+		it("trả về 400 khi email bị thiếu", async () => {
+			const res = await request(app).post(LOGIN).send({ password: "Password1!" });
+			expect(res.status).toBe(400);
+		});
+
+		it("trả về 400 khi mật khẩu bị thiếu", async () => {
+			const res = await request(app).post(LOGIN).send({ email: USER.email });
+			expect(res.status).toBe(400);
+		});
+
+		it("trả về 400 cho một body request rỗng", async () => {
+			const res = await request(app).post(LOGIN).send({});
+			expect(res.status).toBe(400);
+		});
+
+		// --- security ---
+
+		it("không tiết lộ liệu email có tồn tại trong phản hồi lỗi", async () => {
+			const wrongPassRes = await request(app).post(LOGIN).send({ email: USER.email, password: "Wrong!" });
+			const unknownRes = await request(app).post(LOGIN).send({ email: "ghost@example.com", password: "Wrong!" });
+			expect(wrongPassRes.body.message).toBe(unknownRes.body.message);
+		});
+
+		// Migrated from unit: user-not-found maps to 404 at controller level, but exposed
+		// as 401 at the HTTP layer to avoid user enumeration
+		it("trả về 401 (không phải 404) khi user không tồn tại — tránh lộ thông tin", async () => {
+			const res = await request(app).post(LOGIN).send({ email: "nobody@example.com", password: "P455word!" });
+			expect(res.status).toBe(401);
+		});
+
+		// --- email verification required ---
+
+		it("trả về 403 cho người dùng chưa xác minh email", async () => {
+			const unverifiedUser = {
+				firstName: "Unverified",
+				lastName: "User",
+				email: "unverified@example.com",
+				password: "P455word123!@#",
+				confirmPassword: "P455word123!@#",
+			};
+			await request(app).post(REGISTER).send(unverifiedUser);
+			const res = await request(app).post(LOGIN).send({
+				email: unverifiedUser.email,
+				password: unverifiedUser.password,
+			});
+			expect(res.status).toBe(403);
+		});
 	});
 
 	// ---------------------------------------------------------------------------
-	// GET /api/auth/me — extended (profile completeness)
+	// GET /api/auth/me  (session)
 	// ---------------------------------------------------------------------------
 
-	describe("GET /api/auth/me — profile body contract", () => {
+	describe("GET /api/auth/me", () => {
 		const USER = {
-			firstName: "Profile",
-			lastName: "Body",
-			email: "profilebody@example.com",
+			firstName: "Session",
+			lastName: "User",
+			email: "sessionuser@example.com",
 			password: "P455word123!@#",
 			confirmPassword: "P455word123!@#",
 		};
 
 		let token: string;
+		let userId: string;
 
 		beforeEach(async () => {
 			await request(app).post(REGISTER).send(USER);
 			await verifyUserEmail(USER.email);
 			const res = await request(app).post(LOGIN).send({ email: USER.email, password: USER.password });
 			token = res.body.token;
+			userId = res.body.user.id;
+		});
+
+		// --- happy path ---
+
+		it("trả về 200 và hồ sơ người dùng hiện tại cho Bearer JWT hợp lệ", async () => {
+			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${token}`);
+			expect(res.status).toBe(200);
+		});
+
+		it("body phản hồi chứa userId trùng khớp với claim id của token", async () => {
+			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${token}`);
+			expect(res.body.userId ?? res.body._id).toBe(userId);
+		});
+
+		// Migrated from unit: userId in response matches the DB document _id, not a raw token string
+		it("userId phản hồi khớp _id tài liệu DB (không phải chuỗi token)", async () => {
+			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${token}`);
+			expect(res.body.userId ?? res.body._id).toBe(userId);
+			expect(res.body.userId ?? res.body._id).not.toBe(token);
 		});
 
 		it("body phản hồi chứa email", async () => {
@@ -460,9 +477,33 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			expect(res.body.lastName).toBe(USER.lastName);
 		});
 
+		it("body phản hồi không bao gồm trường mật khẩu", async () => {
+			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${token}`);
+			expect(res.body).not.toHaveProperty("password");
+		});
+
 		it("Content-Type phản hồi là application/json", async () => {
 			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${token}`);
 			expect(res.headers["content-type"]).toMatch(/application\/json/);
+		});
+
+		// --- authentication failures ---
+
+		it("trả về 401 khi header Authorization vắng mặt", async () => {
+			const res = await request(app).get(SESSION);
+			expect(res.status).toBe(401);
+		});
+
+		it("trả về 401 cho JWT hết hạn", async () => {
+			const expired = jwt.sign({ userId }, SECRET, { expiresIn: -1 });
+			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${expired}`);
+			expect(res.status).toBe(401);
+		});
+
+		it("trả về 401 cho một token được ký bằng một mật khẩu khác nhau", async () => {
+			const bad = jwt.sign({ userId }, "wrong-secret");
+			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${bad}`);
+			expect(res.status).toBe(401);
 		});
 
 		it("Content-Type 401 là application/json", async () => {
@@ -475,6 +516,15 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			expect(res.body.status).toBe("fail");
 			expect(res.body.message).toBe("Unauthorized");
 		});
+
+		// Migrated from unit: non-ObjectId userId still returns 200 with just { userId }
+		it("trả về 200 với chỉ { userId } khi userId không phải ObjectId hợp lệ", async () => {
+			// Forge a token whose userId payload is not a valid ObjectId
+			const fakeToken = jwt.sign({ userId: "not-an-objectid" }, SECRET);
+			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${fakeToken}`);
+			expect(res.status).toBe(200);
+			expect(res.body).toMatchObject({ userId: "not-an-objectid" });
+		});
 	});
 
 	// ---------------------------------------------------------------------------
@@ -482,8 +532,6 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 	// ---------------------------------------------------------------------------
 
 	describe("POST /api/auth/logout", () => {
-		let token: string;
-		
 		const USER = {
 			firstName: "Logout",
 			lastName: "User",
@@ -491,8 +539,9 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			password: "P455word123!@#",
 			confirmPassword: "P455word123!@#",
 		};
-		
-		// Re-seed before each test because the module-level afterEach clears the DB.
+
+		let token: string;
+
 		beforeEach(async () => {
 			await request(app).post(REGISTER).send(USER);
 			await verifyUserEmail(USER.email);
@@ -500,20 +549,18 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			token = res.body.token;
 		});
 
+		// --- happy path ---
+
 		it("trả về 200 khi được gọi với một token hợp lệ", async () => {
 			const res = await request(app).post(LOGOUT).set("Authorization", `Bearer ${token}`);
 			expect(res.status).toBe(200);
 		});
 
-		it("trả về 401 khi được gọi mà không có token", async () => {
-			const res = await request(app).post(LOGOUT);
-			expect(res.status).toBe(401);
-		});
-
-		it("trả về 401 với body đúng khi không có token được cung cấp", async () => {
-			const res = await request(app).post(LOGOUT);
-			expect(res.body.status).toBe("fail");
-			expect(res.body.message).toBe("Unauthorized");
+		// Migrated from unit: successful logout response contains a message string
+		it("phản hồi 200 chứa trường message khi userId có mặt", async () => {
+			const res = await request(app).post(LOGOUT).set("Authorization", `Bearer ${token}`);
+			expect(res.status).toBe(200);
+			expect(res.body).toMatchObject({ message: expect.any(String) });
 		});
 
 		it("Content-Type phản hồi là application/json", async () => {
@@ -526,6 +573,19 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			const res = await request(app).post(LOGOUT).set("Authorization", `Bearer ${token}`);
 			expect(res.status).toBe(200);
 		});
+
+		// --- authentication failures ---
+
+		it("trả về 401 khi được gọi mà không có token", async () => {
+			const res = await request(app).post(LOGOUT);
+			expect(res.status).toBe(401);
+		});
+
+		it("trả về 401 với body đúng khi không có token được cung cấp", async () => {
+			const res = await request(app).post(LOGOUT);
+			expect(res.body.status).toBe("fail");
+			expect(res.body.message).toBe("Unauthorized");
+		});
 	});
 
 	// ---------------------------------------------------------------------------
@@ -533,9 +593,10 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 	// ---------------------------------------------------------------------------
 
 	describe("GET /api/auth/verify-email", () => {
+		// --- happy path ---
+
 		it("trả về 200 và xác minh email khi token hợp lệ", async () => {
-			// Register a user
-			const res = await request(app).post(REGISTER).send({
+			await request(app).post(REGISTER).send({
 				firstName: "Verify",
 				lastName: "Test",
 				email: "verify@example.com",
@@ -543,21 +604,43 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				confirmPassword: "P455word123!@#",
 			});
 
-			// Get the user to extract verification token
 			const user = await User.findOne({ email: "verify@example.com" });
 			expect(user).toBeTruthy();
 			expect(user?.emailVerificationToken).toBeTruthy();
 
-			// Verify email
 			const verifyRes = await request(app).get(VERIFY_EMAIL).query({ token: user?.emailVerificationToken });
-
 			expect(verifyRes.status).toBe(200);
 			expect(verifyRes.body.message).toMatch(/verified/i);
 
-			// Check user is verified in database
 			const verifiedUser = await User.findOne({ email: "verify@example.com" });
 			expect(verifiedUser?.isEmailVerified).toBe(true);
 		});
+
+		// Migrated from unit: successful verification response shape
+		it("body phản hồi chứa user với id, email, isEmailVerified khi thành công", async () => {
+			await request(app).post(REGISTER).send({
+				firstName: "Shape",
+				lastName: "Check",
+				email: "shapecheck@example.com",
+				password: "P455word123!@#",
+				confirmPassword: "P455word123!@#",
+			});
+
+			const user = await User.findOne({ email: "shapecheck@example.com" });
+			const res = await request(app).get(VERIFY_EMAIL).query({ token: user?.emailVerificationToken });
+
+			expect(res.status).toBe(200);
+			expect(res.body).toMatchObject({
+				message: "Email verified successfully",
+				user: expect.objectContaining({
+					email: "shapecheck@example.com",
+					isEmailVerified: true,
+				}),
+			});
+			expect(res.body.user).toHaveProperty("id");
+		});
+
+		// --- input / token errors ---
 
 		it("trả về 400 khi token bị thiếu", async () => {
 			const res = await request(app).get(VERIFY_EMAIL);
@@ -570,7 +653,6 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 		});
 
 		it("trả về 400 khi token đã hết hạn", async () => {
-			// Create a user with expired token
 			await request(app).post(REGISTER).send({
 				firstName: "Expired",
 				lastName: "Token",
@@ -579,10 +661,9 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				confirmPassword: "P455word123!@#",
 			});
 
-			// Manually set expired date
 			const user = await User.findOne({ email: "expired@example.com" });
 			if (user) {
-				user.emailVerificationExpires = new Date(Date.now() - 1000); // 1 second ago
+				user.emailVerificationExpires = new Date(Date.now() - 1000);
 				await user.save();
 			}
 
@@ -607,27 +688,42 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			await verifyUserEmail("forgot@example.com");
 		});
 
+		// --- happy path ---
+
 		it("trả về 200 và gửi email đặt lại mật khẩu", async () => {
 			const res = await request(app).post(FORGOT_PASSWORD).send({ email: "forgot@example.com" });
 
 			expect(res.status).toBe(200);
 			expect(res.body.message).toEqual("If that email exists, a password reset link has been sent");
 
-			// Verify reset token was created
 			const user = await User.findOne({ email: "forgot@example.com" });
 			expect(user?.passwordResetToken).toBeTruthy();
 			expect(user?.passwordResetExpires).toBeTruthy();
 		});
 
+		// Migrated from unit: response message contains "password reset link"
+		it("thông điệp phản hồi 200 chứa 'password reset link'", async () => {
+			const res = await request(app).post(FORGOT_PASSWORD).send({ email: "forgot@example.com" });
+			expect(res.status).toBe(200);
+			expect(res.body.message).toMatch(/password reset link/);
+		});
+
 		it("trả về 200 ngay cả khi email không tồn tại (security)", async () => {
 			const res = await request(app).post(FORGOT_PASSWORD).send({ email: "nonexistent@example.com" });
-
 			expect(res.status).toBe(200);
 		});
+
+		// --- input validation ---
 
 		it("trả về 400 khi email bị thiếu", async () => {
 			const res = await request(app).post(FORGOT_PASSWORD).send({});
 			expect(res.status).toBe(400);
+		});
+
+		it("body lỗi 400 chứa message 'Please provide a valid email address' khi email bị thiếu", async () => {
+			const res = await request(app).post(FORGOT_PASSWORD).send({});
+			expect(res.status).toBe(400);
+			expect(res.body.message).toMatch(/Please provide a valid email address/);
 		});
 
 		it("trả về 400 khi email không hợp lệ", async () => {
@@ -644,7 +740,6 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 		let resetToken: string;
 
 		beforeEach(async () => {
-			// Register and verify user
 			await request(app).post(REGISTER).send({
 				firstName: "Reset",
 				lastName: "User",
@@ -653,14 +748,12 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				confirmPassword: "P455word123!@#",
 			});
 			await verifyUserEmail("reset@example.com");
-
-			// Request password reset
 			await request(app).post(FORGOT_PASSWORD).send({ email: "reset@example.com" });
-
-			// Get reset token
 			const user = await User.findOne({ email: "reset@example.com" });
 			resetToken = user?.passwordResetToken || "";
 		});
+
+		// --- happy path ---
 
 		it("trả về 200 và đặt lại mật khẩu với token hợp lệ", async () => {
 			const newPassword = "NewP455word123!@#";
@@ -669,10 +762,31 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			expect(res.status).toBe(200);
 			expect(res.body.message).toMatch(/password.*reset/i);
 
-			// Verify can login with new password
 			const loginRes = await request(app).post(LOGIN).send({ email: "reset@example.com", password: newPassword });
 			expect(loginRes.status).toBe(200);
 		});
+
+		// Migrated from unit: successful reset response shape includes user with id and email
+		it("body phản hồi chứa message và user với id, email khi thành công", async () => {
+			const res = await request(app)
+				.post(RESET_PASSWORD)
+				.send({ token: resetToken, newPassword: "NewP455word123!@#" });
+
+			expect(res.status).toBe(200);
+			expect(res.body).toMatchObject({
+				message: "Password reset successfully",
+				user: expect.objectContaining({ email: "reset@example.com" }),
+			});
+			expect(res.body.user).toHaveProperty("id");
+		});
+
+		it("không thể đăng nhập với mật khẩu cũ sau khi đặt lại", async () => {
+			await request(app).post(RESET_PASSWORD).send({ token: resetToken, newPassword: "NewP455word123!@#" });
+			const res = await request(app).post(LOGIN).send({ email: "reset@example.com", password: "P455word123!@#" });
+			expect(res.status).toBe(401);
+		});
+
+		// --- input validation ---
 
 		it("trả về 400 khi token bị thiếu", async () => {
 			const res = await request(app).post(RESET_PASSWORD).send({ newPassword: "NewP455word123!@#" });
@@ -697,7 +811,6 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 		});
 
 		it("trả về 400 khi token đã hết hạn", async () => {
-			// Manually expire the token
 			const user = await User.findOne({ email: "reset@example.com" });
 			if (user) {
 				user.passwordResetExpires = new Date(Date.now() - 1000);
@@ -708,15 +821,6 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				.post(RESET_PASSWORD)
 				.send({ token: resetToken, newPassword: "NewP455word123!@#" });
 			expect(res.status).toBe(400);
-		});
-
-		it("không thể đăng nhập với mật khẩu cũ sau khi đặt lại", async () => {
-			// Reset password
-			await request(app).post(RESET_PASSWORD).send({ token: resetToken, newPassword: "NewP455word123!@#" });
-
-			// Try to login with old password
-			const res = await request(app).post(LOGIN).send({ email: "reset@example.com", password: "P455word123!@#" });
-			expect(res.status).toBe(401);
 		});
 	});
 
@@ -735,32 +839,49 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			});
 		});
 
+		// --- happy path ---
+
 		it("trả về 200 và gửi lại email xác minh", async () => {
 			const res = await request(app).post(RESEND_VERIFICATION).send({ email: "resend@example.com" });
-
 			expect(res.status).toBe(200);
 			expect(res.body.message).toMatch(/verification email.*sent/i);
 		});
 
-		it("trả về 400 khi email đã được xác minh", async () => {
-			// Verify the email first
-			await verifyUserEmail("resend@example.com");
-
+		// Migrated from unit: successful resend response shape includes user with id and email
+		it("body phản hồi chứa message và user với id, email khi thành công", async () => {
 			const res = await request(app).post(RESEND_VERIFICATION).send({ email: "resend@example.com" });
+			expect(res.status).toBe(200);
+			expect(res.body).toMatchObject({
+				message: "Verification email has been sent",
+				user: expect.objectContaining({ email: "resend@example.com" }),
+			});
+			expect(res.body.user).toHaveProperty("id");
+		});
 
+		// --- error cases ---
+
+		it("trả về 400 khi email đã được xác minh", async () => {
+			await verifyUserEmail("resend@example.com");
+			const res = await request(app).post(RESEND_VERIFICATION).send({ email: "resend@example.com" });
 			expect(res.status).toBe(400);
 			expect(res.body.message).toMatch(/already verified/i);
 		});
 
 		it("trả về 400 khi email không tồn tại", async () => {
 			const res = await request(app).post(RESEND_VERIFICATION).send({ email: "nonexistent@example.com" });
-
 			expect(res.status).toBe(400);
 		});
 
 		it("trả về 400 khi email bị thiếu", async () => {
 			const res = await request(app).post(RESEND_VERIFICATION).send({});
 			expect(res.status).toBe(400);
+		});
+
+		// Migrated from unit: missing email yields HttpError 400 with "Please provide a valid email address"
+		it("body lỗi 400 chứa message 'Please provide a valid email address' khi email bị thiếu", async () => {
+			const res = await request(app).post(RESEND_VERIFICATION).send({});
+			expect(res.status).toBe(400);
+			expect(res.body.message).toMatch(/Please provide a valid email address/);
 		});
 
 		it("trả về 400 khi email không hợp lệ", async () => {
@@ -792,57 +913,6 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 		it("404 body có status 'fail'", async () => {
 			const res = await request(app).get("/api/nonexistent");
 			expect(res.body.status).toBe("fail");
-		});
-	});
-
-	// ---------------------------------------------------------------------------
-	// POST /api/auth/register — password confirmation mismatch
-	// ---------------------------------------------------------------------------
-
-	describe("POST /api/auth/register — password confirmation", () => {
-		it("trả về 400 khi password và confirmPassword không khớp với nhau", async () => {
-			const res = await request(app).post(REGISTER).send({
-				firstName: "Test",
-				lastName: "User",
-				email: "mismatch@example.com",
-				password: "P455word123!@#",
-				confirmPassword: "DifferentPass1!",
-			});
-			expect(res.status).toBe(400);
-		});
-
-		it("trả về 400 khi password yếu (không có chữ hoa)", async () => {
-			const res = await request(app).post(REGISTER).send({
-				firstName: "Weak",
-				lastName: "Pass",
-				email: "weak@example.com",
-				password: "password123!",
-				confirmPassword: "password123!",
-			});
-			expect(res.status).toBe(400);
-		});
-
-		it("trả về 400 khi password không có ký hiệu", async () => {
-			const res = await request(app).post(REGISTER).send({
-				firstName: "No",
-				lastName: "Symbol",
-				email: "nosymbol@example.com",
-				password: "Password123",
-				confirmPassword: "Password123",
-			});
-			expect(res.status).toBe(400);
-		});
-
-		it("body phản hồi đăng ký chứa trường message", async () => {
-			const res = await request(app).post(REGISTER).send({
-				firstName: "Msg",
-				lastName: "Test",
-				email: "msgtest@example.com",
-				password: "P455word123!@#",
-				confirmPassword: "P455word123!@#",
-			});
-			expect(res.status).toBe(201);
-			expect(typeof res.body.message).toBe("string");
 		});
 	});
 });

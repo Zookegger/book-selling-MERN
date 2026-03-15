@@ -335,7 +335,10 @@ describe("Đổi mật khẩu - changePassword()", () => {
 
 	it("lưu hash mật khẩu mới khi mật khẩu hiện tại đúng", async () => {
 		const user = await makeUserWithRealPassword();
-		const updated = await changePassword(user._id.toString(), CURRENT_PW, NEW_PW);
+		const updated = await changePassword(user._id.toString(), {
+			currentPassword: CURRENT_PW,
+			newPassword: NEW_PW,
+		});
 
 		expect(updated).not.toBeNull();
 
@@ -346,7 +349,10 @@ describe("Đổi mật khẩu - changePassword()", () => {
 
 	it("mật khẩu cũ không còn khớp sau khi thay đổi", async () => {
 		const user = await makeUserWithRealPassword();
-		await changePassword(user._id.toString(), CURRENT_PW, NEW_PW);
+		await changePassword(user._id.toString(), {
+			currentPassword: CURRENT_PW,
+			newPassword: NEW_PW,
+		});
 
 		const reloaded = await User.findById(user._id);
 		expect(await reloaded!.comparePassword(CURRENT_PW)).toBe(false);
@@ -354,18 +360,33 @@ describe("Đổi mật khẩu - changePassword()", () => {
 
 	it("báo lỗi khi mật khẩu hiện tại không chính xác", async () => {
 		const user = await makeUserWithRealPassword();
-		await expect(changePassword(user._id.toString(), "WrongP455!", NEW_PW)).rejects.toThrow();
+		await expect(
+			changePassword(user._id.toString(), {
+				currentPassword: "WrongP455!",
+				newPassword: NEW_PW,
+			}),
+		).rejects.toThrow();
 	});
 
 	it("báo lỗi khi id không phải ObjectId hợp lệ", async () => {
-		await expect(changePassword("not-an-id", CURRENT_PW, NEW_PW)).rejects.toThrow(
+		await expect(
+			changePassword("not-an-id", {
+				currentPassword: CURRENT_PW,
+				newPassword: NEW_PW,
+			}),
+		).rejects.toThrow(
 			"The provided ID not-an-id is invalid.",
 		);
 	});
 
 	it("trả về null khi id hợp lệ nhưng không tồn tại", async () => {
 		const fakeId = new mongoose.Types.ObjectId().toString();
-		await expect(changePassword(fakeId, CURRENT_PW, NEW_PW)).rejects.toThrow("User not found");
+		await expect(
+			changePassword(fakeId, {
+				currentPassword: CURRENT_PW,
+				newPassword: NEW_PW,
+			}),
+		).rejects.toThrow("User not found");
 	});
 });
 

@@ -11,7 +11,13 @@ import {
 	forgotPasswordSchema,
 	resetPasswordSchema,
 	resendVerificationSchema,
-} from "@schemas/user.schema";
+	LoginInput,
+	RegisterInput,
+	VerifyEmailInput,
+	ForgotPasswordInput,
+	ResetPasswordInput,
+	ResendVerificationInput,
+} from "@schemas/auth.schema";
 
 /**
  * Xác thực người dùng bằng email và mật khẩu.
@@ -27,8 +33,8 @@ import {
  *
  * @returns Một đối tượng chứa `user` đã xác thực và `token` JWT đã ký.
  */
-export async function login(email: string, password: string): Promise<{ user: IUser; token: string }> {
-	const parsed = loginSchema.safeParse({ email, password });
+export async function login(dto: LoginInput): Promise<{ user: IUser; token: string }> {
+	const parsed = loginSchema.safeParse(dto);
 	if (!parsed.success) throw new HttpError(parsed.error.issues[0].message, 400);
 
 	const normalizedEmail = parsed.data.email;
@@ -36,7 +42,7 @@ export async function login(email: string, password: string): Promise<{ user: IU
 	const user = await User.findOne({ email: normalizedEmail });
 	if (!user) throw new HttpError("Invalid email or password", 401);
 
-	const isMatch = await user.comparePassword(password);
+	const isMatch = await user.comparePassword(parsed.data.password);
 	if (!isMatch) throw new HttpError("Invalid email or password", 401);
 
 	if (!user.isEmailVerified) {
@@ -65,11 +71,8 @@ export async function login(email: string, password: string): Promise<{ user: IU
  *
  * @returns Một đối tượng chứa `user` vừa tạo và `token` JWT đã ký.
  */
-export async function register(
-	userInfo: { firstName: string; lastName: string; email: string },
-	password: string,
-): Promise<IUser> {
-	const parsed = registerSchema.safeParse({ ...userInfo, password });
+export async function register(dto: RegisterInput): Promise<IUser> {
+	const parsed = registerSchema.safeParse(dto);
 	if (!parsed.success) throw new HttpError(parsed.error.issues[0].message, 400);
 
 	const { firstName, lastName, email: cleanEmail, password: cleanPassword } = parsed.data;
@@ -114,8 +117,8 @@ export async function register(
  *
  * @returns Thông tin người dùng sau khi xác minh.
  */
-export async function verifyEmail(token: string): Promise<IUser> {
-	const parsed = verifyEmailSchema.safeParse({ token });
+export async function verifyEmail(dto: VerifyEmailInput): Promise<IUser> {
+	const parsed = verifyEmailSchema.safeParse(dto);
 	if (!parsed.success) throw new HttpError(parsed.error.issues[0].message, 400);
 
 	const user = await User.findOne({ emailVerificationToken: parsed.data.token });
@@ -153,9 +156,12 @@ export async function verifyEmail(token: string): Promise<IUser> {
  *
  * @returns Luôn void - không tiết lộ email có tồn tại hay không.
  */
-export async function forgotPassword(email: string): Promise<void> {
-	const parsed = forgotPasswordSchema.safeParse({ email });
-	if (!parsed.success) throw new HttpError(parsed.error.issues[0].message, 400);
+export async function forgotPassword(dto: ForgotPasswordInput): Promise<void> {
+	const parsed = forgotPasswordSchema.safeParse(dto);
+	if (!parsed.success) {
+		const message = parsed.error.issues.map(i => i.message).join(", ");
+		throw new HttpError(message, 400);
+	}
 
 	const user = await User.findOne({ email: parsed.data.email });
 
@@ -196,8 +202,8 @@ export async function forgotPassword(email: string): Promise<void> {
  *
  * @returns Thông tin người dùng sau khi cập nhật mật khẩu.
  */
-export async function resetPassword(token: string, newPassword: string): Promise<IUser> {
-	const parsed = resetPasswordSchema.safeParse({ token, newPassword });
+export async function resetPassword(dto: ResetPasswordInput): Promise<IUser> {
+	const parsed = resetPasswordSchema.safeParse(dto);
 	if (!parsed.success) throw new HttpError(parsed.error.issues[0].message, 400);
 
 	const user = await User.findOne({ passwordResetToken: parsed.data.token });
@@ -235,8 +241,8 @@ export async function resetPassword(token: string, newPassword: string): Promise
  *
  * @returns Thông tin người dùng.
  */
-export async function resendVerificationEmail(email: string): Promise<IUser> {
-	const parsed = resendVerificationSchema.safeParse({ email });
+export async function resendVerificationEmail(dto: ResendVerificationInput): Promise<IUser> {
+	const parsed = resendVerificationSchema.safeParse(dto);
 	if (!parsed.success) throw new HttpError(parsed.error.issues[0].message, 400);
 
 	const normalizedEmail = parsed.data.email;

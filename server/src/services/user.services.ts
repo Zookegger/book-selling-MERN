@@ -9,6 +9,12 @@ import {
 	changePasswordSchema,
 	addressSchema,
 	updateAddressSchema,
+	CreateUserInput,
+	UpdateUserInput,
+	UpdateProfileInput,
+	ChangePasswordInput,
+	UpdateAddressInput,
+	AddAddressInput,
 } from "@schemas/user.schema";
 
 /**
@@ -43,14 +49,8 @@ export const getUser = async (identifier: string) => {
  * @throws {HttpError|Error} 409 khi email đã được sử dụng.
  * @returns Người dùng vừa tạo.
  */
-export const addUser = async (userInfo: {
-	firstName: string;
-	lastName: string;
-	email: string;
-	password: string;
-	role?: IUserRole;
-}): Promise<IUser> => {
-	const parsed = createUserSchema.safeParse(userInfo);
+export const addUser = async (dto: CreateUserInput): Promise<IUser> => {
+	const parsed = createUserSchema.safeParse(dto);
 	if (!parsed.success) {
 		const messages = parsed.error.issues.map((i) => i.message).join(", ");
 		throw new HttpError(messages, 400);
@@ -96,14 +96,14 @@ export const removeUser = async (id: string): Promise<IUser> => {
  * @throws {mongoose.Error.CastError} khi `id` không hợp lệ.
  * @returns Người dùng sau khi cập nhật (nếu có).
  */
-export const updateUser = async (id: string, update: Partial<IUser>): Promise<IUser> => {
+export const updateUser = async (id: string, dto: UpdateUserInput): Promise<IUser> => {
 	if (!mongoose.Types.ObjectId.isValid(id)) {
 		const error = new mongoose.Error.CastError("ObjectId", id, "id");
 		error.message = `The provided ID ${id} is invalid.`;
 		throw error;
 	}
 
-	const user = await User.findByIdAndUpdate(id, update, { returnDocument: "after", runValidators: true }).exec();
+	const user = await User.findByIdAndUpdate(id, dto, { returnDocument: "after", runValidators: true }).exec();
 
 	if (!user) throw new HttpError("User not found", 404);
 
@@ -121,7 +121,7 @@ export const updateUser = async (id: string, update: Partial<IUser>): Promise<IU
  * @throws {mongoose.Error.CastError} khi `id` không hợp lệ.
  * @returns Người dùng sau khi cập nhật.
  */
-export const updateProfile = async (id: string, profile: Partial<IUser>): Promise<IUser> => {
+export const updateProfile = async (id: string, profile: UpdateProfileInput): Promise<IUser> => {
 	if (!mongoose.Types.ObjectId.isValid(id)) {
 		const error = new mongoose.Error.CastError("ObjectId", id, "id");
 		error.message = `The provided ID ${id} is invalid.`;
@@ -178,14 +178,14 @@ export const updateProfile = async (id: string, profile: Partial<IUser>): Promis
  * @throws {HttpError} 404 khi không tìm thấy user.
  * @returns Người dùng sau khi đổi mật khẩu.
  */
-export const changePassword = async (id: string, currentPassword: string, newPassword: string): Promise<IUser> => {
+export const changePassword = async (id: string, dto: ChangePasswordInput): Promise<IUser> => {
 	if (!mongoose.Types.ObjectId.isValid(id)) {
 		const error = new mongoose.Error.CastError("ObjectId", id, "id");
 		error.message = `The provided ID ${id} is invalid.`;
 		throw error;
 	}
 
-	const parsed = changePasswordSchema.safeParse({ currentPassword, newPassword });
+	const parsed = changePasswordSchema.safeParse(dto);
 	if (!parsed.success) {
 		const messages = parsed.error.issues.map((i) => i.message).join(", ");
 		throw new HttpError(messages, 400);
@@ -225,7 +225,7 @@ export const changePassword = async (id: string, currentPassword: string, newPas
  * @throws {HttpError} 404 khi không tìm thấy user.
  * @returns Người dùng sau khi thêm địa chỉ.
  */
-export const addAddress = async (id: string, address: IAddress): Promise<IUser> => {
+export const addAddress = async (id: string, address: AddAddressInput): Promise<IUser> => {
 	if (!mongoose.Types.ObjectId.isValid(id)) {
 		const error = new mongoose.Error.CastError("ObjectId", id, "id");
 		error.message = `The provided ID ${id} is invalid.`;
@@ -269,7 +269,7 @@ export const addAddress = async (id: string, address: IAddress): Promise<IUser> 
  * @throws {HttpError} 404 khi không tìm thấy user.
  * @returns Người dùng sau khi cập nhật địa chỉ.
  */
-export const updateAddress = async (id: string, index: number, updates: Partial<IAddress>): Promise<IUser | null> => {
+export const updateAddress = async (id: string, index: number, updates: UpdateAddressInput): Promise<IUser> => {
 	if (!mongoose.Types.ObjectId.isValid(id)) {
 		const error = new mongoose.Error.CastError("ObjectId", id, "id");
 		error.message = `The provided ID ${id} is invalid.`;
@@ -322,7 +322,7 @@ export const deleteAddress = async (id: string, index: number): Promise<IUser> =
 
 	if (!user) throw new HttpError("User not found", 404);
 
-	if (index > user.addresses.length) throw new RangeError("Index out of range");
+	if (index < 0 || index >= user.addresses.length) throw new RangeError("Index out of range");
 
 	user.addresses.splice(index, 1);
 

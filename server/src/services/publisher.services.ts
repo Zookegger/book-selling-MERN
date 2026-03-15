@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { Publisher } from "@models";
 import { IPublisher } from "@models/publisher.model";
 import { HttpError } from "@middleware/error.middleware";
-import { createPublisherSchema, updatePublisherSchema } from "@schemas";
+import { CreatePublisherInput, createPublisherSchema, UpdatePublisherInput, updatePublisherSchema } from "@schemas";
 import { getPagination } from "@utils";
 
 /**
@@ -16,7 +16,7 @@ import { getPagination } from "@utils";
  * @throws {HttpError} 400 khi dữ liệu không hợp lệ.
  * @throws {HttpError} 409 khi tên đã tồn tại.
  */
-export const createPublisher = async (dto: Record<string, unknown>): Promise<IPublisher> => {
+export const createPublisher = async (dto: CreatePublisherInput): Promise<IPublisher> => {
 	const parsed = createPublisherSchema.safeParse(dto);
 	if (!parsed.success) {
 		const message = parsed.error.issues.map((i) => i.message).join(",");
@@ -97,7 +97,7 @@ export const getPublisher = async (identifier: string): Promise<IPublisher | nul
  * @throws {HttpError} 400 khi dữ liệu không hợp lệ.
  * @throws {HttpError} 404 khi nhà xuất bản không tồn tại.
  */
-export const updatePublisher = async (id: string, dto: Record<string, unknown>): Promise<IPublisher | null> => {
+export const updatePublisher = async (id: string, dto: UpdatePublisherInput): Promise<IPublisher | null> => {
 	if (!mongoose.Types.ObjectId.isValid(id)) throw new HttpError("Invalid ID", 400);
 
 	const parsed = updatePublisherSchema.safeParse(dto);
