@@ -44,6 +44,10 @@ const publisherSchema = new Schema<IPublisher>(
 			required: true,
 			lowercase: true,
 			match: [/.+\@.+\..+/, "Please fill a valid email address"],
+			default: function (this: IPublisher) {
+				const base = slugify(this.name || "publisher", { lower: true, strict: true }) || "publisher";
+				return `${base}-${new mongoose.Types.ObjectId().toString()}@example.com`;
+			},
 		},
 		website: { type: String },
 		logo: { type: String }, // URL to S3/Cloudinary

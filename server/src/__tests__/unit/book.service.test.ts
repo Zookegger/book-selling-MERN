@@ -50,7 +50,7 @@ describe("createBook()", () => {
 	it("creates a book with required fields", async () => {
 		const book = await makeBook();
 
-		expect(book._id).toBeDefined();
+		expect(book.id).toBeDefined();
 		expect(book.title).toBe("Nineteen Eighty-Four");
 		expect(book.description).toBe("A dystopian novel by George Orwell");
 		expect(book.language).toBe("en");
@@ -79,23 +79,23 @@ describe("createBook()", () => {
 
 	it("creates a book linked to an author", async () => {
 		const author = await Author.create({ name: "George Orwell" });
-		const book = await makeBook({ authors: [author._id.toString()] });
+		const book = await makeBook({ authors: [author.id.toString()] });
 
-		expect(book.authors[0].toString()).toBe(author._id.toString());
+		expect(book.authors[0].toString()).toBe(author.id.toString());
 	});
 
 	it("creates a book linked to a publisher", async () => {
 		const publisher = await Publisher.create({ name: "Secker & Warburg" });
-		const book = await makeBook({ publisher: publisher._id.toString() });
+		const book = await makeBook({ publisher: publisher.id.toString() });
 
-		expect(book.publisher!.toString()).toBe(publisher._id.toString());
+		expect(book.publisher!.toString()).toBe(publisher.id.toString());
 	});
 
 	it("creates a book linked to categories", async () => {
 		const cat = await Category.create({ name: "Fiction", slug: "fiction" });
-		const book = await makeBook({ categories: [cat._id.toString()] });
+		const book = await makeBook({ categories: [cat.id.toString()] });
 
-		expect(book.categories[0].toString()).toBe(cat._id.toString());
+		expect(book.categories[0].toString()).toBe(cat.id.toString());
 	});
 
 	it("throws 400 when title is missing", async () => {
@@ -205,7 +205,7 @@ describe("listBooks()", () => {
 describe("getBook()", () => {
 	it("returns the book for a valid existing ID", async () => {
 		const created = await makeBook();
-		const found = await getBook(created._id.toString());
+		const found = await getBook(created.id.toString());
 
 		expect(found).not.toBeNull();
 		expect(found!.title).toBe("Nineteen Eighty-Four");
@@ -217,12 +217,12 @@ describe("getBook()", () => {
 		const category = await Category.create({ name: "Fiction", slug: "fiction" });
 
 		const created = await makeBook({
-			authors: [author._id.toString()],
-			publisher: publisher._id.toString(),
-			categories: [category._id.toString()],
+			authors: [author.id.toString()],
+			publisher: publisher.id.toString(),
+			categories: [category.id.toString()],
 		});
 
-		const found = await getBook(created._id.toString());
+		const found = await getBook(created.id.toString());
 		expect((found!.authors[0] as any).name).toBe("George Orwell");
 		expect((found!.publisher as any).name).toBe("Secker & Warburg");
 		expect((found!.categories[0] as any).name).toBe("Fiction");
@@ -243,14 +243,14 @@ describe("getBook()", () => {
 describe("updateBook()", () => {
 	it("applies partial updates and returns the updated document", async () => {
 		const created = await makeBook();
-		const updated = await updateBook(created._id.toString(), { title: "Animal Farm" });
+		const updated = await updateBook(created.id.toString(), { title: "Animal Farm" });
 
 		expect(updated!.title).toBe("Animal Farm");
 	});
 
 	it("does not modify fields not included in the update", async () => {
 		const created = await makeBook();
-		const updated = await updateBook(created._id.toString(), { title: "Animal Farm" });
+		const updated = await updateBook(created.id.toString(), { title: "Animal Farm" });
 
 		expect(updated!.language).toBe("en");
 	});
@@ -268,17 +268,17 @@ describe("updateBook()", () => {
 describe("deleteBook()", () => {
 	it("deletes the book and returns the deleted document", async () => {
 		const created = await makeBook();
-		const deleted = await deleteBook(created._id.toString());
+		const deleted = await deleteBook(created.id.toString());
 
 		expect(deleted).not.toBeNull();
-		expect(deleted!._id.toString()).toBe(created._id.toString());
+		expect(deleted!.id.toString()).toBe(created.id.toString());
 	});
 
 	it("book no longer exists in DB after deletion", async () => {
 		const created = await makeBook();
-		await deleteBook(created._id.toString());
+		await deleteBook(created.id.toString());
 
-		expect(await Book.findById(created._id)).toBeNull();
+		expect(await Book.findById(created.id)).toBeNull();
 	});
 
 	it("throws 404 when book does not exist", async () => {
@@ -296,7 +296,7 @@ describe("deleteBook()", () => {
 describe("addFormat()", () => {
 	it("adds a format to an existing book", async () => {
 		const book = await makeBook();
-		const updated = await addFormat(book._id.toString(), physicalFormat);
+		const updated = await addFormat(book.id.toString(), physicalFormat);
 
 		expect(updated!.formats.length).toBe(1);
 		expect(updated!.formats[0].sku).toBe("SKU-PHYS-001");
@@ -304,7 +304,7 @@ describe("addFormat()", () => {
 
 	it("adds multiple formats to the same book", async () => {
 		const book = await makeBook({ formats: [physicalFormat] });
-		const updated = await addFormat(book._id.toString(), {
+		const updated = await addFormat(book.id.toString(), {
 			...digitalFormat,
 			sku: "SKU-DIG-002",
 		});
@@ -320,14 +320,14 @@ describe("addFormat()", () => {
 	it("throws 400 when physical format includes a digital file", async () => {
 		const book = await makeBook();
 		await expect(
-			addFormat(book._id.toString(), { ...physicalFormat, file: "/path/to/file.pdf" }),
+			addFormat(book.id.toString(), { ...physicalFormat, file: "/path/to/file.pdf" }),
 		).rejects.toMatchObject({ statusCode: 400 });
 	});
 
 	it("throws 400 when digital format includes stockQuantity", async () => {
 		const book = await makeBook();
 		await expect(
-			addFormat(book._id.toString(), { ...digitalFormat, stockQuantity: 5 }),
+			addFormat(book.id.toString(), { ...digitalFormat, stockQuantity: 5 }),
 		).rejects.toMatchObject({ statusCode: 400 });
 	});
 });
@@ -337,18 +337,18 @@ describe("addFormat()", () => {
 describe("updateFormat()", () => {
 	it("updates fields on an existing format", async () => {
 		const book = await makeBook({ formats: [physicalFormat] });
-		const formatId = book.formats[0]._id!.toString();
+		const formatId = book.formats[0].id!.toString();
 
-		const updated = await updateFormat(book._id.toString(), formatId, { price: 19.99 });
+		const updated = await updateFormat(book.id.toString(), formatId, { price: 19.99 });
 
 		expect(updated!.formats[0].price).toBe(19.99);
 	});
 
 	it("does not modify fields not included in the update", async () => {
 		const book = await makeBook({ formats: [physicalFormat] });
-		const formatId = book.formats[0]._id!.toString();
+		const formatId = book.formats[0].id!.toString();
 
-		const updated = await updateFormat(book._id.toString(), formatId, { price: 19.99 });
+		const updated = await updateFormat(book.id.toString(), formatId, { price: 19.99 });
 		expect(updated!.formats[0].sku).toBe("SKU-PHYS-001");
 	});
 
@@ -363,7 +363,7 @@ describe("updateFormat()", () => {
 	it("throws 404 when format does not exist on the book", async () => {
 		const book = await makeBook();
 		const fakeFormatId = new mongoose.Types.ObjectId().toString();
-		await expect(updateFormat(book._id.toString(), fakeFormatId, { price: 9.99 })).rejects.toMatchObject({
+		await expect(updateFormat(book.id.toString(), fakeFormatId, { price: 9.99 })).rejects.toMatchObject({
 			statusCode: 404,
 		});
 	});
@@ -374,9 +374,9 @@ describe("updateFormat()", () => {
 describe("removeFormat()", () => {
 	it("removes a format from the book", async () => {
 		const book = await makeBook({ formats: [physicalFormat] });
-		const formatId = book.formats[0]._id!.toString();
+		const formatId = book.formats[0].id!.toString();
 
-		const updated = await removeFormat(book._id.toString(), formatId);
+		const updated = await removeFormat(book.id.toString(), formatId);
 		expect(updated!.formats.length).toBe(0);
 	});
 
@@ -389,7 +389,7 @@ describe("removeFormat()", () => {
 	it("throws 404 when format does not exist on the book", async () => {
 		const book = await makeBook();
 		const fakeFormatId = new mongoose.Types.ObjectId().toString();
-		await expect(removeFormat(book._id.toString(), fakeFormatId)).rejects.toMatchObject({
+		await expect(removeFormat(book.id.toString(), fakeFormatId)).rejects.toMatchObject({
 			statusCode: 404,
 		});
 	});

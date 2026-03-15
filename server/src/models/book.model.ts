@@ -7,6 +7,7 @@ import slugify from "slugify";
 export type BookFormatType = "physical" | "digital" | "audiobook";
 
 export interface IBookFormat {
+	id?: string;
 	formatType: BookFormatType;
 	sku: string;
 	isbn?: string;
@@ -112,7 +113,7 @@ const bookSchema = new Schema<IBook>(
 
 bookSchema.index({ title: "text", description: "text" });
 
-bookSchema.index({ "formats.sku": 1 }, { unique: true }); // SKU must be globally unique
+bookSchema.index({ "formats.sku": 1 }, { unique: true, sparse: true }); // sparse allows books without formats
 bookSchema.index({ "formats.isbn": 1 }, { unique: true, sparse: true }); // sparse allows nulls/undefined
 
 bookSchema.set("toJSON", {

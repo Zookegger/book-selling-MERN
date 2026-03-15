@@ -14,11 +14,13 @@ router.get("/health", (_req, res) => {
 });
 
 import authorRouter from "./author.routes";
+import bookRouter from "./book.routes";
 import publisherRouter from "./publisher.routes";
 import categoryRouter from "./category.routes";
 
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
+router.use("/books", bookRouter);
 router.use("/authors", authorRouter);
 router.use("/publishers", publisherRouter);
 router.use("/categories", categoryRouter);

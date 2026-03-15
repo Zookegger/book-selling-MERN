@@ -32,6 +32,10 @@ const authorSchema = new Schema<IAuthor>(
 			unique: true, // Prevents duplicate accounts
 			lowercase: true,
 			trim: true,
+			default: function (this: IAuthor) {
+				const base = slugify(this.name || "author", { lower: true, strict: true }) || "author";
+				return `${base}-${new mongoose.Types.ObjectId().toString()}@example.com`;
+			},
 		},
 		bio: { type: String, default: "" },
 		birthDate: { type: Date },

@@ -1,38 +1,43 @@
 import { z } from "zod";
 
-export const bookFormatTypeSchema = z.enum(["physical", "digital", "audiobook"]);
+const baseFormatSchema = z.object({
+	sku: z.string().min(1, "SKU is required"),
+	isbn: z.string().optional(),
+	price: z.number().min(0, "Price must be non-negative"),
+	discountedPrice: z.number().min(0).optional(),
+	currency: z.string().length(3, "Currency must be a 3-letter code").toUpperCase().optional().default("USD"),
+	active: z.boolean().optional().default(true),
+	releaseDate: z.coerce.date().optional(),
+});
 
-export const bookFormatSchema = z
-	.object({
-		formatType: bookFormatTypeSchema,
-		sku: z.string().min(1, "SKU is required"),
-		isbn: z.string().optional(),
-		price: z.number().min(0, "Price must be non-negative"),
-		discountedPrice: z.number().min(0).optional(),
-		currency: z.string().length(3, "Currency must be a 3-letter code").toUpperCase().optional().default("USD"),
-		active: z.boolean().optional().default(true),
-		releaseDate: z.coerce.date().optional(),
+const physicalFormatSchema = baseFormatSchema.extend({
+	formatType: z.literal("physical"),
+	stockQuantity: z.number().min(0).optional(),
+	weight: z.number().min(0).optional(),
+	dimensions: z.string().optional(),
+});
 
-		// Physical
-		stockQuantity: z.number().min(0).optional(),
-		weight: z.number().min(0).optional(),
-		dimensions: z.string().optional(),
+const digitalFormatSchema = baseFormatSchema.extend({
+	formatType: z.literal("digital"),
+	file: z.string().optional(),
+	fileFormat: z.enum(["PDF", "ePub", "MOBI"]).optional(),
+	fileSize: z.number().min(0).optional(),
+	downloadLimit: z.number().min(1).optional(),
+	sampleFile: z.string().optional(),
+});
 
-		// Digital
-		file: z.string().optional(),
-		fileFormat: z.enum(["PDF", "ePub", "MOBI"]).optional(),
-		fileSize: z.number().min(0).optional(),
-		downloadLimit: z.number().min(1).optional(),
-		sampleFile: z.string().optional(),
-	})
-	.refine((data) => !(data.formatType === "physical" && data.file), {
-		message: "Physical format cannot have a digital file",
-		path: ["file"],
-	})
-	.refine((data) => !(data.formatType === "digital" && data.stockQuantity != null), {
-		message: "Digital format should not have stock quantity",
-		path: ["stockQuantity"],
-	});
+const audiobookFormatSchema = baseFormatSchema.extend({
+	formatType: z.literal("audiobook"),
+	file: z.string().optional(),
+	fileSize: z.number().min(0).optional(),
+	sampleFile: z.string().optional(),
+});
+
+export const bookFormatSchema = z.discriminatedUnion("formatType", [
+	physicalFormatSchema,
+	digitalFormatSchema,
+	audiobookFormatSchema,
+]);
 
 export const bookSchema = z.object({
 	title: z.string().min(1, "Title is required"),
@@ -50,9 +55,17 @@ export const bookSchema = z.object({
 	formats: z.array(bookFormatSchema).optional().default([]),
 });
 
-export const createBookSchema = bookSchema.partial();
-export const updateBookSchema = bookSchema.partial();
+export const createBookSchema = bookSchema;
+export const createBookFormatSchema = bookFormatSchema;
 
-export type BookFormatInput = z.infer<typeof bookFormatSchema>;
-export type CreateBookInput = z.infer<typeof createBookSchema>;
-export type UpdateBookInput = z.infer<typeof updateBookSchema>;
+export const updateBookSchema = bookSchema.partial();
+export const updateBookFormatSchema = z.union([
+	physicalFormatSchema.partial(),
+	digitalFormatSchema.partial(),
+	audiobookFormatSchema.partial(),
+]);
+
+export type AddBookFormatInput = z.input<typeof createBookFormatSchema>;
+export type EditBookFormatInput = z.input<typeof updateBookFormatSchema>;
+export type CreateBookInput = z.input<typeof createBookSchema>;
+export type UpdateBookInput = z.input<typeof updateBookSchema>;

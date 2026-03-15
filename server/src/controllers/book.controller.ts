@@ -1,48 +1,98 @@
 import { NextFunction, Request, Response } from "express";
+import * as bookServices from "@services/book.services";
+import { HttpError } from "@middleware/error.middleware";
 
-const createBook = async (req: Request, res: Response, next: NextFunction) => {
-	// TODO: implement create book (with formats)
-	res.status(201).json({ message: "Create book - not implemented" });
+type BookIdParam = { bookId: string };
+type BookFormatParam = { bookId: string; formatId: string };
+
+export const createBook = async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const book = await bookServices.createBook(req.body);
+		return res.status(201).json(book);
+	} catch (err) {
+		next(err);
+	}
 };
 
-const listBooks = async (req: Request, res: Response, next: NextFunction) => {
-	// pagination: ?page=&limit=
-	const page = Number(req.query.page) || 1;
-	const limit = Number(req.query.limit) || 10;
-	res.status(200).json({ message: "List books - not implemented", page, limit });
+export const listBooks = async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const { page, limit, search, language, order } = req.query as Record<string, string>;
+
+		const result = await bookServices.listBooks({
+			page: page ? Number(page) : undefined,
+			limit: limit ? Number(limit) : undefined,
+			search,
+			language,
+			order: order as "asc" | "desc" | undefined,
+		});
+
+		return res.status(200).json(result);
+	} catch (err) {
+		next(err);
+	}
 };
 
-const getBook = async (req: Request, res: Response, next: NextFunction) => {
-	const { bookId } = req.params;
-	res.status(200).json({ message: "Get book - not implemented", bookId });
+export const getBook = async (req: Request<BookIdParam>, res: Response, next: NextFunction) => {
+	try {
+		const book = await bookServices.getBook(req.params.bookId);
+		if (!book) return next(new HttpError("Book not found", 404));
+
+		return res.status(200).json(book);
+	} catch (err) {
+		next(err);
+	}
 };
 
-const replaceBook = async (req: Request, res: Response, next: NextFunction) => {
-	const { bookId } = req.params;
-	res.status(200).json({ message: "Replace book (PUT) - not implemented", bookId });
+export const replaceBook = async (req: Request<BookIdParam>, res: Response, next: NextFunction) => {
+	try {
+		const book = await bookServices.replaceBook(req.params.bookId, req.body);
+		return res.status(200).json(book);
+	} catch (err) {
+		next(err);
+	}
 };
 
-const updateBook = async (req: Request, res: Response, next: NextFunction) => {
-	const { bookId } = req.params;
-	res.status(200).json({ message: "Update book (PATCH) - not implemented", bookId });
+export const updateBook = async (req: Request<BookIdParam>, res: Response, next: NextFunction) => {
+	try {
+		const book = await bookServices.updateBook(req.params.bookId, req.body);
+		return res.status(200).json(book);
+	} catch (err) {
+		next(err);
+	}
 };
 
-const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
-	const { bookId } = req.params;
-	res.status(204).send();
+export const deleteBook = async (req: Request<BookIdParam>, res: Response, next: NextFunction) => {
+	try {
+		await bookServices.deleteBook(req.params.bookId);
+		return res.status(204).send();
+	} catch (err) {
+		next(err);
+	}
 };
 
-const addFormat = async (req: Request, res: Response, next: NextFunction) => {
-	const { bookId } = req.params;
-	res.status(201).json({ message: "Add format - not implemented", bookId });
+export const addFormat = async (req: Request<BookIdParam>, res: Response, next: NextFunction) => {
+	try {
+		const book = await bookServices.addFormat(req.params.bookId, req.body);
+		return res.status(201).json(book);
+	} catch (err) {
+		next(err);
+	}
 };
 
-const updateFormat = async (req: Request, res: Response, next: NextFunction) => {
-	const { bookId, formatId } = req.params;
-	res.status(200).json({ message: "Update format - not implemented", bookId, formatId });
+export const updateFormat = async (req: Request<BookFormatParam>, res: Response, next: NextFunction) => {
+	try {
+		const book = await bookServices.updateFormat(req.params.bookId, req.params.formatId, req.body);
+		return res.status(200).json(book);
+	} catch (err) {
+		next(err);
+	}
 };
 
-const removeFormat = async (req: Request, res: Response, next: NextFunction) => {
-	const { bookId, formatId } = req.params;
-	res.status(204).send();
+export const removeFormat = async (req: Request<BookFormatParam>, res: Response, next: NextFunction) => {
+	try {
+		await bookServices.removeFormat(req.params.bookId, req.params.formatId);
+		return res.status(204).send();
+	} catch (err) {
+		next(err);
+	}
 };
