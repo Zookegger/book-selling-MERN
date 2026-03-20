@@ -130,7 +130,7 @@ authRouter.post(
  * GET /api/auth/me
  * Lấy phiên người dùng hiện tại (route được bảo vệ)
  */
-authRouter.get("/me", authMiddleware, authController.session, errorHandler);
+authRouter.get("/me", authMiddleware, authController.getMe, errorHandler);
 
 /**
  * POST /api/auth/logout

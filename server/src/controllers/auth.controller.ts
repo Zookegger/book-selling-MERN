@@ -89,7 +89,7 @@ export async function verifyEmail(req: Request, res: Response, next: NextFunctio
  * - Yêu cầu `authMiddleware` đã gán `req.userId`.
  * - Nếu tìm được user trong DB, trả về chi tiết (không có password).
  */
-export async function session(req: AuthRequest, res: Response, next: NextFunction) {
+export async function getMe(req: AuthRequest, res: Response, next: NextFunction) {
 	try {
 		const userId = req.userId;
 		if (!userId) return next(new HttpError("Unauthorized", 401));
@@ -100,16 +100,20 @@ export async function session(req: AuthRequest, res: Response, next: NextFunctio
 				user = await User.findById(userId).select("-password");
 			}
 		} catch {
-			// CastError or similar — userId is not a valid ObjectId, fall through
+			throw new HttpError("Internal Server Error", 500);
+		}
+		
+		if (!user) {
+			throw new HttpError("Internal Server Error", 401);
 		}
 
-		if (user) {
-			return res
-				.status(200)
-				.json({ userId: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName });
-		}
-
-		return res.status(200).json({ userId });
+		return res.status(200).json({
+			userId: user.id,
+			email: user.email,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			role: user.role,
+		});
 	} catch (err) {
 		next(err);
 	}

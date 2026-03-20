@@ -459,6 +459,11 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			expect(res.body.userId ?? res.body._id).toBe(userId);
 		});
 
+		it("body phản hồi chứa user role đúng", async () => {
+			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${token}`);
+			expect(res.body.role).toBe("customer");
+		});
+
 		// Migrated from unit: userId in response matches the DB document _id, not a raw token string
 		it("userId phản hồi khớp _id tài liệu DB (không phải chuỗi token)", async () => {
 			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${token}`);
@@ -515,15 +520,6 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			const res = await request(app).get(SESSION);
 			expect(res.body.status).toBe("fail");
 			expect(res.body.message).toBe("Unauthorized");
-		});
-
-		// Migrated from unit: non-ObjectId userId still returns 200 with just { userId }
-		it("trả về 200 với chỉ { userId } khi userId không phải ObjectId hợp lệ", async () => {
-			// Forge a token whose userId payload is not a valid ObjectId
-			const fakeToken = jwt.sign({ userId: "not-an-objectid" }, SECRET);
-			const res = await request(app).get(SESSION).set("Authorization", `Bearer ${fakeToken}`);
-			expect(res.status).toBe(200);
-			expect(res.body).toMatchObject({ userId: "not-an-objectid" });
 		});
 	});
 
