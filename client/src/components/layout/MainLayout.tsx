@@ -1,21 +1,17 @@
 import { AppBar, Box, Container, Toolbar, Typography } from "@mui/material";
-import { ReactNode } from "react";
+import { Outlet } from "react-router-dom";
 
-interface MainLayoutProps {
-  children: ReactNode;
-}
-
-const MainLayout = ({ children }: MainLayoutProps) => {
+const MainLayout = () => {
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", minWidth: "100vw" }}>
       <AppBar position="static" color="transparent" elevation={0}>
         <Toolbar>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            LuminaBooks
+            Book Store
           </Typography>
         </Toolbar>
       </AppBar>
-      <Container sx={{ py: 4 }}>{children}</Container>
+      <Container maxWidth={"xl"}><Outlet /></Container>
     </Box>
   );
 };

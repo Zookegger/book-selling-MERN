@@ -50,3 +50,7 @@ lib-cov
 
 # Optional npm cache directory
 .npm
+
+# IDE Settings
+.github
+.vscode
