@@ -46,7 +46,7 @@ export async function login(dto: LoginInput): Promise<{ user: IUser; token: stri
 	if (!isMatch) throw new HttpError("Invalid email or password", 401);
 
 	if (!user.isEmailVerified) {
-		throw new HttpError("Please verify your email before logging in", 403);
+		throw new HttpError("Please verify your email before logging in", 403, { code: "EMAIL_NOT_VERIFIED" });
 	}
 
 	const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET as string, { expiresIn: "1d" });
@@ -159,7 +159,7 @@ export async function verifyEmail(dto: VerifyEmailInput): Promise<IUser> {
 export async function forgotPassword(dto: ForgotPasswordInput): Promise<void> {
 	const parsed = forgotPasswordSchema.safeParse(dto);
 	if (!parsed.success) {
-		const message = parsed.error.issues.map(i => i.message).join(", ");
+		const message = parsed.error.issues.map((i) => i.message).join(", ");
 		throw new HttpError(message, 400);
 	}
 

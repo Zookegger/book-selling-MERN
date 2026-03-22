@@ -1,4 +1,4 @@
-import api from "@services/api";
+import api, { ApiError } from "@services/api";
 import type {
 	GetMeResponseDto,
 	LoginRequestDto,
@@ -6,6 +6,10 @@ import type {
 	LogoutResponseDto,
 	RegisterRequestDto,
 	RegisterResponseDto,
+	ResendVerificationRequestDto,
+	ResendVerificationResponseDto,
+	VerifyEmailRequestDto,
+	VerifyEmailResponseDto,
 } from "@my-types/auth.dto";
 import type { ErrorResponseDto } from "@my-types/common.dto";
 
@@ -18,10 +22,10 @@ export const authService = {
 			if (error.response && error.response.data) {
 				const serverError = error.response.data as ErrorResponseDto;
 
-				throw new Error(serverError.message || "Invalid credentials provided.");
+				throw new ApiError(serverError.message || "Invalid credentials provided.", serverError.data?.code);
 			}
 
-			throw new Error("Network error: Could not reach the authentication server.");
+			throw new ApiError("Network error: Could not reach the authentication server.");
 		}
 	},
 
@@ -33,10 +37,10 @@ export const authService = {
 			if (error.response && error.response.data) {
 				const serverError = error.response.data as ErrorResponseDto;
 
-				throw new Error(serverError.message || "Registration failed.");
+				throw new ApiError(serverError.message || "Registration failed.", serverError.data?.code);
 			}
 
-			throw new Error("Network error: Could not reach the registration server.");
+			throw new ApiError("Network error: Could not reach the registration server.");
 		}
 	},
 
@@ -49,10 +53,10 @@ export const authService = {
 			if (error.response && error.response.data) {
 				const serverError = error.response.data as ErrorResponseDto;
 
-				throw new Error(serverError.message || "Logout failed on the server.");
+				throw new ApiError(serverError.message || "Logout failed on the server.", serverError.data?.code);
 			}
 
-			throw new Error("Network error: Could not reach the server to logout.");
+			throw new ApiError("Network error: Could not reach the server to logout.");
 		} finally {
 			localStorage.removeItem("accessToken");
 			localStorage.removeItem("refreshToken");
@@ -61,16 +65,45 @@ export const authService = {
 
 	getCurrentUser: async (): Promise<GetMeResponseDto> => {
 		try {
-			const response = await api.get<GetMeResponseDto>("/users/me");
+			const response = await api.get<GetMeResponseDto>("/auth/me");
 			return response.data;
 		} catch (error: any) {
 			if (error.response && error.response.data) {
 				const serverError = error.response.data as ErrorResponseDto;
 
-				throw new Error(serverError.message || "Failed to fetch user profile.");
+				throw new ApiError(serverError.message || "Failed to fetch user profile.", serverError.data?.code);
 			}
 
-			throw new Error("Network error: Could not retrieve user data.");
+			throw new ApiError("Network error: Could not retrieve user data.");
+		}
+	},
+
+	verifyEmail: async (data: VerifyEmailRequestDto): Promise<VerifyEmailResponseDto> => {
+		try {
+			const response = await api.get<VerifyEmailResponseDto>(`/auth/verify-email?token=${data.token}`);
+			return response.data;
+		} catch (error: any) {
+			if (error.response && error.response.data) {
+				const serverError = error.response.data as ErrorResponseDto;
+
+				throw new ApiError(serverError.message || "Failed to verify your email.", serverError.data?.code);
+			}
+
+			throw new ApiError("Network error: Could not verify you email.");
+		}
+	},
+	resendVerification: async (data: ResendVerificationRequestDto): Promise<ResendVerificationResponseDto> => {
+		try {
+			const response = await api.post<ResendVerificationResponseDto>(`/auth/resend-verification`, data);
+			return response.data;
+		} catch (error: any) {
+			if (error.response && error.response.data) {
+				const serverError = error.response.data as ErrorResponseDto;
+
+				throw new ApiError(serverError.message || "Failed to resend your request.", serverError.data?.code);
+			}
+
+			throw new ApiError("Network error: Could not resend your request.");
 		}
 	},
 };

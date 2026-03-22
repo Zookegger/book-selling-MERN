@@ -1,6 +1,7 @@
 import { createContext, useCallback, useEffect, useState, type ReactNode } from "react";
 import userService, { authService } from "@services/auth.services";
 import type { GetMeResponseDto, LoginRequestDto, LoginResponseDto, RegisterRequestDto, RegisterResponseDto } from "@my-types/auth.dto";
+import { ApiError } from "@services/api";
 
 type AuthContextType = {
     user: GetMeResponseDto | null;
@@ -49,7 +50,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
 
         try {
-
             const response = await authService.login(data);
             localStorage.setItem("accessToken", response.token);
 
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return response;
         } catch (err: any) {
             console.error(err.statusCode ?? err.code, " - ", err.message);
-            throw { status: err.status, message: err.message }
+            throw new ApiError(err.message, err.data?.code ?? err.statusCode ?? err.code);
         } finally {
             setIsLoading(false);
         }
@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return response;
         } catch (err: any) {
             console.error(err.statusCode ?? err.code, " - ", err.message);
+            throw new ApiError(err.message, err.data?.code ?? err.statusCode ?? err.code);
         } finally {
             setUser(null);
             setIsAuthenticated(false);
@@ -82,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await authService.logout();
         } catch (err: any) {
             console.error(err.statusCode ?? err.code, " - ", err.message);
+            throw new ApiError(err.message, err.data?.code ?? err.statusCode ?? err.code);
         } finally {
             setUser(null);
             setIsAuthenticated(false);

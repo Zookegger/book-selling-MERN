@@ -3,6 +3,7 @@ import useAuth from "@hooks/useAuth";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Loading from "@components/common/Loading";
+import { ROUTER_PATHS } from "@components/common/Router";
 
 const Login = () => {
 	const [email, setEmail] = useState<string>("");
@@ -17,6 +18,7 @@ const Login = () => {
 	const [passwordError, setPasswordError] = useState<string | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
+	const [errorCode, setErrorCode] = useState<string | null>(null);
 
 	const { isLoading, login } = useAuth();
 
@@ -49,6 +51,7 @@ const Login = () => {
 	async function submitForm(e: React.SubmitEvent) {
 		e.preventDefault();
 
+		setErrorCode(null);
 		setErrorMessage(null);
 		setSuccessMessage(null);
 
@@ -63,7 +66,10 @@ const Login = () => {
 				}, 5000);
 
 			} catch (error: any) {
+				console.error(error);
+
 				setErrorMessage(error.message || "An unexpected error occurred");
+				setErrorCode(error.data?.code ?? error.statusCode ?? error.code ?? null);
 			}
 		}
 	};
@@ -77,6 +83,14 @@ const Login = () => {
 					{errorMessage !== null && (
 						<Alert severity="error" sx={{ mb: 5 }}>
 							{errorMessage}
+							{errorCode === "EMAIL_NOT_VERIFIED" && (
+								<>
+									{" "}
+									<Button component={Link} to="/resend-verification" variant="contained" sx={{ mt: 1 }} color="error">
+										Resend verification email
+									</Button>
+								</>
+							)}
 						</Alert>
 					)}
 
@@ -121,7 +135,7 @@ const Login = () => {
 						/>
 
 						<Typography mb={2} >
-							<Link to={"/forgot-password"} style={{ color: "#000", textDecoration: "none" }}>
+							<Link to={ROUTER_PATHS.FORGOT_PASSWORD} style={{ color: "#000", textDecoration: "none" }}>
 								Forgot your password?
 							</Link>
 						</Typography>
@@ -130,11 +144,11 @@ const Login = () => {
 							Sign in
 						</Button>
 
-						<Button variant="outlined" fullWidth>
+						<Button variant="outlined" fullWidth component={Link} to={ROUTER_PATHS.REGISTER} replace>
 							Sign Up
 						</Button>
 					</Box>
-				</Container>
+				</Container >
 			)}
 		</>
 	);
