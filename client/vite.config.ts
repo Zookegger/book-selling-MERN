@@ -8,15 +8,19 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			"@api": path.resolve(__dirname, "./src/api"),
+			"@services": path.resolve(__dirname, "./src/services"),
 			"@assets": path.resolve(__dirname, "./src/assets"),
 			"@components": path.resolve(__dirname, "./src/components"),
+			"@hooks": path.resolve(__dirname, "./src/hooks"),
+			"@contexts": path.resolve(__dirname, "./src/contexts"),
 			"@common": path.resolve(__dirname, "./src/components/common"),
 			"@layout": path.resolve(__dirname, "./src/components/layout"),
-			"@context": path.resolve(__dirname, "./src/context"),
+			"@context": path.resolve(__dirname, "./src/contexts"),
 			"@features": path.resolve(__dirname, "./src/features"),
 			"@pages": path.resolve(__dirname, "./src/pages"),
 			"@theme": path.resolve(__dirname, "./src/theme"),
-			"@shared": path.resolve(__dirname, "../shared/src"),
+			"@my-types": path.resolve(__dirname, "./src/types"),
+			"@shared": path.resolve(__dirname, "../shared"),
 		},
 	},
 });

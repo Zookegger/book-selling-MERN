@@ -2,6 +2,7 @@ import { RouterProvider } from "react-router-dom";
 import "./App.css";
 import router from "@components/common/Router";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { AuthProvider } from "@contexts/AuthContext";
 
 const theme = createTheme({
   components: {
@@ -22,12 +23,12 @@ const theme = createTheme({
 function App() {
 
   return (
-    <>
+    <AuthProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <RouterProvider router={router} />
       </ThemeProvider>
-    </>
+    </AuthProvider>
   );
 }
 
