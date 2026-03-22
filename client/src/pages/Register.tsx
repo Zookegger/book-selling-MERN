@@ -1,6 +1,198 @@
+import Loading from "@components/common/Loading";
+import { ROUTER_PATHS } from "@components/common/Router";
+import useAuth from "@hooks/useAuth";
+import { Alert, Box, TextField, Container, Typography, Stack, Button } from "@mui/material";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 const RegisterPage = () => {
+    const [firstName, setFirstName] = useState<string>("");
+    const [lastName, setLastName] = useState<string>("");
+    const [email, setEmail] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
+    const [confirmPassword, setConfirmPassword] = useState<string>("");
+
+    const { isLoading, register } = useAuth();
+
+    const navigate = useNavigate();
+
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [firstNameError, setFirstNameError] = useState<string | null>(null);
+    const [lastNameError, setLastNameError] = useState<string | null>(null);
+    const [emailError, setEmailError] = useState<string | null>(null);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
+
+    const [isConfirmTouched, setIsConfirmTouched] = useState(false);
+    const isMismatch = confirmPassword.length > 0 && password !== confirmPassword && isConfirmTouched;
+
+    function validateForm(): boolean {
+        let isValid = true;
+        setFirstNameError(null);
+        setLastNameError(null);
+        setEmailError(null);
+        setPasswordError(null);
+        setConfirmPasswordError(null);
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!firstName) {
+            setFirstNameError("First name is required");
+            isValid = false;
+        }
+
+        if (!lastName) {
+            setLastNameError("Last name is required");
+            isValid = false;
+        }
+
+        if (!email) {
+            setEmailError("Email is required");
+            isValid = false;
+        } else if (!emailRegex.test(email)) {
+            setEmailError("Please enter a valid email address");
+            isValid = false;
+        }
+
+        if (!password) {
+            setPasswordError("Password is required");
+            isValid = false;
+        } else if (password && password.length < 6) {
+            setPasswordError("Password must be at least 6 characters");
+            isValid = false;
+        }
+
+        if (!confirmPassword) {
+            setConfirmPasswordError("Please confirm your password");
+            isValid = false;
+        } else if (password && confirmPassword !== password) {
+            setConfirmPasswordError("Passwords do not match");
+            isValid = false;
+        }
+
+        return isValid;
+    };
+
+    async function submitForm(e: React.SubmitEvent) {
+        e.preventDefault();
+
+        setErrorMessage(null);
+        setSuccessMessage(null);
+
+        if (validateForm()) {
+            try {
+                const res = await register({ firstName, lastName, email, password, confirmPassword });
+
+                setSuccessMessage(res?.message || "Successfully logged in! Redirecting...");
+
+                setTimeout(() => {
+                    navigate(ROUTER_PATHS.LOGIN, { replace: true });
+                }, 5000);
+
+            } catch (error: any) {
+                setErrorMessage(error.message || "An unexpected error occurred");
+            }
+        }
+    };
+
     return (
         <>
+            {isLoading ? (
+                <Loading />
+            ) : (
+                <Container maxWidth={"xs"}>
+                    {errorMessage !== null && (
+                        <Alert severity="error" sx={{ mb: 5 }}>
+                            {errorMessage}
+                        </Alert>
+                    )}
+
+                    {successMessage !== null && (
+                        <Alert severity="success" sx={{ mb: 5 }}>
+                            {successMessage}
+                        </Alert>
+                    )}
+
+                    <Box
+                        component="form"
+                        onSubmit={submitForm}
+                        noValidate
+                        sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}
+                    >
+                        <Typography variant="h4" component={"h1"} sx={{ mb: 4 }}>Create account</Typography>
+
+                        <Stack direction={"row"} gap={2}>
+
+                            <TextField
+                                variant="filled"
+                                label="First Name"
+                                type="text"
+                                autoComplete="given-name"
+                                fullWidth
+                                error={!!firstNameError}
+                                helperText={firstNameError}
+                                sx={{ mb: 2 }}
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                            />
+                            <TextField
+                                variant="filled"
+                                label="Last Name"
+                                type="text"
+                                autoComplete="family-name"
+                                fullWidth
+                                error={!!lastNameError}
+                                helperText={lastNameError}
+                                sx={{ mb: 2 }}
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                            />
+                        </Stack>
+                        <TextField
+                            variant="filled"
+                            label="Email"
+                            type="email"
+                            autoComplete="email"
+                            fullWidth
+                            error={!!emailError}
+                            helperText={emailError}
+                            sx={{ mb: 2 }}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                        <TextField
+                            variant="filled"
+                            label="Password"
+                            type="password"
+                            autoComplete="new-password"
+                            fullWidth
+                            error={!!passwordError}
+                            helperText={passwordError}
+                            sx={{ mb: 3 }}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+
+                        <TextField
+                            variant="filled"
+                            label="Confirm Password"
+                            type="password"
+                            autoComplete="new-password"
+                            fullWidth
+                            error={!!confirmPasswordError || isMismatch}
+                            helperText={confirmPasswordError ? confirmPasswordError : isMismatch ? "Password do not match" : ""}
+                            sx={{ mb: 3 }}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            onBlur={() => setIsConfirmTouched(true)}
+                        />
+                        <Button type="submit" variant="contained" fullWidth sx={{ mb: 2 }}>
+                            Create
+                        </Button>
+                    </Box>
+                </Container>
+            )}
         </>
     );
 }

@@ -42,7 +42,7 @@ export function verificationEmailTemplate(name: string, verificationLink: string
                     .button {
                         display: inline-block;
                         background-color: #3498db;
-                        color: white;
+                        color: white !important;
                         padding: 12px 30px;
                         text-decoration: none;
                         border-radius: 5px;

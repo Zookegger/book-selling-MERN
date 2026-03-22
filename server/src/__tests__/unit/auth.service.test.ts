@@ -178,7 +178,7 @@ describe("login", () => {
 
 		await expect(authServices.login({ email: "jane@example.com", password: "correctpassword" })).rejects.toMatchObject({
 			statusCode: 403,
-			message: "Please verify your email before logging in",
+			message: "Please verify your email before logging in, if you haven't receive if click here to resend <a href=`/resend-verification`></a>",
 		});
 	});
 });

@@ -3,6 +3,7 @@ import Loading from "./Loading";
 
 import type { ReactNode } from "react";
 import useAuth from "hooks/useAuth";
+import { ROUTER_PATHS } from "./Router";
 
 type ProtectedRouteProps = {
     children: ReactNode;
@@ -18,11 +19,11 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     }
 
     if (!isAuthenticated) {
-        return <Navigate to={"/sign-in"} state={{ from: location }} replace />
+        return <Navigate to={ROUTER_PATHS.LOGIN} state={{ from: location }} replace />
     }
 
     if (user && allowedRoles && !allowedRoles.includes(user.role)) {
-        return <Navigate to="/unauthorized" replace />
+        return <Navigate to={ROUTER_PATHS.UNAUTHORIZE} replace />
     }
 
     return children;

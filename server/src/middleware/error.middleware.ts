@@ -10,13 +10,16 @@ export class HttpError extends Error {
 	statusCode: number;
 	status: string;
 	isOperational: boolean;
+	data?: any;
 
-	constructor(message: string, statusCode: number) {
+	constructor(message: string, statusCode: number, data?: any) {
 		super(message);
 		this.statusCode = statusCode;
 		// 4xx = fail (client error), 5xx = error (server error)
 		this.status = `${statusCode}`.startsWith("4") ? "fail" : "error";
 		this.isOperational = true;
+		this.data = data;
+
 		Error.captureStackTrace(this, this.constructor);
 	}
 }
@@ -40,6 +43,7 @@ export const errorHandler = (err: Error | HttpError, _req: Request, res: Respons
 		res.status(err.statusCode).json({
 			status: err.status,
 			message: err.message,
+			data: err.data || null,
 		});
 		return;
 	}

@@ -9,6 +9,7 @@ export type ErrorStatusDto = "fail" | "error";
 export interface ErrorResponseDto {
 	status: ErrorStatusDto;
 	message: string;
+	data: any;
 }
 
 export interface PaginatedResponseDto<T> {

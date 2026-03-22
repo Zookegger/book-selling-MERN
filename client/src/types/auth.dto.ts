@@ -51,7 +51,7 @@ export interface RegisterResponseDto {
 
 export interface VerifyEmailResponseDto {
 	message: string;
-	user: AuthUserDto & { isEmailVerified: boolean };
+	user: (AuthUserDto & { isEmailVerified: boolean }); // Override isEmailRequired to be required instead of optional
 }
 
 export interface GetMeResponseDto {
