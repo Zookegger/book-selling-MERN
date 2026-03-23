@@ -1,4 +1,4 @@
-import api, { ApiError } from "@services/api";
+import api, { mapApiError } from "@services/api";
 import type {
 	GetMeResponseDto,
 	LoginRequestDto,
@@ -11,7 +11,6 @@ import type {
 	VerifyEmailRequestDto,
 	VerifyEmailResponseDto,
 } from "@my-types/auth.dto";
-import type { ErrorResponseDto } from "@my-types/common.dto";
 
 export const authService = {
 	login: async (data: LoginRequestDto): Promise<LoginResponseDto> => {
@@ -19,13 +18,7 @@ export const authService = {
 			const response = await api.post<LoginResponseDto>("/auth/login", data);
 			return response.data;
 		} catch (error: any) {
-			if (error.response && error.response.data) {
-				const serverError = error.response.data as ErrorResponseDto;
-
-				throw new ApiError(serverError.message || "Invalid credentials provided.", serverError.data?.code);
-			}
-
-			throw new ApiError("Network error: Could not reach the authentication server.");
+			throw mapApiError(error, "Network error: Could not reach the authentication server.");
 		}
 	},
 
@@ -34,13 +27,7 @@ export const authService = {
 			const response = await api.post<RegisterResponseDto>("/auth/register", data);
 			return response.data;
 		} catch (error: any) {
-			if (error.response && error.response.data) {
-				const serverError = error.response.data as ErrorResponseDto;
-
-				throw new ApiError(serverError.message || "Registration failed.", serverError.data?.code);
-			}
-
-			throw new ApiError("Network error: Could not reach the registration server.");
+			throw mapApiError(error, "Network error: Could not reach the registration server.");
 		}
 	},
 
@@ -50,13 +37,7 @@ export const authService = {
 			const res = await api.post<LogoutResponseDto>("/auth/logout", { refreshToken });
 			return res.data;
 		} catch (error: any) {
-			if (error.response && error.response.data) {
-				const serverError = error.response.data as ErrorResponseDto;
-
-				throw new ApiError(serverError.message || "Logout failed on the server.", serverError.data?.code);
-			}
-
-			throw new ApiError("Network error: Could not reach the server to logout.");
+			throw mapApiError(error, "Network error: Could not reach the server to logout.");
 		} finally {
 			localStorage.removeItem("accessToken");
 			localStorage.removeItem("refreshToken");
@@ -68,13 +49,7 @@ export const authService = {
 			const response = await api.get<GetMeResponseDto>("/auth/me");
 			return response.data;
 		} catch (error: any) {
-			if (error.response && error.response.data) {
-				const serverError = error.response.data as ErrorResponseDto;
-
-				throw new ApiError(serverError.message || "Failed to fetch user profile.", serverError.data?.code);
-			}
-
-			throw new ApiError("Network error: Could not retrieve user data.");
+			throw mapApiError(error, "Network error: Could not retrieve user data.");
 		}
 	},
 
@@ -83,13 +58,7 @@ export const authService = {
 			const response = await api.get<VerifyEmailResponseDto>(`/auth/verify-email?token=${data.token}`);
 			return response.data;
 		} catch (error: any) {
-			if (error.response && error.response.data) {
-				const serverError = error.response.data as ErrorResponseDto;
-
-				throw new ApiError(serverError.message || "Failed to verify your email.", serverError.data?.code);
-			}
-
-			throw new ApiError("Network error: Could not verify you email.");
+			throw mapApiError(error, "Network error: Could not verify your email.");
 		}
 	},
 	resendVerification: async (data: ResendVerificationRequestDto): Promise<ResendVerificationResponseDto> => {
@@ -97,13 +66,7 @@ export const authService = {
 			const response = await api.post<ResendVerificationResponseDto>(`/auth/resend-verification`, data);
 			return response.data;
 		} catch (error: any) {
-			if (error.response && error.response.data) {
-				const serverError = error.response.data as ErrorResponseDto;
-
-				throw new ApiError(serverError.message || "Failed to resend your request.", serverError.data?.code);
-			}
-
-			throw new ApiError("Network error: Could not resend your request.");
+			throw mapApiError(error, "Network error: Could not resend your request.");
 		}
 	},
 };

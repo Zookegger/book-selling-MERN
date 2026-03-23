@@ -7,3 +7,4 @@ export { default as NotFoundPage } from "./NotFound";
 export { default as UnauthorizePage } from "./Unauthorized";
 export { default as RootErrorBoundaryPage } from "./RootErrorBoundary";
 export { default as ResendVerificationPage } from "./ResendVerification";
+export { default as ProfilePage } from "./Profile/Profile";

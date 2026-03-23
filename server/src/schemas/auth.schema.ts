@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const normalizePhoneSpaces = (value: string) => value.replace(/\s+/g, "");
+
 export const loginSchema = z.object({
 	email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")),
 	password: z.string().min(1, "Password is required"),
@@ -8,6 +10,12 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
 	firstName: z.string().trim().min(1, "First name is required"),
 	lastName: z.string().trim().min(1, "Last name is required"),
+	phone: z
+		.string()
+		.trim()
+		.min(8, "Phone number must be at least 8 characters")
+		.regex(/^[0-9+\-\s]{8,}$/, "Invalid phone number")
+		.transform(normalizePhoneSpaces),
 	email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")),
 	password: z
 		.string()

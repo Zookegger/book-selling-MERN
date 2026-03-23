@@ -37,6 +37,11 @@ authRouter.post(
 		body("email").isEmail().withMessage("Please provide a valid email address").normalizeEmail(),
 		body("firstName").trim().notEmpty().withMessage("First name is required"),
 		body("lastName").trim().notEmpty().withMessage("Last name is required"),
+		body("phone")
+			.trim()
+			.customSanitizer((value) => (typeof value === "string" ? value.replace(/\s+/g, "") : value))
+			.matches(/^[0-9+\-]{8,}$/)
+			.withMessage("Phone number is invalid"),
 		body("password")
 			.trim()
 			.isStrongPassword({

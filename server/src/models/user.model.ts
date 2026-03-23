@@ -29,6 +29,7 @@ export type IUserRole = "customer" | "admin";
 export interface IUser extends Document {
 	firstName: string;
 	lastName: string;
+	phone: string;
 	email: string;
 	password: string;
 	role: IUserRole;
@@ -66,8 +67,9 @@ const addressSchema = new Schema<IAddress>(
 			type: String,
 			required: true,
 			trim: true,
+			set: (v: string) => (typeof v === "string" ? v.replace(/\s+/g, "") : v),
 			validate: {
-				validator: (v: string) => /^[0-9+\-\s]{8,}$/.test(v),
+				validator: (v: string) => /^[0-9+\-]{8,}$/.test(v),
 				message: (props) => `${props.value} is not a valid phone number!`,
 			},
 		},
@@ -99,6 +101,10 @@ const userSchema = new Schema<IUser>(
 			unique: true,
 			lowercase: true,
 			trim: true,
+			validate: {
+				validator: (v: string) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+				message: (props) => `${props.value} is not a valid email!`,
+			},
 		},
 		firstName: {
 			type: String,
@@ -109,6 +115,15 @@ const userSchema = new Schema<IUser>(
 			type: String,
 			required: true,
 			trim: true,
+		},
+		phone: {
+			type: String,
+			trim: true,
+			set: (v: string) => (typeof v === "string" ? v.replace(/\s+/g, "") : v),
+			validate: {
+				validator: (v: string) => !v || /^[0-9+\-]{8,}$/.test(v),
+				message: (props) => `${props.value} is not a valid phone number!`,
+			},
 		},
 		password: {
 			type: String,

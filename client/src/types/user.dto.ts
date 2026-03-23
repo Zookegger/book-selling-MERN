@@ -37,6 +37,7 @@ export interface UserDto {
   firstName: string;
   lastName: string;
   email: string;
+  phone: string;
   role: UserRoleDto;
   isEmailVerified: boolean;
   addresses: AddressDto[];
@@ -47,10 +48,11 @@ export interface UserDto {
 }
 
 export interface UpdateProfileRequestDto {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  addresses?: AddressDto[];
+	firstName?: string;
+	lastName?: string;
+	email?: string;
+	phone?: string;
+	addresses?: AddressDto[];
 }
 
 export interface ChangePasswordRequestDto {

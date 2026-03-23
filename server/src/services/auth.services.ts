@@ -75,8 +75,8 @@ export async function register(dto: RegisterInput): Promise<IUser> {
 	const parsed = registerSchema.safeParse(dto);
 	if (!parsed.success) throw new HttpError(parsed.error.issues[0].message, 400);
 
-	const { firstName, lastName, email: cleanEmail, password: cleanPassword } = parsed.data;
-	const cleanUserInfo = { firstName, lastName, email: cleanEmail };
+	const { firstName, lastName, phone, email: cleanEmail, password: cleanPassword } = parsed.data;
+	const cleanUserInfo = { firstName, lastName, phone, email: cleanEmail };
 
 	const existingUser = await User.findOne({ email: cleanUserInfo.email });
 

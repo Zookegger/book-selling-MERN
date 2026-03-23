@@ -69,6 +69,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "New",
 				lastName: "User",
 				email: "newuser@example.com",
+				phone: "+84943438532",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			});
@@ -84,6 +85,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Jwt",
 				lastName: "User",
 				email: "jwtuser@example.com",
+				phone: "+84943438532",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			});
@@ -96,6 +98,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Safe",
 				lastName: "User",
 				email: "safeuser@example.com",
+				phone: "+84943438532",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			});
@@ -109,6 +112,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Msg",
 				lastName: "Test",
 				email: "msgtest@example.com",
+				phone: "+84943438532",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			});
@@ -213,6 +217,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Dup",
 				lastName: "User",
 				email: "dup@example.com",
+				phone: "+84943438532",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			};
@@ -227,6 +232,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Fwd",
 				lastName: "Err",
 				email: "fwderr@example.com",
+				phone: "+84943438532",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			};
@@ -244,6 +250,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Hash",
 				lastName: "Check",
 				email: "hashcheck@example.com",
+				phone: "+84943438532",
 				password: plainPassword,
 				confirmPassword: plainPassword,
 			});

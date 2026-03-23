@@ -1,6 +1,6 @@
-import { Alert, Box, Button, Container, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Container, LinearProgress, TextField, Typography } from "@mui/material";
 import useAuth from "@hooks/useAuth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Loading from "@components/common/Loading";
 import { ROUTER_PATHS } from "@components/common/Router";
@@ -21,6 +21,7 @@ const Login = () => {
 	const [errorCode, setErrorCode] = useState<string | null>(null);
 
 	const { isLoading, login } = useAuth();
+	const [progress, setProgress] = useState(0);
 
 	function validateForm(): boolean {
 		let isValid = true;
@@ -74,6 +75,28 @@ const Login = () => {
 		}
 	};
 
+	useEffect(() => {
+		if (!successMessage) return;
+
+		const duration = 4000;
+		const intervalTime = 100;
+		const step = (100 * intervalTime) / duration;
+
+		setProgress(0);
+
+		const interval = setInterval(() => {
+			setProgress((prev) => {
+				if (prev >= 100) {
+					clearInterval(interval);
+					return 100;
+				}
+				return prev + step;
+			});
+		}, intervalTime);
+
+		return () => clearInterval(interval);
+	}, [successMessage]);
+
 	return (
 		<>
 			{isLoading ? (
@@ -95,9 +118,12 @@ const Login = () => {
 					)}
 
 					{successMessage !== null && (
-						<Alert severity="success" sx={{ mb: 5 }}>
-							{successMessage}
-						</Alert>
+						<Box sx={{ mb: 5 }}>
+							<Alert severity="success" >
+								{successMessage}
+							</Alert>
+							<LinearProgress value={progress} variant="determinate" sx={{ transition: "width 5s linear" }} />
+						</Box>
 					)}
 
 					<Box
