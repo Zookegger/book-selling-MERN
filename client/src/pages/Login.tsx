@@ -62,9 +62,6 @@ const Login = () => {
 
 				setSuccessMessage(res?.message || "Successfully logged in! Redirecting...");
 
-				setTimeout(() => {
-					navigate(from, { replace: true });
-				}, 5000);
 
 			} catch (error: any) {
 				console.error(error);
@@ -75,15 +72,23 @@ const Login = () => {
 		}
 	};
 
+	// 
 	useEffect(() => {
 		if (!successMessage) return;
 
+		// Animation configuration
 		const duration = 4000;
 		const intervalTime = 100;
 		const step = (100 * intervalTime) / duration;
 
 		setProgress(0);
 
+		// Set navigation timer (5 seconds total from component mount)
+		const timer = setTimeout(() => {
+			navigate(from, { replace: true });
+		}, 5000);
+
+		// Create progress animation interval
 		const interval = setInterval(() => {
 			setProgress((prev) => {
 				if (prev >= 100) {
@@ -94,8 +99,12 @@ const Login = () => {
 			});
 		}, intervalTime);
 
-		return () => clearInterval(interval);
-	}, [successMessage]);
+		// Cleanup function if component unmounts
+		return () => {
+			clearTimeout(timer);
+			clearInterval(interval);
+		};
+	}, [successMessage, from, navigate]); // Triggered if one of these changes
 
 	return (
 		<>

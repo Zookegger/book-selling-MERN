@@ -225,7 +225,7 @@ export const changePassword = async (id: string, dto: ChangePasswordInput): Prom
  * @throws {HttpError} 404 khi không tìm thấy user.
  * @returns Người dùng sau khi thêm địa chỉ.
  */
-export const addAddress = async (id: string, address: AddAddressInput): Promise<IUser> => {
+export const addAddress = async (id: string, address: AddAddressInput): Promise<IAddress[]> => {
 	if (!mongoose.Types.ObjectId.isValid(id)) {
 		const error = new mongoose.Error.CastError("ObjectId", id, "id");
 		error.message = `The provided ID ${id} is invalid.`;
@@ -252,27 +252,32 @@ export const addAddress = async (id: string, address: AddAddressInput): Promise<
 
 	await user.save();
 
-	return user;
+	return user.addresses;
 };
 
 /**
- * Cập nhật địa chỉ của người dùng theo chỉ số trong mảng `addresses`.
+ * Cập nhật địa chỉ của người dùng theo `addressId` trong mảng `addresses`.
  *
  * - Validate `updates` bằng `updateAddressSchema`.
- * - Kiểm tra `index` hợp lệ.
+ * - Kiểm tra `userId` và `addressId` hợp lệ.
  * - Nếu `isDefault` được đặt trong `updates`, reset `isDefault` cho các địa chỉ khác.
- * - Cập nhật trực tiếp subdocument (không thay thế bằng plain object) và lưu user.
+ * - Cập nhật trực tiếp subdocument và lưu user.
  *
- * @throws {mongoose.Error.CastError} khi `id` không hợp lệ.
+ * @throws {mongoose.Error.CastError} khi `userId` hoặc `addressId` không hợp lệ.
  * @throws {HttpError} 400 khi dữ liệu không hợp lệ.
- * @throws {RangeError} khi `index` vượt quá phạm vi.
- * @throws {HttpError} 404 khi không tìm thấy user.
+ * @throws {HttpError} 404 khi không tìm thấy user hoặc địa chỉ.
  * @returns Người dùng sau khi cập nhật địa chỉ.
  */
-export const updateAddress = async (id: string, index: number, updates: UpdateAddressInput): Promise<IUser> => {
-	if (!mongoose.Types.ObjectId.isValid(id)) {
-		const error = new mongoose.Error.CastError("ObjectId", id, "id");
-		error.message = `The provided ID ${id} is invalid.`;
+export const updateAddress = async (userId: string, addressId: string, updates: UpdateAddressInput): Promise<IAddress[]> => {
+	if (!mongoose.Types.ObjectId.isValid(userId)) {
+		const error = new mongoose.Error.CastError("ObjectId", userId, "userId");
+		error.message = `The provided ID ${userId} is invalid.`;
+		throw error;
+	}
+
+	if (!mongoose.Types.ObjectId.isValid(addressId)) {
+		const error = new mongoose.Error.CastError("ObjectId", addressId, "addressId");
+		error.message = `The provided address ID ${addressId} is invalid.`;
 		throw error;
 	}
 
@@ -282,11 +287,12 @@ export const updateAddress = async (id: string, index: number, updates: UpdateAd
 		throw new HttpError(messages, 400);
 	}
 
-	const user = await User.findById(id);
+	const user = await User.findById(userId);
 
 	if (!user) throw new HttpError("User not found", 404);
 
-	if (index < 0 || index >= user.addresses.length) throw new RangeError("Index out of range");
+	const targetIndex = user.addresses.findIndex((address) => address._id?.toString() === addressId);
+	if (targetIndex === -1) throw new HttpError("Address not found", 404);
 
 	if (parsed.data.isDefault) {
 		user.addresses.forEach((address) => {
@@ -294,72 +300,122 @@ export const updateAddress = async (id: string, index: number, updates: UpdateAd
 		});
 	}
 
-	Object.assign(user.addresses[index], parsed.data);
+	Object.assign(user.addresses[targetIndex], parsed.data);
 
 	await user.save();
-	return user;
+	return user.addresses;
 };
 
 /**
- * Xóa địa chỉ theo chỉ số khỏi user.
+ * Lấy một địa chỉ cụ thể của user theo `addressId`.
  *
- * - Kiểm tra `id` hợp lệ và `index` nằm trong phạm vi.
+ * - Kiểm tra `id` và `addressId` có hợp lệ hay không.
+ * - Chỉ trả về địa chỉ thuộc về user đó.
+ *
+ * @param {string} id - ID của user.
+ * @param {string} addressId - ID của địa chỉ cần lấy.
+ *
+ * @throws {mongoose.Error.CastError} khi `id` hoặc `addressId` không hợp lệ.
+ * @throws {HttpError} 404 khi không tìm thấy user.
+ * @throws {HttpError} 404 khi không tìm thấy địa chỉ.
+ *
+ * @returns {Promise<IAddress>} Địa chỉ tìm được.
+ */
+export const getAddresses = async (id: string, addressId?: string): Promise<IAddress[]> => {
+	if (!mongoose.Types.ObjectId.isValid(id)) {
+		const error = new mongoose.Error.CastError("ObjectId", id, "id");
+		error.message = `The provided ID ${id} is invalid.`;
+		throw error;
+	}
+
+	if (addressId && !mongoose.Types.ObjectId.isValid(addressId)) {
+		const error = new mongoose.Error.CastError("ObjectId", addressId, "addressId");
+		error.message = `The provided address ID ${addressId} is invalid.`;
+		throw error;
+	}
+
+	const user = await User.findById(id).select("addresses").lean();
+	if (!user) throw new HttpError("User not found", 404);
+
+	if (!addressId) {
+		return user.addresses ?? [];
+	}
+
+	return user.addresses.filter((address) => address._id!.toString() === addressId) ?? [];
+};
+
+/**
+ * Xóa địa chỉ theo `addressId` khỏi user.
+ *
+ * - Kiểm tra `userId` và `addressId` hợp lệ.
  * - Xóa phần tử khỏi `addresses` và lưu người dùng.
  *
- * @throws {mongoose.Error.CastError} khi `id` không hợp lệ.
- * @throws {RangeError} khi `index` vượt quá phạm vi.
- * @throws {HttpError} 404 khi không tìm thấy user.
+ * @throws {mongoose.Error.CastError} khi `userId` hoặc `addressId` không hợp lệ.
+ * @throws {HttpError} 404 khi không tìm thấy user hoặc địa chỉ.
  * @returns Người dùng sau khi xóa địa chỉ.
  */
-export const deleteAddress = async (id: string, index: number): Promise<IUser> => {
-	if (!mongoose.Types.ObjectId.isValid(id)) {
-		const error = new mongoose.Error.CastError("ObjectId", id, "id");
-		error.message = `The provided ID ${id} is invalid.`;
+export const deleteAddress = async (userId: string, addressId: string): Promise<IAddress[]> => {
+	if (!mongoose.Types.ObjectId.isValid(userId)) {
+		const error = new mongoose.Error.CastError("ObjectId", userId, "userId");
+		error.message = `The provided ID ${userId} is invalid.`;
 		throw error;
 	}
 
-	const user = await User.findById(id);
+	if (!mongoose.Types.ObjectId.isValid(addressId)) {
+		const error = new mongoose.Error.CastError("ObjectId", addressId, "addressId");
+		error.message = `The provided address ID ${addressId} is invalid.`;
+		throw error;
+	}
+
+	const user = await User.findById(userId);
 
 	if (!user) throw new HttpError("User not found", 404);
 
-	if (index < 0 || index >= user.addresses.length) throw new RangeError("Index out of range");
+	const targetIndex = user.addresses.findIndex((address) => address._id?.toString() === addressId);
+	if (targetIndex === -1) throw new HttpError("Address not found", 404);
 
-	user.addresses.splice(index, 1);
+	user.addresses.splice(targetIndex, 1);
 
 	await user.save();
 
-	return user;
+	return user.addresses;
 };
 
 /**
- * Đặt một địa chỉ là mặc định theo chỉ số.
+ * Đặt một địa chỉ là mặc định theo `addressId`.
  *
- * - Kiểm tra `id` hợp lệ và `index` nằm trong phạm vi.
+ * - Kiểm tra `userId` và `addressId` hợp lệ.
  * - Cập nhật flag `isDefault` cho từng địa chỉ.
  *
- * @throws {mongoose.Error.CastError} khi `id` không hợp lệ.
- * @throws {RangeError} khi `index` vượt quá phạm vi.
- * @throws {HttpError} 404 khi không tìm thấy user.
+ * @throws {mongoose.Error.CastError} khi `userId` hoặc `addressId` không hợp lệ.
+ * @throws {HttpError} 404 khi không tìm thấy user hoặc địa chỉ.
  * @returns Người dùng sau khi cập nhật địa chỉ mặc định.
  */
-export const setDefaultAddress = async (id: string, index: number): Promise<IUser> => {
-	if (!mongoose.Types.ObjectId.isValid(id)) {
-		const error = new mongoose.Error.CastError("ObjectId", id, "id");
-		error.message = `The provided ID ${id} is invalid.`;
+export const setDefaultAddress = async (userId: string, addressId: string): Promise<IAddress[]> => {
+	if (!mongoose.Types.ObjectId.isValid(userId)) {
+		const error = new mongoose.Error.CastError("ObjectId", userId, "userId");
+		error.message = `The provided ID ${userId} is invalid.`;
 		throw error;
 	}
 
-	const user = await User.findById(id);
+	if (!mongoose.Types.ObjectId.isValid(addressId)) {
+		const error = new mongoose.Error.CastError("ObjectId", addressId, "addressId");
+		error.message = `The provided address ID ${addressId} is invalid.`;
+		throw error;
+	}
+
+	const user = await User.findById(userId);
 
 	if (!user) throw new HttpError("User not found", 404);
 
-	if (index < 0 || index >= user.addresses.length) throw new RangeError("Index out of range");
+	const targetAddress = user.addresses.find((address) => address._id?.toString() === addressId);
+	if (!targetAddress) throw new HttpError("Address not found", 404);
 
-	user.addresses.forEach((address, i) => {
-		address.isDefault = i === index;
+	user.addresses.forEach((address) => {
+		address.isDefault = address._id?.toString() === addressId;
 	});
 
 	await user.save();
 
-	return user;
+	return user.addresses;
 };

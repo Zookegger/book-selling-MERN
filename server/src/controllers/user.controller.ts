@@ -76,52 +76,61 @@ export async function addAddress(req: AuthRequest, res: Response, next: NextFunc
 }
 
 /**
- * Cập nhật địa chỉ theo index
+ * Lấy các địa chỉ của người dùng
+ */
+export async function getAddresses(req: AuthRequest, res: Response, next: NextFunction) {
+	try {
+		const userId = req.userId;
+		if (!userId) return next(new HttpError("Unauthorized", 401));
+
+		const updated = await userServices.getAddresses(userId);
+		return res.status(200).json(sanitizeUser(updated));
+	} catch (err) {
+		next(err);
+	}
+}
+
+/**
+ * Cập nhật địa chỉ theo addressId
  */
 export async function updateAddress(req: AuthRequest, res: Response, next: NextFunction) {
 	try {
 		const userId = req.userId;
 		if (!userId) return next(new HttpError("Unauthorized", 401));
 
-		const index = parseInt(req.params.index as string, 10);
-		const updated = await userServices.updateAddress(userId as string, index, req.body);
+		const updated = await userServices.updateAddress(userId as string, req.params.addressId as string, req.body);
 		return res.status(200).json(sanitizeUser(updated));
 	} catch (err) {
-		if (err instanceof RangeError) return next(new HttpError(err.message, 404));
 		next(err);
 	}
 }
 
 /**
- * Xóa địa chỉ theo index
+ * Xóa địa chỉ theo addressId
  */
 export async function deleteAddress(req: AuthRequest, res: Response, next: NextFunction) {
 	try {
 		const userId = req.userId;
 		if (!userId) return next(new HttpError("Unauthorized", 401));
 
-		const index = parseInt(req.params.index as string, 10);
-		const updated = await userServices.deleteAddress(userId as string, index);
+		const updated = await userServices.deleteAddress(userId as string, req.params.addressId as string);
 		return res.status(200).json(sanitizeUser(updated));
 	} catch (err) {
-		if (err instanceof RangeError) return next(new HttpError(err.message, 404));
 		next(err);
 	}
 }
 
 /**
- * Đặt địa chỉ mặc định theo index
+ * Đặt địa chỉ mặc định theo addressId
  */
 export async function setDefaultAddress(req: AuthRequest, res: Response, next: NextFunction) {
 	try {
 		const userId = req.userId;
 		if (!userId) return next(new HttpError("Unauthorized", 401));
 
-		const index = parseInt(req.params.index as string, 10);
-		const updated = await userServices.setDefaultAddress(userId as string, index);
+		const updated = await userServices.setDefaultAddress(userId as string, req.params.addressId as string);
 		return res.status(200).json(sanitizeUser(updated));
 	} catch (err) {
-		if (err instanceof RangeError) return next(new HttpError(err.message, 404));
 		next(err);
 	}
 }

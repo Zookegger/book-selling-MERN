@@ -11,6 +11,7 @@ import {
 	deleteAddress,
 	setDefaultAddress,
 } from "@services/user.services";
+import * as userServiceModule from "@services/user.services";
 import { connectTestDB, closeTestDB, clearTestDB } from "../utils/testDb";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
@@ -492,8 +493,8 @@ describe("Thêm địa chỉ - addAddress()", () => {
 		const user = await makeUser();
 		const updated = await addAddress(user._id.toString(), sampleAddress);
 
-		expect(updated!.addresses).toHaveLength(1);
-		expect(updated!.addresses[0].streetDetails).toBe(sampleAddress.streetDetails);
+		expect(updated!).toHaveLength(1);
+		expect(updated![0].streetDetails).toBe(sampleAddress.streetDetails);
 	});
 
 	it("tích lũy địa chỉ sau các lần gọi liên tiếp", async () => {
@@ -505,7 +506,7 @@ describe("Thêm địa chỉ - addAddress()", () => {
 			isDefault: false,
 		});
 
-		expect(updated!.addresses).toHaveLength(2);
+		expect(updated!).toHaveLength(2);
 	});
 
 	it("khi isDefault = true, bỏ isDefault trên tất cả địa chỉ đã tồn tại", async () => {
@@ -517,7 +518,7 @@ describe("Thêm địa chỉ - addAddress()", () => {
 			streetDetails: "Second St",
 		});
 
-		const defaults = updated!.addresses.filter((a) => a.isDefault);
+		const defaults = updated!.filter((a) => a.isDefault);
 		expect(defaults).toHaveLength(1);
 		expect(defaults[0].streetDetails).toBe("Second St");
 	});
@@ -531,7 +532,7 @@ describe("Thêm địa chỉ - addAddress()", () => {
 			streetDetails: "Second St",
 		});
 
-		const defaults = updated!.addresses.filter((a) => a.isDefault);
+		const defaults = updated!.filter((a) => a.isDefault);
 		expect(defaults).toHaveLength(1);
 		expect(defaults[0].streetDetails).toBe("First St");
 	});
@@ -560,65 +561,74 @@ describe("Thêm địa chỉ - addAddress()", () => {
 
 describe("Cập nhật địa chỉ - updateAddress()", () => {
 	const seedAddresses = async (userId: string) => {
-		await updateProfile(userId, {
+		const updated = await updateProfile(userId, {
 			addresses: [
 				{ ...sampleAddress, streetDetails: "First St", isDefault: true },
 				{ ...sampleAddress, streetDetails: "Second St", isDefault: false },
 			],
 		});
+
+		return {
+			firstAddressId: updated.addresses[0]._id!.toString(),
+			secondAddressId: updated.addresses[1]._id!.toString(),
+		};
 	};
 
 	it("cập nhật trường tại vị trí chỉ định", async () => {
 		const user = await makeUser();
-		await seedAddresses(user._id.toString());
+		const { firstAddressId } = await seedAddresses(user._id.toString());
 
-		const updated = await updateAddress(user._id.toString(), 0, { streetDetails: "Updated St" });
+		const updated = await updateAddress(user._id.toString(), firstAddressId, { streetDetails: "Updated St" });
 
-		expect(updated!.addresses[0].streetDetails).toBe("Updated St");
+		expect(updated![0].streetDetails).toBe("Updated St");
 	});
 
 	it("không thay đổi địa chỉ ở các vị trí khác", async () => {
 		const user = await makeUser();
-		await seedAddresses(user._id.toString());
+		const { firstAddressId } = await seedAddresses(user._id.toString());
 
-		const updated = await updateAddress(user._id.toString(), 0, { streetDetails: "Changed" });
+		const updated = await updateAddress(user._id.toString(), firstAddressId, { streetDetails: "Changed" });
 
-		expect(updated!.addresses[1].streetDetails).toBe("Second St");
+		expect(updated![1].streetDetails).toBe("Second St");
 	});
 
 	it("khi isDefault được đặt true, bỏ isDefault trên tất cả các địa chỉ khác", async () => {
 		const user = await makeUser();
-		await seedAddresses(user._id.toString());
+		const { secondAddressId } = await seedAddresses(user._id.toString());
 
-		const updated = await updateAddress(user._id.toString(), 1, { isDefault: true });
-		const defaults = updated!.addresses.filter((a) => a.isDefault);
+		const updated = await updateAddress(user._id.toString(), secondAddressId, { isDefault: true });
+		const defaults = updated!.filter((a) => a.isDefault);
 
 		expect(defaults).toHaveLength(1);
 		expect(defaults[0].streetDetails).toBe("Second St");
 	});
 
 	it("báo lỗi khi id không phải ObjectId hợp lệ", async () => {
-		await expect(updateAddress("bad-id", 0, { streetDetails: "X" })).rejects.toThrow(
+		const validAddressId = new mongoose.Types.ObjectId().toString();
+		await expect(updateAddress("bad-id", validAddressId, { streetDetails: "X" })).rejects.toThrow(
 			"The provided ID bad-id is invalid.",
 		);
 	});
 
-	it("báo lỗi khi chỉ số vượt ngoài phạm vi", async () => {
+	it("báo lỗi khi addressId không tồn tại trong danh sách địa chỉ", async () => {
 		const user = await makeUser();
-		await expect(updateAddress(user._id.toString(), 99, { streetDetails: "X" })).rejects.toThrow();
+		await seedAddresses(user._id.toString());
+		const unknownAddressId = new mongoose.Types.ObjectId().toString();
+		await expect(updateAddress(user._id.toString(), unknownAddressId, { streetDetails: "X" })).rejects.toThrow();
 	});
 
 	it("ném lỗi không tìm thấy khi người dùng không tồn tại", async () => {
 		const fakeId = new mongoose.Types.ObjectId().toString();
-		await expect(updateAddress(fakeId, 0, { streetDetails: "X" })).rejects.toThrow();
+		const validAddressId = new mongoose.Types.ObjectId().toString();
+		await expect(updateAddress(fakeId, validAddressId, { streetDetails: "X" })).rejects.toThrow();
 	});
 
 	it("báo lỗi 400 khi payload cập nhật địa chỉ không hợp lệ", async () => {
 		const user = await makeUser();
-		await seedAddresses(user._id.toString());
+		const { firstAddressId } = await seedAddresses(user._id.toString());
 
 		await expect(
-			updateAddress(user._id.toString(), 0, {
+			updateAddress(user._id.toString(), firstAddressId, {
 				phoneNumber: "not-numeric",
 			} as any),
 		).rejects.toBeInstanceOf(HttpError);
@@ -629,44 +639,54 @@ describe("Cập nhật địa chỉ - updateAddress()", () => {
 
 describe("Xóa địa chỉ - deleteAddress()", () => {
 	const seedAddresses = async (userId: string) => {
-		await updateProfile(userId, {
+		const updated = await updateProfile(userId, {
 			addresses: [
 				{ ...sampleAddress, streetDetails: "First St", isDefault: true },
 				{ ...sampleAddress, streetDetails: "Second St", isDefault: false },
 			],
 		});
+
+		return {
+			firstAddressId: updated.addresses[0]._id!.toString(),
+			secondAddressId: updated.addresses[1]._id!.toString(),
+		};
 	};
 
 	it("xóa địa chỉ tại vị trí chỉ định", async () => {
 		const user = await makeUser();
-		await updateProfile(user._id.toString(), { addresses: [sampleAddress] });
+		const updatedProfile = await updateProfile(user._id.toString(), { addresses: [sampleAddress] });
+		const addressId = updatedProfile.addresses[0]._id!.toString();
 
-		const updated = await deleteAddress(user._id.toString(), 0);
-		expect(updated!.addresses).toHaveLength(0);
+		const updated = await deleteAddress(user._id.toString(), addressId);
+		expect(updated!).toHaveLength(0);
 	});
 
 	it("giữ nguyên các địa chỉ khác khi xóa một địa chỉ", async () => {
 		const user = await makeUser();
-		await seedAddresses(user._id.toString());
+		const { firstAddressId } = await seedAddresses(user._id.toString());
 
-		const updated = await deleteAddress(user._id.toString(), 0);
+		const updated = await deleteAddress(user._id.toString(), firstAddressId);
 
-		expect(updated!.addresses).toHaveLength(1);
-		expect(updated!.addresses[0].streetDetails).toBe("Second St");
+		expect(updated!).toHaveLength(1);
+		expect(updated![0].streetDetails).toBe("Second St");
 	});
 
 	it("báo lỗi khi id không phải ObjectId hợp lệ", async () => {
-		await expect(deleteAddress("bad-id", 0)).rejects.toThrow("The provided ID bad-id is invalid.");
+		const validAddressId = new mongoose.Types.ObjectId().toString();
+		await expect(deleteAddress("bad-id", validAddressId)).rejects.toThrow("The provided ID bad-id is invalid.");
 	});
 
-	it("báo lỗi khi chỉ số vượt ngoài phạm vi", async () => {
+	it("báo lỗi khi addressId không tồn tại", async () => {
 		const user = await makeUser();
-		await expect(deleteAddress(user._id.toString(), 99)).rejects.toThrow();
+		await seedAddresses(user._id.toString());
+		const unknownAddressId = new mongoose.Types.ObjectId().toString();
+		await expect(deleteAddress(user._id.toString(), unknownAddressId)).rejects.toThrow();
 	});
 
 	it("ném lỗi không tìm thấy khi người dùng không tồn tại", async () => {
 		const fakeId = new mongoose.Types.ObjectId().toString();
-		await expect(deleteAddress(fakeId, 0)).rejects.toThrow();
+		const validAddressId = new mongoose.Types.ObjectId().toString();
+		await expect(deleteAddress(fakeId, validAddressId)).rejects.toThrow();
 	});
 });
 
@@ -674,31 +694,37 @@ describe("Xóa địa chỉ - deleteAddress()", () => {
 
 describe("Đặt địa chỉ mặc định - setDefaultAddress()", () => {
 	const seedAddresses = async (userId: string) => {
-		await updateProfile(userId, {
+		const updated = await updateProfile(userId, {
 			addresses: [
 				{ ...sampleAddress, streetDetails: "First St", isDefault: true },
 				{ ...sampleAddress, streetDetails: "Second St", isDefault: false },
 				{ ...sampleAddress, streetDetails: "Third St", isDefault: false },
 			],
 		});
+
+		return {
+			firstAddressId: updated.addresses[0]._id!.toString(),
+			secondAddressId: updated.addresses[1]._id!.toString(),
+			thirdAddressId: updated.addresses[2]._id!.toString(),
+		};
 	};
 
 	it("đánh dấu địa chỉ tại vị trí chỉ định là mặc định", async () => {
 		const user = await makeUser();
-		await seedAddresses(user._id.toString());
+		const { secondAddressId } = await seedAddresses(user._id.toString());
 
-		const updated = await setDefaultAddress(user._id.toString(), 1);
-		console.log(updated.addresses);
+		const updated = await setDefaultAddress(user._id.toString(), secondAddressId);
+		console.log(updated);
 
-		expect(updated.addresses[1].isDefault).toBe(true);
+		expect(updated[1].isDefault).toBe(true);
 	});
 
 	it("bỏ isDefault trên tất cả các địa chỉ khác", async () => {
 		const user = await makeUser();
-		await seedAddresses(user._id.toString());
+		const { thirdAddressId } = await seedAddresses(user._id.toString());
 
-		const updated = await setDefaultAddress(user._id.toString(), 2);
-		const defaults = updated!.addresses.filter((a) => a.isDefault);
+		const updated = await setDefaultAddress(user._id.toString(), thirdAddressId);
+		const defaults = updated!.filter((a) => a.isDefault);
 
 		expect(defaults).toHaveLength(1);
 		expect(defaults[0].streetDetails).toBe("Third St");
@@ -706,23 +732,64 @@ describe("Đặt địa chỉ mặc định - setDefaultAddress()", () => {
 
 	it("địa chỉ mặc định trước đó không còn là mặc định nữa", async () => {
 		const user = await makeUser();
-		await seedAddresses(user._id.toString());
+		const { secondAddressId } = await seedAddresses(user._id.toString());
 
-		const updated = await setDefaultAddress(user._id.toString(), 1);
-		expect(updated.addresses[0].isDefault).toBe(false);
+		const updated = await setDefaultAddress(user._id.toString(), secondAddressId);
+		expect(updated[0].isDefault).toBe(false);
 	});
 
 	it("báo lỗi khi id không phải ObjectId hợp lệ", async () => {
-		await expect(setDefaultAddress("bad-id", 0)).rejects.toThrow("The provided ID bad-id is invalid.");
+		const validAddressId = new mongoose.Types.ObjectId().toString();
+		await expect(setDefaultAddress("bad-id", validAddressId)).rejects.toThrow("The provided ID bad-id is invalid.");
 	});
 
-	it("báo lỗi khi chỉ số vượt ngoài phạm vi", async () => {
+	it("báo lỗi khi addressId không tồn tại", async () => {
 		const user = await makeUser();
-		await expect(setDefaultAddress(user._id.toString(), 99)).rejects.toThrow();
+		await seedAddresses(user._id.toString());
+		const unknownAddressId = new mongoose.Types.ObjectId().toString();
+		await expect(setDefaultAddress(user._id.toString(), unknownAddressId)).rejects.toThrow();
 	});
 
 	it("ném lỗi không tìm thấy khi người dùng không tồn tại", async () => {
 		const fakeId = new mongoose.Types.ObjectId().toString();
-		await expect(setDefaultAddress(fakeId, 0)).rejects.toThrow();
+		const validAddressId = new mongoose.Types.ObjectId().toString();
+		await expect(setDefaultAddress(fakeId, validAddressId)).rejects.toThrow();
+	});
+});
+
+// ─── fetch addresses (contract-first) ────────────────────────────────────────
+
+describe("Lấy địa chỉ - fetching addresses (contract-first)", () => {
+	it("lấy danh sách địa chỉ của user theo userId", async () => {
+		const getAddresses = (userServiceModule as any).getAddresses;
+		expect(typeof getAddresses).toBe("function");
+
+		const user = await makeUser();
+		await updateProfile(user._id.toString(), {
+			addresses: [
+				{ ...sampleAddress, streetDetails: "Own Address 1", isDefault: true },
+				{ ...sampleAddress, streetDetails: "Own Address 2", isDefault: false },
+			],
+		});
+
+		const result = await getAddresses(user._id.toString());
+		expect(Array.isArray(result)).toBe(true);
+		expect(result).toHaveLength(2);
+		expect(result[0].streetDetails).toBe("Own Address 1");
+		console.log(result);
+
+	});
+
+	it("lấy địa chỉ theo identifier là id của chính người dùng", async () => {
+		const getAddresses = (userServiceModule as any).getAddresses;
+		expect(typeof getAddresses).toBe("function");
+
+		const user = await makeUser({ email: "selfid@example.com" });
+		await updateProfile(user._id.toString(), {
+			addresses: [{ ...sampleAddress, streetDetails: "Self ID Address" }],
+		});
+
+		const result = await getAddresses(user._id.toString());
+		expect(result.map((a: { streetDetails: string }) => a.streetDetails)).toContain("Self ID Address");
 	});
 });

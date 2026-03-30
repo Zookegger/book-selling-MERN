@@ -10,6 +10,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 	const PROFILE = "/api/users/profile";
 	const CHANGE_PASSWORD = "/api/users/change-password";
 	const ADDRESSES = "/api/users/addresses";
+	const GET_ADDRESSES = "/api/users/addresses";
 	const DELETE_ACCOUNT = "/api/users/me";
 
 	let sendVerificationEmailSpy: jest.SpyInstance;
@@ -17,7 +18,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 
 	const sampleAddress = {
 		recipientName: "Nguyen Van A",
-		phoneNumber: "0901234567",
+		phoneNumber: "+84901234567",
 		provinceOrCity: "Ho Chi Minh",
 		district: "District 1",
 		ward: "Ben Nghe",
@@ -48,6 +49,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		const payload = {
 			firstName: "Test",
 			lastName: "User",
+			phone: "0901234567",
 			email: "testuser@example.com",
 			password: "P455word123!@#",
 			confirmPassword: "P455word123!@#",
@@ -55,6 +57,25 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		};
 		await request(app).post(REGISTER).send(payload);
 		await verifyUserEmail(payload.email);
+		const loginRes = await request(app).post(LOGIN).send({ email: payload.email, password: payload.password });
+		return { token: loginRes.body.token as string, payload };
+	};
+
+	const registerVerifyAndPromoteToAdmin = async (overrides: Record<string, string> = {}) => {
+		const payload = {
+			firstName: "Admin",
+			lastName: "User",
+			phone: "0901234568",
+			email: "admin@example.com",
+			password: "P455word123!@#",
+			confirmPassword: "P455word123!@#",
+			...overrides,
+		};
+
+		await request(app).post(REGISTER).send(payload);
+		await verifyUserEmail(payload.email);
+		await User.findOneAndUpdate({ email: payload.email.toLowerCase() }, { role: "admin" });
+
 		const loginRes = await request(app).post(LOGIN).send({ email: payload.email, password: payload.password });
 		return { token: loginRes.body.token as string, payload };
 	};
@@ -360,9 +381,9 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		it("trả về mảng addresses đã cập nhật chứa mục mới", async () => {
 			const { token } = await registerAndLogin();
 			const res = await request(app).post(ADDRESSES).set("Authorization", `Bearer ${token}`).send(sampleAddress);
-			expect(Array.isArray(res.body.addresses)).toBe(true);
-			expect(res.body.addresses).toHaveLength(1);
-			expect(res.body.addresses[0].streetDetails).toBe(sampleAddress.streetDetails);
+			expect(Array.isArray(res.body)).toBe(true);
+			expect(res.body).toHaveLength(1);
+			expect(res.body[0].streetDetails).toBe(sampleAddress.streetDetails);
 		});
 
 		it("lưu trữ nhiều địa chỉ khi gọi API nhiều lần", async () => {
@@ -375,7 +396,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 				.post(ADDRESSES)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ ...sampleAddress, streetDetails: "Second St", isDefault: false });
-			expect(res.body.addresses).toHaveLength(2);
+			expect(res.body).toHaveLength(2);
 		});
 
 		it("khi isDefault là true, chỉ địa chỉ mới là mặc định", async () => {
@@ -388,7 +409,7 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 				.post(ADDRESSES)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ ...sampleAddress, isDefault: true, streetDetails: "Second St" });
-			const defaults = res.body.addresses.filter((a: { isDefault: boolean }) => a.isDefault);
+			const defaults = res.body.filter((a: { isDefault: boolean }) => a.isDefault);
 			expect(defaults).toHaveLength(1);
 			expect(defaults[0].streetDetails).toBe("Second St");
 		});
@@ -428,23 +449,72 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 	});
 
 	// ---------------------------------------------------------------------------
-	// PUT /api/users/addresses/:index — Edit Address
+	// GET /api/users/addresses — Fetch Addresses
 	// ---------------------------------------------------------------------------
 
-	describe("PUT /api/users/addresses/:index — Chỉnh sửa địa chỉ", () => {
+	describe("GET /api/users/addresses — Lấy địa chỉ", () => {
+		it("trả về 200 và danh sách địa chỉ của chính user khi gọi endpoint với token hợp lệ", async () => {
+			const { token } = await registerAndLogin();
+			await request(app)
+				.post(ADDRESSES)
+				.set("Authorization", `Bearer ${token}`)
+				.send({ ...sampleAddress, streetDetails: "Own Address" });
+
+			const res = await request(app).get(GET_ADDRESSES).set("Authorization", `Bearer ${token}`);
+			
+			expect(res.status).toBe(200);
+			expect(Array.isArray(res.body)).toBe(true);
+			expect(res.body).toHaveLength(1);
+			expect(res.body[0].streetDetails).toBe("Own Address");
+		});
+
+		it("trả về địa chỉ theo userId khi query userId là chính tài khoản hiện tại", async () => {
+			const { token } = await registerAndLogin();
+			await request(app)
+				.post(ADDRESSES)
+				.set("Authorization", `Bearer ${token}`)
+				.send({ ...sampleAddress, streetDetails: "By Query UserId" });
+
+			const profileRes = await request(app).get(PROFILE).set("Authorization", `Bearer ${token}`);
+			expect(profileRes.status).toBe(200);
+
+			const userId = profileRes.body._id as string;
+			const res = await request(app)
+				.get(GET_ADDRESSES)
+				.query({ userId })
+				.set("Authorization", `Bearer ${token}`);
+
+			expect(res.status).toBe(200);
+			expect(Array.isArray(res.body)).toBe(true);
+			expect(res.body.map((a: { streetDetails: string }) => a.streetDetails)).toContain("By Query UserId");
+		});
+
+		it("trả về 401 khi không có Authorization header", async () => {
+			const res = await request(app).get(GET_ADDRESSES);
+			expect(res.status).toBe(401);
+		});
+	});
+
+	// ---------------------------------------------------------------------------
+	// PUT /api/users/addresses/:addressId — Edit Address
+	// ---------------------------------------------------------------------------
+
+	describe("PUT /api/users/addresses/:addressId — Chỉnh sửa địa chỉ", () => {
 		let token: string;
+		let firstAddressId: string;
 
 		beforeEach(async () => {
 			const result = await registerAndLogin();
 			token = result.token;
-			await request(app).post(ADDRESSES).set("Authorization", `Bearer ${token}`).send(sampleAddress);
+			const addRes = await request(app).post(ADDRESSES).set("Authorization", `Bearer ${token}`).send(sampleAddress);
+			firstAddressId = addRes.body[0]._id;
 		});
 
 		// --- happy path ---
 
 		it("trả về 200 khi cập nhật địa chỉ tồn tại", async () => {
 			const res = await request(app)
-				.put(`${ADDRESSES}/0`)
+				.put(`${ADDRESSES}/${firstAddressId}`)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ streetDetails: "Updated Street" });
 			expect(res.status).toBe(200);
@@ -452,43 +522,54 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 
 		it("trả về giá trị trường đã cập nhật trong phản hồi", async () => {
 			const res = await request(app)
-				.put(`${ADDRESSES}/0`)
+				.put(`${ADDRESSES}/${firstAddressId}`)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ streetDetails: "New Street Name" });
-			expect(res.body.addresses[0].streetDetails).toBe("New Street Name");
+			expect(res.body[0].streetDetails).toBe("New Street Name");
 		});
 
 		it("không thay đổi các địa chỉ khác", async () => {
-			await request(app)
+			const addSecondRes = await request(app)
 				.post(ADDRESSES)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ ...sampleAddress, streetDetails: "Second St", isDefault: false });
+			const secondAddressId = addSecondRes.body.find(
+				(a: { streetDetails: string }) => a.streetDetails === "Second St",
+			)._id;
+
 			const res = await request(app)
-				.put(`${ADDRESSES}/0`)
+				.put(`${ADDRESSES}/${firstAddressId}`)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ streetDetails: "Changed First" });
-			expect(res.body.addresses[1].streetDetails).toBe("Second St");
+			expect(
+				res.body.find((a: { _id: string }) => a._id === secondAddressId).streetDetails,
+			).toBe("Second St");
 		});
 
 		it("khi đặt isDefault thành true, các địa chỉ khác không còn mặc định", async () => {
-			await request(app)
+			const addSecondRes = await request(app)
 				.post(ADDRESSES)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ ...sampleAddress, streetDetails: "Second St", isDefault: false });
+			const secondAddressId = addSecondRes.body.find(
+				(a: { streetDetails: string }) => a.streetDetails === "Second St",
+			)._id;
+
 			const res = await request(app)
-				.put(`${ADDRESSES}/1`)
+				.put(`${ADDRESSES}/${secondAddressId}`)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ isDefault: true });
-			const defaults = res.body.addresses.filter((a: { isDefault: boolean }) => a.isDefault);
+			const defaults = res.body.filter((a: { isDefault: boolean }) => a.isDefault);
 			expect(defaults).toHaveLength(1);
 			expect(defaults[0].streetDetails).toBe("Second St");
 		});
 
 		// --- validation ---
 
-		it("trả về 404 khi chỉ số (index) ngoài phạm vi", async () => {
+		it("trả về 404 khi addressId không tồn tại", async () => {
+			const unknownAddressId = "507f1f77bcf86cd799439011";
 			const res = await request(app)
-				.put(`${ADDRESSES}/99`)
+				.put(`${ADDRESSES}/${unknownAddressId}`)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ streetDetails: "Ghost" });
 			expect(res.status).toBe(404);
@@ -497,115 +578,145 @@ describe("Kiểm thử hợp đồng: Quản lý người dùng", () => {
 		// --- authentication ---
 
 		it("trả về 401 khi không cung cấp header Authorization", async () => {
-			const res = await request(app).put(`${ADDRESSES}/0`).send({ streetDetails: "Intruder" });
+			const res = await request(app)
+				.put(`${ADDRESSES}/507f1f77bcf86cd799439011`)
+				.send({ streetDetails: "Intruder" });
 			expect(res.status).toBe(401);
 		});
 	});
 
 	// ---------------------------------------------------------------------------
-	// DELETE /api/users/addresses/:index — Delete Address
+	// DELETE /api/users/addresses/:addressId — Delete Address
 	// ---------------------------------------------------------------------------
 
-	describe("DELETE /api/users/addresses/:index — Xóa địa chỉ", () => {
+	describe("DELETE /api/users/addresses/:addressId — Xóa địa chỉ", () => {
 		let token: string;
+		let firstAddressId: string;
 
 		beforeEach(async () => {
 			const result = await registerAndLogin();
 			token = result.token;
-			await request(app).post(ADDRESSES).set("Authorization", `Bearer ${token}`).send(sampleAddress);
+			const addRes = await request(app).post(ADDRESSES).set("Authorization", `Bearer ${token}`).send(sampleAddress);
+			firstAddressId = addRes.body[0]._id;
 		});
 
 		// --- happy path ---
 
 		it("trả về 200 sau khi xóa một địa chỉ", async () => {
-			const res = await request(app).delete(`${ADDRESSES}/0`).set("Authorization", `Bearer ${token}`);
+			const res = await request(app).delete(`${ADDRESSES}/${firstAddressId}`).set("Authorization", `Bearer ${token}`);
 			expect(res.status).toBe(200);
 		});
 
 		it("địa chỉ bị xóa không còn xuất hiện trong phản hồi", async () => {
-			const res = await request(app).delete(`${ADDRESSES}/0`).set("Authorization", `Bearer ${token}`);
-			expect(res.body.addresses).toHaveLength(0);
+			const res = await request(app).delete(`${ADDRESSES}/${firstAddressId}`).set("Authorization", `Bearer ${token}`);
+			expect(res.body).toHaveLength(0);
 		});
 
 		it("xóa một địa chỉ không làm ảnh hưởng đến các địa chỉ khác", async () => {
-			await request(app)
+			const addSecondRes = await request(app)
 				.post(ADDRESSES)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ ...sampleAddress, streetDetails: "Second St", isDefault: false });
-			const res = await request(app).delete(`${ADDRESSES}/0`).set("Authorization", `Bearer ${token}`);
-			expect(res.body.addresses).toHaveLength(1);
-			expect(res.body.addresses[0].streetDetails).toBe("Second St");
+			const secondAddressId = addSecondRes.body.find(
+				(a: { streetDetails: string }) => a.streetDetails === "Second St",
+			)._id;
+
+			const res = await request(app)
+				.delete(`${ADDRESSES}/${firstAddressId}`)
+				.set("Authorization", `Bearer ${token}`);
+			expect(res.body).toHaveLength(1);
+			expect(res.body[0]._id).toBe(secondAddressId);
+			expect(res.body[0].streetDetails).toBe("Second St");
 		});
 
 		// --- validation ---
 
-		it("trả về 404 khi chỉ số (index) ngoài phạm vi", async () => {
-			const res = await request(app).delete(`${ADDRESSES}/99`).set("Authorization", `Bearer ${token}`);
+		it("trả về 404 khi addressId không tồn tại", async () => {
+			const res = await request(app)
+				.delete(`${ADDRESSES}/507f1f77bcf86cd799439011`)
+				.set("Authorization", `Bearer ${token}`);
 			expect(res.status).toBe(404);
 		});
 
 		// --- authentication ---
 
 		it("trả về 401 khi không cung cấp header Authorization", async () => {
-			const res = await request(app).delete(`${ADDRESSES}/0`);
+			const res = await request(app).delete(`${ADDRESSES}/507f1f77bcf86cd799439011`);
 			expect(res.status).toBe(401);
 		});
 	});
 
 	// ---------------------------------------------------------------------------
-	// PATCH /api/users/addresses/:index/default — Set Default Address
+	// PATCH /api/users/addresses/:addressId/default — Set Default Address
 	// ---------------------------------------------------------------------------
 
-	describe("PATCH /api/users/addresses/:index/default — Đặt địa chỉ mặc định", () => {
+	describe("PATCH /api/users/addresses/:addressId/default — Đặt địa chỉ mặc định", () => {
 		let token: string;
+		let firstAddressId: string;
+		let secondAddressId: string;
 
 		beforeEach(async () => {
 			const result = await registerAndLogin();
 			token = result.token;
-			await request(app)
+			const firstRes = await request(app)
 				.post(ADDRESSES)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ ...sampleAddress, isDefault: true, streetDetails: "First St" });
-			await request(app)
+			firstAddressId = firstRes.body.find((a: { streetDetails: string }) => a.streetDetails === "First St")._id;
+
+			const secondRes = await request(app)
 				.post(ADDRESSES)
 				.set("Authorization", `Bearer ${token}`)
 				.send({ ...sampleAddress, isDefault: false, streetDetails: "Second St" });
+			secondAddressId = secondRes.body.find(
+				(a: { streetDetails: string }) => a.streetDetails === "Second St",
+			)._id;
 		});
 
 		// --- happy path ---
 
 		it("trả về 200 sau khi đặt địa chỉ mặc định", async () => {
-			const res = await request(app).patch(`${ADDRESSES}/1/default`).set("Authorization", `Bearer ${token}`);
+			const res = await request(app)
+				.patch(`${ADDRESSES}/${secondAddressId}/default`)
+				.set("Authorization", `Bearer ${token}`);
 			expect(res.status).toBe(200);
 		});
 
 		it("địa chỉ được chọn có isDefault là true sau khi thực hiện", async () => {
-			const res = await request(app).patch(`${ADDRESSES}/1/default`).set("Authorization", `Bearer ${token}`);
-			expect(res.body.addresses[1].isDefault).toBe(true);
+			const res = await request(app)
+				.patch(`${ADDRESSES}/${secondAddressId}/default`)
+				.set("Authorization", `Bearer ${token}`);
+			expect(res.body.find((a: { _id: string }) => a._id === secondAddressId).isDefault).toBe(true);
 		});
 
 		it("các địa chỉ khác có isDefault là false sau khi thực hiện", async () => {
-			const res = await request(app).patch(`${ADDRESSES}/1/default`).set("Authorization", `Bearer ${token}`);
-			const defaults = res.body.addresses.filter((a: { isDefault: boolean }) => a.isDefault);
+			const res = await request(app)
+				.patch(`${ADDRESSES}/${secondAddressId}/default`)
+				.set("Authorization", `Bearer ${token}`);
+			const defaults = res.body.filter((a: { isDefault: boolean }) => a.isDefault);
 			expect(defaults).toHaveLength(1);
 		});
 
 		it("địa chỉ trước đó không còn cờ isDefault", async () => {
-			const res = await request(app).patch(`${ADDRESSES}/1/default`).set("Authorization", `Bearer ${token}`);
-			expect(res.body.addresses[0].isDefault).toBe(false);
+			const res = await request(app)
+				.patch(`${ADDRESSES}/${secondAddressId}/default`)
+				.set("Authorization", `Bearer ${token}`);
+			expect(res.body.find((a: { _id: string }) => a._id === firstAddressId).isDefault).toBe(false);
 		});
 
 		// --- validation ---
 
-		it("trả về 404 khi chỉ số (index) ngoài phạm vi", async () => {
-			const res = await request(app).patch(`${ADDRESSES}/99/default`).set("Authorization", `Bearer ${token}`);
+		it("trả về 404 khi addressId không tồn tại", async () => {
+			const res = await request(app)
+				.patch(`${ADDRESSES}/507f1f77bcf86cd799439011/default`)
+				.set("Authorization", `Bearer ${token}`);
 			expect(res.status).toBe(404);
 		});
 
 		// --- authentication ---
 
 		it("trả về 401 khi không cung cấp header Authorization", async () => {
-			const res = await request(app).patch(`${ADDRESSES}/0/default`);
+			const res = await request(app).patch(`${ADDRESSES}/507f1f77bcf86cd799439011/default`);
 			expect(res.status).toBe(401);
 		});
 	});

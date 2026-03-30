@@ -1,10 +1,14 @@
-import { COUNTRY_CODES } from "@constants/CountryCodes";
+import Loading from "@components/common/Loading";
 import {
-    Autocomplete,
+    PhoneField,
+    type PhoneValue,
+    splitPhone,
+} from "@components/input/PhoneField";
+import {
     Box,
+    Container,
     IconButton,
     Paper,
-    Stack,
     TextField,
     Tooltip,
     Typography,
@@ -21,7 +25,7 @@ import {
     X,
     XCircle,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString("en-US", {
@@ -29,27 +33,6 @@ function formatDate(iso: string) {
         month: "long",
         day: "numeric",
     });
-}
-
-function normalizePhonePart(value: string) {
-    return value.replace(/\s+/g, "");
-}
-
-function splitPhone(fullPhone: string) {
-    const normalizedPhone = normalizePhonePart(fullPhone ?? "");
-    const defaultCode = "+84";
-
-    const bestMatch = COUNTRY_CODES.map((item) => normalizePhonePart(item.code))
-        .sort((a, b) => b.length - a.length)
-        .find((code) => normalizedPhone.startsWith(code));
-
-    const code = bestMatch ?? defaultCode;
-    return {
-        code,
-        local: normalizedPhone.startsWith(code)
-            ? normalizedPhone.slice(code.length)
-            : normalizedPhone,
-    };
 }
 
 // ─── FieldRow ────────────────────────────────────────────────────────────────
@@ -142,144 +125,67 @@ function FieldRow({
     );
 }
 
-// ─── PhoneField ──────────────────────────────────────────────────────────────
-
-interface PhoneFieldProps {
-    countryCode: string;
-    codeInputValue: string;
-    localPhone: string;
-    phoneError: string | null;
-    onCountryChange: (code: string) => void;
-    onCodeInputChange: (value: string) => void;
-    onLocalPhoneChange: (digits: string) => void;
-}
-
-function PhoneField({
-    countryCode,
-    codeInputValue,
-    localPhone,
-    phoneError,
-    onCountryChange,
-    onCodeInputChange,
-    onLocalPhoneChange,
-}: PhoneFieldProps) {
-    return (
-        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-            <Box
-                sx={{
-                    mt: 0.5,
-                    color: "text.secondary",
-                    display: "flex",
-                    alignItems: "center",
-                    flexShrink: 0,
-                }}
-            >
-                <Phone size={16} />
-            </Box>
-
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography
-                    variant="caption"
-                    sx={{
-                        color: "text.secondary",
-                        letterSpacing: 1,
-                        textTransform: "uppercase",
-                        fontSize: "0.65rem",
-                        display: "block",
-                    }}
-                >
-                    Phone
-                </Typography>
-
-                <Stack direction="row" gap={1} width="100%" sx={{ mt: 0.25 }} alignItems="flex-start">
-                    <Autocomplete
-                        options={COUNTRY_CODES}
-                        getOptionLabel={(option) => `${option.name} (${option.code})`}
-                        value={
-                            COUNTRY_CODES.find(
-                                (c) => normalizePhonePart(c.code) === countryCode
-                            ) ?? null
-                        }
-                        onChange={(_, newValue) => {
-                            onCountryChange(normalizePhonePart(newValue?.code ?? ""));
-                        }}
-                        inputValue={codeInputValue}
-                        onInputChange={(_, value, reason) => {
-                            if (reason === "input") {
-                                onCodeInputChange(normalizePhonePart(value));
-                            }
-                        }}
-                        filterOptions={(options, { inputValue }) =>
-                            options.filter(
-                                (o) =>
-                                    o.name.toLowerCase().includes(inputValue.toLowerCase()) ||
-                                    o.code.includes(inputValue)
-                            )
-                        }
-                        sx={{ minWidth: 140 }}
-                        slotProps={{ paper: { sx: { minWidth: 260 } } }}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                variant="filled"
-                                label="Code"
-                                error={!!phoneError}
-                                helperText={phoneError ?? " "}
-                                autoComplete="off"
-                            />
-                        )}
-                        renderOption={(props, option) => (
-                            <li {...props} key={`${option.code}-${option.name}`}>
-                                {option.name} ({option.code})
-                            </li>
-                        )}
-                    />
-
-                    <TextField
-                        name="phone"
-                        variant="filled"
-                        label="Phone Number"
-                        type="tel"
-                        autoComplete="tel-national"
-                        fullWidth
-                        error={!!phoneError}
-                        helperText={phoneError ?? " "}
-                        value={localPhone}
-                        onChange={(e) => onLocalPhoneChange(e.target.value.replace(/\D/g, ""))}
-                        placeholder="901123456"
-                    />
-                </Stack>
-            </Box>
-        </Box>
-    );
-}
+let profileCache: UserDto | null = null;
+let hasProfileCache = false;
+let profileRequest: Promise<UserDto | null> | null = null;
 
 // ─── ProfileTab ──────────────────────────────────────────────────────────────
 
 interface ProfileTabProps {
-    profile: UserDto;
-    onProfileUpdate: (updated: UserDto) => void;
+    setErrorMessage: (errorMsg: string) => void;
     onSnack: (msg: string, severity: "success" | "error") => void;
 }
 
-export default function ProfileTab({ profile, onProfileUpdate, onSnack }: ProfileTabProps) {
+export default function ProfileTab({ setErrorMessage, onSnack }: ProfileTabProps) {
+    const initialProfile = useMemo(() => (hasProfileCache ? profileCache : null), []);
+    const [profile, setProfile] = useState<UserDto | null>(initialProfile);
+    const [isLoading, setIsLoading] = useState(!initialProfile);
     const [draft, setDraft] = useState<Partial<UserDto>>({});
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const [phoneError, setPhoneError] = useState<string | null>(null);
-    const [countryCode, setCountryCode] = useState("+84");
-    const [codeInputValue, setCodeInputValue] = useState("+84");
-    const [localPhone, setLocalPhone] = useState("");
+    const [phoneValue, setPhoneValue] = useState<PhoneValue>({
+        countryCode: "+84",
+        localNumber: "",
+        fullNumber: "+84",
+    });
 
-    function startEdit() {
-        setDraft({ firstName: profile.firstName, lastName: profile.lastName, phone: profile.phone });
-        const parsed = splitPhone(profile.phone ?? "");
-        setCountryCode(parsed.code);
-        setCodeInputValue(parsed.code);
-        setLocalPhone(parsed.local);
-        setPhoneError(null);
-        setEditing(true);
-    }
+    useEffect(() => {
+        let isMounted = true;
+
+        async function fetchProfile() {
+            if (hasProfileCache) {
+                setProfile(profileCache);
+                setIsLoading(false);
+                return;
+            }
+
+            setIsLoading(true);
+            try {
+                profileRequest ??= userService.fetchProfile();
+                const res = await profileRequest;
+                hasProfileCache = true;
+                profileCache = res ?? null;
+                if (isMounted) {
+                    setProfile(profileCache);
+                }
+            } catch (error: any) {
+                if (isMounted) {
+                    setErrorMessage(error.message);
+                }
+            } finally {
+                profileRequest = null;
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        }
+
+        fetchProfile();
+        return () => {
+            isMounted = false;
+        };
+    }, [setErrorMessage]);
 
     function cancelEdit() {
         setDraft({});
@@ -300,16 +206,26 @@ export default function ProfileTab({ profile, onProfileUpdate, onSnack }: Profil
             const payload = { ...draft };
 
             const localPhoneRegex = /^[0-9]{6,15}$/;
-            if (!localPhoneRegex.test(localPhone)) {
+            if (!localPhoneRegex.test(phoneValue.localNumber)) {
                 setPhoneError("Enter digits only, e.g. 901123456");
                 return;
             }
-            payload.phone = `${normalizePhonePart(countryCode)}${localPhone}`;
+            payload.phone = phoneValue.fullNumber;
 
             const res = await userService.updateProfile(payload);
             if (!res) throw new Error("Something went wrong while updating your profile");
 
-            onProfileUpdate(res);
+            if (profile) {
+                const nextProfile: UserDto = {
+                    ...profile,
+                    ...payload,
+                    updatedAt: new Date().toISOString(),
+                };
+                setProfile(nextProfile);
+                profileCache = nextProfile;
+                hasProfileCache = true;
+            }
+
             setDraft({});
             setEditing(false);
             onSnack("Profile updated successfully.", "success");
@@ -320,18 +236,52 @@ export default function ProfileTab({ profile, onProfileUpdate, onSnack }: Profil
         }
     }
 
-    const firstName = editing ? (draft.firstName ?? "") : profile.firstName;
-    const lastName = editing ? (draft.lastName ?? "") : profile.lastName;
-    const phone = editing ? (draft.phone ?? "") : profile.phone;
+    const viewModel = useMemo(() => {
+        if (!profile) return null;
+
+        return {
+            firstName: editing ? (draft.firstName ?? "") : profile.firstName,
+            lastName: editing ? (draft.lastName ?? "") : profile.lastName,
+            phone: editing ? (draft.phone ?? "") : profile.phone,
+            joinedAt: formatDate(profile.createdAt),
+            updatedAt: formatDate(profile.updatedAt),
+        };
+    }, [draft.firstName, draft.lastName, draft.phone, editing, profile]);
+
+    if (isLoading) {
+        return <Loading />;
+    }
+
+    if (!profile || !viewModel) {
+        return (
+            <Container maxWidth="sm" sx={{ mt: 10, textAlign: "center" }}>
+                <Typography color="text.secondary">No profile found.</Typography>
+            </Container>
+        );
+    }
+
+    function startEdit() {
+        if (profile) {
+            setDraft({ firstName: profile.firstName, lastName: profile.lastName, phone: profile.phone });
+            const parsed = splitPhone(profile.phone ?? "");
+            setPhoneValue({
+                countryCode: parsed.code,
+                localNumber: parsed.local,
+                fullNumber: `${parsed.code}${parsed.local}`,
+            });
+            setPhoneError(null);
+            setEditing(true);
+        }
+    }
 
     return (
-        <Box sx={{ flex: 1 }}>
+        <>
             <Paper square elevation={0} sx={{ px: 3 }}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, py: 3 }}>
                     <FieldRow
                         icon={<User size={16} />}
                         label="First name"
-                        value={firstName}
+                        value={viewModel.firstName}
                         editing={editing}
                         name="firstName"
                         onChange={handleChange}
@@ -339,7 +289,7 @@ export default function ProfileTab({ profile, onProfileUpdate, onSnack }: Profil
                     <FieldRow
                         icon={<User size={16} />}
                         label="Last name"
-                        value={lastName}
+                        value={viewModel.lastName}
                         editing={editing}
                         name="lastName"
                         onChange={handleChange}
@@ -377,30 +327,22 @@ export default function ProfileTab({ profile, onProfileUpdate, onSnack }: Profil
                         <FieldRow
                             icon={<Phone size={16} />}
                             label="Phone"
-                            value={phone}
+                            value={viewModel.phone}
                             editing={editing}
                             name="phone"
                             onChange={handleChange}
                         />
                     ) : (
                         <PhoneField
-                            countryCode={countryCode}
-                            codeInputValue={codeInputValue}
-                            localPhone={localPhone}
-                            phoneError={phoneError}
-                            onCountryChange={(code) => {
-                                setCountryCode(code);
-                                setCodeInputValue(code);
-                                setDraft((prev) => ({ ...prev, phone: `${code}${localPhone}` }));
+                            value={phoneValue}
+                            onChange={(nextValue) => {
+                                setPhoneValue(nextValue);
+                                setDraft((prev) => ({ ...prev, phone: nextValue.fullNumber }));
                             }}
-                            onCodeInputChange={setCodeInputValue}
-                            onLocalPhoneChange={(digits) => {
-                                setLocalPhone(digits);
-                                setDraft((prev) => ({
-                                    ...prev,
-                                    phone: `${normalizePhonePart(countryCode)}${digits}`,
-                                }));
-                            }}
+                            error={!!phoneError}
+                            helperText={phoneError ?? undefined}
+                            variant="filled"
+                            size="small"
                         />
                     )}
                 </Box>
@@ -444,8 +386,8 @@ export default function ProfileTab({ profile, onProfileUpdate, onSnack }: Profil
 
                 <Box sx={{ display: "flex", gap: 2 }}>
                     {[
-                        { label: "Joined", value: formatDate(profile.createdAt) },
-                        { label: "Updated", value: formatDate(profile.updatedAt) },
+                        { label: "Joined", value: viewModel.joinedAt },
+                        { label: "Updated", value: viewModel.updatedAt },
                     ].map(({ label, value }) => (
                         <Box key={label}>
                             <Typography
@@ -470,6 +412,6 @@ export default function ProfileTab({ profile, onProfileUpdate, onSnack }: Profil
                     ))}
                 </Box>
             </Box>
-        </Box>
+        </>
     );
 }

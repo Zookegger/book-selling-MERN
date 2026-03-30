@@ -21,8 +21,8 @@ userRouter.put(
 		body("phone")
 			.optional()
 			.trim()
-			.customSanitizer((value) => (typeof value === "string" ? value.replace(/\s+/g, "") : value))
-			.matches(/^[0-9+\-]{8,}$/)
+			.customSanitizer((value) => value?.replace(/\s+/g, ""))
+			.matches(/^\+\d{7,15}$/)
 			.withMessage("Phone number is invalid"),
 	],
 	validateRequest,
@@ -73,8 +73,10 @@ userRouter.post(
 	[
 		body("recipientName").trim().notEmpty().withMessage("Recipient name is required"),
 		body("phoneNumber")
-			.matches(/^\d{7,15}$/)
-			.withMessage("Phone number must contain only digits"),
+			.trim()
+			.customSanitizer((value) => value?.replace(/\s+/g, ""))
+			.matches(/^\+\d{7,15}$/)
+			.withMessage("Phone number is invalid"),
 		body("provinceOrCity").trim().notEmpty().withMessage("Province or city is required"),
 		body("district").trim().notEmpty().withMessage("District is required"),
 		body("ward").trim().notEmpty().withMessage("Ward is required"),
@@ -88,17 +90,19 @@ userRouter.post(
 );
 
 /**
- * PUT /api/users/addresses/:index
+ * PUT /api/users/addresses/:addressId
  */
 userRouter.put(
-	"/addresses/:index",
+	"/addresses/:addressId",
 	authMiddleware,
 	[
-		param("index").isInt({ min: 0 }).withMessage("Index must be a non-negative integer"),
+		param("addressId").isMongoId().withMessage("Address ID must be a valid ObjectId"),
 		body("phoneNumber")
 			.optional()
-			.matches(/^\d{7,15}$/)
-			.withMessage("Phone number must contain only digits"),
+			.trim()
+			.customSanitizer((value) => value?.replace(/\s+/g, ""))
+			.matches(/^\+\d{7,15}$/)
+			.withMessage("Phone number is invalid"),
 		body("isDefault").optional().isBoolean().withMessage("isDefault must be a boolean"),
 	],
 	validateRequest,
@@ -106,25 +110,27 @@ userRouter.put(
 	errorHandler,
 );
 
+userRouter.get("/addresses", authMiddleware, userController.getAddresses, errorHandler);
+
 /**
- * DELETE /api/users/addresses/:index
+ * DELETE /api/users/addresses/:addressId
  */
 userRouter.delete(
-	"/addresses/:index",
+	"/addresses/:addressId",
 	authMiddleware,
-	[param("index").isInt({ min: 0 }).withMessage("Index must be a non-negative integer")],
+	[param("addressId").isMongoId().withMessage("Address ID must be a valid ObjectId")],
 	validateRequest,
 	userController.deleteAddress,
 	errorHandler,
 );
 
 /**
- * PATCH /api/users/addresses/:index/default
+ * PATCH /api/users/addresses/:addressId/default
  */
 userRouter.patch(
-	"/addresses/:index/default",
+	"/addresses/:addressId/default",
 	authMiddleware,
-	[param("index").isInt({ min: 0 }).withMessage("Index must be a non-negative integer")],
+	[param("addressId").isMongoId().withMessage("Address ID must be a valid ObjectId")],
 	validateRequest,
 	userController.setDefaultAddress,
 	errorHandler,

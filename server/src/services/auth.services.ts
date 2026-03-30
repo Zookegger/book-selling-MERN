@@ -49,7 +49,7 @@ export async function login(dto: LoginInput): Promise<{ user: IUser; token: stri
 		throw new HttpError("Please verify your email before logging in", 403, { code: "EMAIL_NOT_VERIFIED" });
 	}
 
-	const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET as string, { expiresIn: "1d" });
+	const token = jwt.sign({ userId: user._id.toString() }, process.env.JWT_SECRET as string, { expiresIn: "1d" });
 
 	return { user, token };
 }
