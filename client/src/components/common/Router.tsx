@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "@layout/MainLayout";
-import { RootErrorBoundaryPage, HomePage, LoginPage, NotFoundPage, RegisterPage, UnauthorizePage, VerifyEmailPage, ResendVerificationPage } from "@pages";
+import { RootErrorBoundaryPage, HomePage, LoginPage, NotFoundPage, RegisterPage, UnauthorizePage, VerifyEmailPage, ResendVerificationPage, ProfilePage } from "@pages";
+import ProtectedRoute from "./ProtectedRoute";
 
 export const ROUTER_PATHS = {
     HOME: "/",
@@ -11,6 +12,7 @@ export const ROUTER_PATHS = {
     ERROR: "/error",
     VERIFY_EMAIL: "/verify-email",
     RESEND_VERIFICATION: "/resend-verification",
+    PROFILE: "/account/profile",
 }
 
 const router = createBrowserRouter([
@@ -46,6 +48,10 @@ const router = createBrowserRouter([
             {
                 path: ROUTER_PATHS.RESEND_VERIFICATION,
                 element: <ResendVerificationPage />
+            },
+            {
+                path: ROUTER_PATHS.PROFILE,
+                element: <ProtectedRoute><ProfilePage /></ProtectedRoute>
             },
         ]
     }

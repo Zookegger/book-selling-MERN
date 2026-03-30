@@ -17,6 +17,7 @@ describe("Mô hình người dùng (User Model)", () => {
 				email: "test@example.com",
 				firstName: "Nguyen",
 				lastName: "An",
+				phone: "0901111222",
 				password: storedHash,
 			});
 
@@ -32,6 +33,7 @@ describe("Mô hình người dùng (User Model)", () => {
 				email: "test@example.com",
 				firstName: "Nguyen",
 				lastName: "An",
+				phone: "0901111222",
 				password: storedHash,
 			});
 
@@ -63,6 +65,7 @@ describe("Mô hình người dùng (User Model)", () => {
 			const user = new UserModel({
 				firstName: "Tran",
 				lastName: "Binh",
+				phone: "0901111222",
 				email: "binh@example.com",
 				password: rawPassword,
 			});
@@ -87,6 +90,7 @@ describe("Mô hình người dùng (User Model)", () => {
 			const user = new UserModel({
 				firstName: "Tran",
 				lastName: "Binh",
+				phone: "0901111222",
 				email: "binh@example.com",
 				password: rawPassword,
 			});
@@ -106,6 +110,7 @@ describe("Mô hình người dùng (User Model)", () => {
 			const user = new UserModel({
 				firstName: "Tran",
 				lastName: "Binh",
+				phone: "0901111222",
 				email: "phone-check@example.com",
 				password: "Password123!",
 				addresses: [
@@ -125,10 +130,61 @@ describe("Mô hình người dùng (User Model)", () => {
 			expect(err!.errors["addresses.0.phoneNumber"].message).toContain("is not a valid phone number");
 		});
 
+		it("trả về thông báo lỗi validate số điện thoại khi phone top-level không hợp lệ", async () => {
+			const user = new UserModel({
+				firstName: "Phone",
+				lastName: "Check",
+				phone: "invalid-phone",
+				email: "top-level-phone-check@example.com",
+				password: "Password123!",
+			});
+
+			const err = user.validateSync();
+			expect(err).toBeDefined();
+			expect(err!.errors.phone.message).toContain("is not a valid phone number");
+		});
+
+		it("tự động loại bỏ khoảng trắng trong phone top-level trước khi lưu", async () => {
+			const user = new UserModel({
+				firstName: "Phone",
+				lastName: "Normalize",
+				phone: "+84 901 123 456",
+				email: "phone-normalize@example.com",
+				password: "Password123!",
+			});
+
+			await user.save();
+			expect(user.phone).toBe("+84901123456");
+		});
+
+		it("tự động loại bỏ khoảng trắng trong addresses.phoneNumber trước khi lưu", async () => {
+			const user = new UserModel({
+				firstName: "Address",
+				lastName: "Normalize",
+				phone: "0901111222",
+				email: "address-phone-normalize@example.com",
+				password: "Password123!",
+				addresses: [
+					{
+						recipientName: "Address Normalize",
+						phoneNumber: "0901 234 567",
+						provinceOrCity: "HCM",
+						district: "District 1",
+						ward: "Ben Nghe",
+						streetDetails: "123 Street",
+					},
+				],
+			});
+
+			await user.save();
+			expect(user.addresses[0].phoneNumber).toBe("0901234567");
+		});
+
 		it("toJSON thêm id và loại bỏ _id, __v", async () => {
 			const user = new UserModel({
 				firstName: "Json",
 				lastName: "User",
+				phone: "0901111222",
 				email: "json-user@example.com",
 				password: "Password123!",
 			});
@@ -137,6 +193,7 @@ describe("Mô hình người dùng (User Model)", () => {
 
 			const json = user.toJSON() as unknown as Record<string, unknown>;
 			expect(json.id).toBeDefined();
+			expect(json.phone).toBe("0901111222");
 			expect(json._id).toBeUndefined();
 			expect(json.__v).toBeUndefined();
 		});

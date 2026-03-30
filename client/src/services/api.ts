@@ -1,3 +1,5 @@
+import { ROUTER_PATHS } from "@components/common/Router";
+import type { ErrorResponseDto } from "@my-types/common.dto";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000/api";
@@ -34,19 +36,28 @@ api.interceptors.request.use(
 	},
 );
 
-// Response interceptor - handle token refresh
+// Response interceptor
 api.interceptors.response.use(
 	(response) => response,
 	async (error) => {
 		if (error.response?.status === 401) {
 			localStorage.removeItem("accessToken");
 
-			if (window.location.pathname !== "/sign-in") {
-				window.location.href = "/sign-in";
+			if (window.location.pathname !== ROUTER_PATHS.LOGIN) {
+				window.location.href = ROUTER_PATHS.LOGIN;
 			}
 		}
 		return Promise.reject(error);
 	},
 );
+
+export const mapApiError = (error: any, fallbackMessage: string): never => {
+	if (error.response && error.response.data) {
+		const serverError = error.response.data as ErrorResponseDto;
+		throw new ApiError(serverError.message || fallbackMessage, serverError.data?.code);
+	}
+
+	throw new ApiError(fallbackMessage);
+};
 
 export default api;

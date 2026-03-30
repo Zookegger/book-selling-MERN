@@ -27,6 +27,7 @@ const makeUser = (overrides = {}) =>
 	addUser({
 		firstName: "Nguyen",
 		lastName: "Van A",
+		phone: "0901111222",
 		email: "nguyenvana@example.com",
 		password: "$2b$10$Hashedpassword",
 		...overrides,
@@ -52,15 +53,29 @@ describe("Thêm người dùng - addUser()", () => {
 		expect(user._id).toBeDefined();
 		expect(user.firstName).toBe("Nguyen");
 		expect(user.lastName).toBe("Van A");
+		expect(user.phone).toBe("0901111222");
 		expect(user.email).toBe("nguyenvana@example.com");
 		expect(user.role).toBe("customer");
 		expect(user.isEmailVerified).toBe(false);
+	});
+
+	it("lưu trường phone khi được truyền vào", async () => {
+		const user = await addUser({
+			firstName: "Phone",
+			lastName: "User",
+			phone: "+84 901 123 456",
+			email: "phone-user@example.com",
+			password: "P455w0rd123!@#",
+		});
+
+		expect(user.phone).toBe("+84901123456");
 	});
 
 	it("chuyển email về chữ thường khi tạo", async () => {
 		const user = await addUser({
 			firstName: "Test",
 			lastName: "User",
+			phone: "0901111222",
 			email: "UPPERCASE@EXAMPLE.COM",
 			password: "P455w0rd123!@#",
 		});
@@ -71,6 +86,7 @@ describe("Thêm người dùng - addUser()", () => {
 		const user = await addUser({
 			firstName: "Admin",
 			lastName: "User",
+			phone: "0901111222",
 			email: "admin@example.com",
 			role: "admin",
 			password: "4dm1nP455w0rd123!@#",
@@ -102,6 +118,18 @@ describe("Thêm người dùng - addUser()", () => {
 				lastName: "User",
 				email: "invalid",
 				password: "short",
+			} as any),
+		).rejects.toBeInstanceOf(HttpError);
+	});
+
+	it("báo lỗi 400 khi trường phone không hợp lệ", async () => {
+		await expect(
+			addUser({
+				firstName: "Phone",
+				lastName: "User",
+				phone: "abc",
+				email: "invalid-phone@example.com",
+				password: "P455w0rd123!@#",
 			} as any),
 		).rejects.toBeInstanceOf(HttpError);
 	});
@@ -198,7 +226,15 @@ describe("Cập nhật người dùng - updateUser()", () => {
 		const updated = await updateUser(created._id.toString(), { firstName: "Minh" });
 
 		expect(updated!.lastName).toBe("Van A");
+		expect(updated!.phone).toBe("0901111222");
 		expect(updated!.email).toBe("nguyenvana@example.com");
+	});
+
+	it("có thể cập nhật trường phone của người dùng", async () => {
+		const created = await makeUser();
+		const updated = await updateUser(created._id.toString(), { phone: "0933333444" });
+
+		expect(updated!.phone).toBe("0933333444");
 	});
 
 	it("có thể cập nhật vai trò của người dùng", async () => {
@@ -228,10 +264,21 @@ describe("Cập nhật hồ sơ cá nhân - updateProfile()", () => {
 		const updated = await updateProfile(created._id.toString(), {
 			firstName: "Thi",
 			lastName: "Nguyen",
+			phone: "0988 888 999",
 		});
 
 		expect(updated!.firstName).toBe("Thi");
 		expect(updated!.lastName).toBe("Nguyen");
+		expect(updated!.phone).toBe("0988888999");
+	});
+
+	it("loại bỏ khoảng trắng trong phone khi cập nhật hồ sơ", async () => {
+		const created = await makeUser();
+		const updated = await updateProfile(created._id.toString(), {
+			phone: "+84 901 123 456",
+		});
+
+		expect(updated!.phone).toBe("+84901123456");
 	});
 
 	it("báo lỗi khi id không phải ObjectId hợp lệ", async () => {
@@ -258,10 +305,11 @@ describe("Cập nhật hồ sơ cá nhân - updateProfile()", () => {
 		it("lưu danh sách địa chỉ cho người dùng", async () => {
 			const created = await makeUser();
 			const updated = await updateProfile(created._id.toString(), {
-				addresses: [sampleAddress],
+				addresses: [{ ...sampleAddress, phoneNumber: "0901 234 567" }],
 			});
 
 			expect(updated!.addresses).toHaveLength(1);
+			expect(updated!.addresses[0].phoneNumber).toBe("0901234567");
 			expect(updated!.addresses[0].recipientName).toBe("Nguyen Van A");
 		});
 
@@ -348,6 +396,7 @@ describe("Đổi mật khẩu - changePassword()", () => {
 		return addUser({
 			firstName: "Password",
 			lastName: "User",
+			phone: "0901111222",
 			email: "pwuser@example.com",
 			password: CURRENT_PW,
 		});

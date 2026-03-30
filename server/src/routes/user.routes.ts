@@ -18,6 +18,12 @@ userRouter.put(
 		body("email").optional().isEmail().withMessage("Please provide a valid email address").normalizeEmail(),
 		body("firstName").optional().trim().notEmpty().withMessage("First name cannot be empty"),
 		body("lastName").optional().trim().notEmpty().withMessage("Last name cannot be empty"),
+		body("phone")
+			.optional()
+			.trim()
+			.customSanitizer((value) => (typeof value === "string" ? value.replace(/\s+/g, "") : value))
+			.matches(/^[0-9+\-]{8,}$/)
+			.withMessage("Phone number is invalid"),
 	],
 	validateRequest,
 	userController.updateProfile,

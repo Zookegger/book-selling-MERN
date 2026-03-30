@@ -1,12 +1,15 @@
 import { z } from "zod";
 
+const normalizePhoneSpaces = (value: string) => value.replace(/\s+/g, "");
+
 export const addressSchema = z.object({
 	recipientName: z.string().trim().min(1, "Recipient name is required"),
 	phoneNumber: z
 		.string()
 		.trim()
 		.min(8, "Phone number must be at least 8 characters")
-		.regex(/^[0-9+\-\s]{8,}$/, "Invalid phone number"),
+		.regex(/^[0-9+\-\s]{8,}$/, "Invalid phone number")
+		.transform(normalizePhoneSpaces),
 	provinceOrCity: z.string().trim().min(1, "Province or city is required"),
 	district: z.string().trim().min(1, "District is required"),
 	ward: z.string().trim().min(1, "Ward is required"),
@@ -34,6 +37,12 @@ export const userRoleSchema = z.enum(["customer", "admin"]);
 export const createUserSchema = z.object({
 	firstName: z.string().trim().min(1, "First name is required"),
 	lastName: z.string().trim().min(1, "Last name is required"),
+	phone: z
+		.string()
+		.trim()
+		.min(8, "Phone number must be at least 8 characters")
+		.regex(/^[0-9+\-\s]{8,}$/, "Invalid phone number")
+		.transform(normalizePhoneSpaces),
 	email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")),
 	password: z
 		.string()
@@ -48,6 +57,13 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
 	firstName: z.string().trim().min(1).optional(),
 	lastName: z.string().trim().min(1).optional(),
+	phone: z
+		.string()
+		.trim()
+		.min(8, "Phone number must be at least 8 characters")
+		.regex(/^[0-9+\-\s]{8,}$/, "Invalid phone number")
+		.transform(normalizePhoneSpaces)
+		.optional(),
 	email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")).optional(),
 	role: userRoleSchema.optional(),
 	addresses: z.array(addressSchema).optional(),
@@ -57,6 +73,13 @@ export const updateUserSchema = z.object({
 export const updateProfileSchema = z.object({
 	firstName: z.string().trim().min(1).optional(),
 	lastName: z.string().trim().min(1).optional(),
+	phone: z
+		.string()
+		.trim()
+		.min(8, "Phone number must be at least 8 characters")
+		.regex(/^[0-9+\-\s]{8,}$/, "Invalid phone number")
+		.transform(normalizePhoneSpaces)
+		.optional(),
 	addresses: z.array(addressSchema).optional(),
 	email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")).optional(),
 });
