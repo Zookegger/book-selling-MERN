@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
  * Định nghĩa kiểu `IAddress` cho thông tin địa chỉ người dùng.
  */
 export interface IAddress {
+	_id?: mongoose.Types.ObjectId;
 	recipientName: string;
 	phoneNumber: string;
 	provinceOrCity: string;
@@ -60,28 +61,25 @@ export interface IUser extends Document {
 /**
  * Schema cho địa chỉ nhúng trong tài liệu User.
  */
-const addressSchema = new Schema<IAddress>(
-	{
-		recipientName: { type: String, required: true, trim: true },
-		phoneNumber: {
-			type: String,
-			required: true,
-			trim: true,
-			set: (v: string) => (typeof v === "string" ? v.replace(/\s+/g, "") : v),
-			validate: {
-				validator: (v: string) => /^[0-9+\-]{8,}$/.test(v),
-				message: (props) => `${props.value} is not a valid phone number!`,
-			},
+const addressSchema = new Schema<IAddress>({
+	recipientName: { type: String, required: true, trim: true },
+	phoneNumber: {
+		type: String,
+		required: true,
+		trim: true,
+		set: (v: string) => (typeof v === "string" ? v.replace(/\s+/g, "") : v),
+		validate: {
+			validator: (v: string) => /^[0-9+\-]{8,}$/.test(v),
+			message: (props) => `${props.value} is not a valid phone number!`,
 		},
-		provinceOrCity: { type: String, required: true, trim: true },
-		district: { type: String, required: true, trim: true },
-		ward: { type: String, required: true, trim: true },
-		streetDetails: { type: String, required: true, trim: true },
-		country: { type: String, default: "Vietnam" },
-		isDefault: { type: Boolean, default: false },
 	},
-	{ _id: false }, // Giữ _id: false nếu bạn không cần thao tác trên từng địa chỉ
-);
+	provinceOrCity: { type: String, required: true, trim: true },
+	district: { type: String, required: true, trim: true },
+	ward: { type: String, required: true, trim: true },
+	streetDetails: { type: String, required: true, trim: true },
+	country: { type: String, default: "Vietnam" },
+	isDefault: { type: Boolean, default: false },
+});
 
 const wishlistItemSchema = new Schema<IWishlistItem>({
 	book: { type: Schema.Types.ObjectId, ref: "Book", required: true },

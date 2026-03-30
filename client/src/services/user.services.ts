@@ -7,6 +7,7 @@ import type {
 	ChangePasswordResponseDto,
 	DeleteAccountResponseDto,
 	DeleteAddressResponseDto,
+	GetAddressResponseDto,
 	GetProfileResponseDto,
 	SetDefaultAddressResponseDto,
 	UpdateAddressRequestDto,
@@ -62,27 +63,36 @@ export const userService = {
 		}
 	},
 
-	updateAddress: async (index: number, data: UpdateAddressRequestDto): Promise<UpdateAddressResponseDto> => {
+	getAddresses: async (): Promise<GetAddressResponseDto> => {
 		try {
-			const response = await api.put<UpdateAddressResponseDto>(`/users/addresses/${index}`, data);
+			const response = await api.get<GetAddressResponseDto>("/users/addresses");
+			return response.data;
+		} catch (error: any) {
+			throw mapApiError(error, "Network error: Could not fetch addresses.");
+		}
+	},
+
+	updateAddress: async (id: string, data: UpdateAddressRequestDto): Promise<UpdateAddressResponseDto> => {
+		try {
+			const response = await api.put<UpdateAddressResponseDto>(`/users/addresses/${id}`, data);
 			return response.data;
 		} catch (error: any) {
 			throw mapApiError(error, "Network error: Could not update address.");
 		}
 	},
 
-	deleteAddress: async (index: number): Promise<DeleteAddressResponseDto> => {
+	deleteAddress: async (id: string): Promise<DeleteAddressResponseDto> => {
 		try {
-			const response = await api.delete<DeleteAddressResponseDto>(`/users/addresses/${index}`);
+			const response = await api.delete<DeleteAddressResponseDto>(`/users/addresses/${id}`);
 			return response.data;
 		} catch (error: any) {
 			throw mapApiError(error, "Network error: Could not delete address.");
 		}
 	},
 
-	setDefaultAddress: async (index: number): Promise<SetDefaultAddressResponseDto> => {
+	setDefaultAddress: async (id: string): Promise<SetDefaultAddressResponseDto> => {
 		try {
-			const response = await api.patch<SetDefaultAddressResponseDto>(`/users/addresses/${index}/default`);
+			const response = await api.patch<SetDefaultAddressResponseDto>(`/users/addresses/${id}/default`);
 			return response.data;
 		} catch (error: any) {
 			throw mapApiError(error, "Network error: Could not set default address.");

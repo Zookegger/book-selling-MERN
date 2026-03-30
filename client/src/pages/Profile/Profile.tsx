@@ -1,4 +1,3 @@
-import Loading from "@components/common/Loading";
 import {
     Alert,
     Box,
@@ -8,12 +7,10 @@ import {
     Stack,
     Tab,
     Tabs,
-    Typography,
 } from "@mui/material";
-import type { UserDto } from "@my-types/user.dto";
-import userService from "@services/user.services";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import ProfileTab from "./ProfileTab";
+import AddressesTab from "./AddressesTab";
 
 // ─── CustomTabPanel ───────────────────────────────────────────────────────────
 
@@ -33,11 +30,11 @@ function CustomTabPanel({ children, value, index, ...other }: TabPanelProps) {
             style={{ flexGrow: 1 }}
             {...other}
         >
-            {value === index && (
-                <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
+            <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
+                <Box sx={{ flex: 1 }}>
                     {children}
                 </Box>
-            )}
+            </Box>
         </div>
     );
 }
@@ -45,8 +42,6 @@ function CustomTabPanel({ children, value, index, ...other }: TabPanelProps) {
 // ─── ProfilePage ──────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-    const [profile, setProfile] = useState<UserDto | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [tabValue, setTabValue] = useState(0);
     const [snack, setSnack] = useState<{
@@ -55,38 +50,19 @@ export default function ProfilePage() {
         severity: "success" | "error";
     }>({ open: false, msg: "", severity: "success" });
 
-    useEffect(() => {
-        async function fetchProfile() {
-            setIsLoading(true);
-            try {
-                const res = await userService.fetchProfile();
-                if (res) setProfile(res);
-            } catch (error: any) {
-                setErrorMessage(error.message);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        fetchProfile();
-    }, []);
-
     function handleSnack(msg: string, severity: "success" | "error") {
         setSnack({ open: true, msg, severity });
     }
 
-    if (isLoading) return <Loading />;
-
-    if (!profile) {
-        return (
-            <Container maxWidth="sm" sx={{ mt: 10, textAlign: "center" }}>
-                <Typography color="text.secondary">No profile found.</Typography>
-            </Container>
-        );
-    }
-
     return (
-        <Container maxWidth="md" sx={{ p: 0 }}>
+        <Container maxWidth="md" sx={{ p: 0, mt: 5 }}>
+            {errorMessage && (
+                <Alert severity="error" sx={{ mb: 2, mx: 3, mt: 3 }}>
+                    {errorMessage}
+                </Alert>
+            )}
             <Paper>
+
                 <Stack direction="row">
                     <Tabs
                         value={tabValue}
@@ -107,14 +83,9 @@ export default function ProfilePage() {
                     </Tabs>
 
                     <CustomTabPanel value={tabValue} index={0}>
-                        {errorMessage && (
-                            <Alert severity="error" sx={{ mb: 2, mx: 3, mt: 3 }}>
-                                {errorMessage}
-                            </Alert>
-                        )}
+
                         <ProfileTab
-                            profile={profile}
-                            onProfileUpdate={setProfile}
+                            setErrorMessage={setErrorMessage}
                             onSnack={handleSnack}
                         />
                     </CustomTabPanel>
@@ -124,7 +95,10 @@ export default function ProfilePage() {
                     </CustomTabPanel>
 
                     <CustomTabPanel value={tabValue} index={2}>
-                        {/* TODO: AddressesTab */}
+                        <AddressesTab
+                            setErrorMessage={setErrorMessage}
+                            onSnack={handleSnack}
+                        />
                     </CustomTabPanel>
                 </Stack>
             </Paper>
