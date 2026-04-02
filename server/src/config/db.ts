@@ -1,4 +1,7 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 /**
  * Kết nối tới MongoDB bằng Mongoose.
