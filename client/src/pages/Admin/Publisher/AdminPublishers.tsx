@@ -73,7 +73,6 @@ export default function AdminPublishersPage() {
 				search: search.trim() || undefined,
 			});
 			setPublishers(result.data);
-			success("Danh sách nhà xuất bản đã được cập nhật.");
 		} catch (err) {
 			console.error(err);
 			error("Không thể tải danh sách nhà xuất bản.");
@@ -174,6 +173,7 @@ export default function AdminPublishersPage() {
 		try {
 			await publisherService.deletePublisher(id);
 			await fetchPublishers();
+			success("Nhà xuất bản đã được xóa thành công.");
 		} catch (error) {
 			console.error(error);
 		} finally {
