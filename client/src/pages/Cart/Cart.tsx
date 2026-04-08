@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Alert,
 	Box,
@@ -10,7 +10,7 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-import useCart from "@hooks/useCart";
+import useOrder from "@hooks/useOrder";
 import type { CartItemDto } from "@my-types/cart.dto";
 import type { BookDto, BookFormatType } from "@my-types/book.dto";
 
@@ -41,14 +41,16 @@ const getBookInfo = (item: CartItemDto): { title: string; coverImage?: string } 
 const DISPLAY_CURRENCY = "VND";
 
 const CartPage = () => {
-	const { cart, setCart, itemCount, isLoading, isMutating, updateItem, removeItem } = useCart({
-		autoFetchCart: true,
-	});
+	const { cart, setCart, itemCount, isLoading, isMutating, updateItem, removeItem, fetchCart } = useOrder();
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
 		open: false,
 		message: "",
 		severity: "success",
 	});
+
+	useEffect(() => {
+		void fetchCart();
+	}, [fetchCart]);
 
 	const handleUpdateQuantity = async (item: CartItemDto, nextQuantity: number) => {
 		if (isMutating) return;

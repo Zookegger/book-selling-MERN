@@ -1,6 +1,6 @@
 import { ROUTES } from "@constants/index";
 import useAuth from "@hooks/useAuth";
-import useCart from "@hooks/useCart";
+import useOrder from "@hooks/useOrder";
 import { AppBar, Box, Button, Container, Menu, MenuItem, Toolbar, Typography } from "@mui/material";
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { Link, Outlet } from "react-router-dom";
@@ -11,7 +11,7 @@ type MainLayoutProps = {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
 	const { isAuthenticated, user, logout } = useAuth();
-	const { itemCount, fetchItemCount } = useCart();
+	const { itemCount, fetchItemCount } = useOrder();
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const open = Boolean(anchorEl);
 

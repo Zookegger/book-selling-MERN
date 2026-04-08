@@ -3,6 +3,7 @@ import "./App.css";
 import router from "@components/common/Router";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { AuthProvider } from "@contexts/AuthContext";
+import { OrderProvider } from "@contexts/OrderContext";
 
 const theme = createTheme({
   components: {
@@ -24,10 +25,12 @@ function App() {
 
   return (
     <AuthProvider>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <RouterProvider router={router} />
-      </ThemeProvider>
+      <OrderProvider>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <RouterProvider router={router} />
+        </ThemeProvider>
+      </OrderProvider>
     </AuthProvider>
   );
 }

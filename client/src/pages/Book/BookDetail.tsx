@@ -16,7 +16,7 @@ import {
 	Snackbar,
 	Alert,
 } from "@mui/material";
-import useCart from "@hooks/useCart";
+import useOrder from "@hooks/useOrder";
 import { BookService } from "@services/book.services";
 import type { BookDto, BookFormatType } from "@my-types/book.dto";
 
@@ -26,7 +26,7 @@ const BookDetail = () => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [quantity, setQuantity] = useState<number>(1);
 	const [selectedFormat, setSelectedFormat] = useState<BookFormatType | "">("");
-	const { addItem, isMutating } = useCart();
+	const { addItem, isMutating } = useOrder();
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
 		open: false,
 		message: "",
