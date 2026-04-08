@@ -4,3 +4,4 @@ export * as userController from "./user.controller";
 export * as authorController from "./author.controller";
 export * as publisherController from "./publisher.controller";
 export * as categoryController from "./category.controller";
+export * as cartController from "./cart.controller";
