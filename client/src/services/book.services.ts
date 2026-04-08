@@ -4,13 +4,14 @@ import api, { mapApiError } from "./api";
 interface PaginatedBooks {
     data: BookDto[];
     total: number;
-    // ... thêm các trường khác nếu Backend trả về
+    page?: number;
+    totalPages?: number;
 }
 
 export const BookService = {
-	fetchDetail: async (bookId: string): Promise<BookDto> => {
+	fetchDetail: async (bookIdentifier: string): Promise<BookDto> => {
 		try {
-			const response = await api.get<BookDto>(`/books/${bookId}`);
+			const response = await api.get<BookDto>(`/books/${bookIdentifier}`);
 			return response.data;
 		} catch (error: any) {
 			throw mapApiError(error, "Network error: Could not fetch book detail.");

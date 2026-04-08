@@ -1,22 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { 
-    Container, Typography, Box, Grid, Card, 
-    CardMedia, CardContent, Breadcrumbs, 
-    Link as MuiLink, Divider, Chip
+import {
+    Typography, Box, Breadcrumbs,
+    Link as MuiLink, Divider,
 } from "@mui/material";
 
 import WishlistButton from "@components/common/WishlistButton";
 // Import corresponding Services and Types
 import { categoryService, type ICategory } from "@services/category.service";
-import { BookService } from "@services/book.services";
-import type { BookDto } from "@my-types/book.dto";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
+import BookGrid from "@pages/Book/BookGrid";
 
 const CategoryDetail: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
     const [category, setCategory] = useState<ICategory | null>(null);
-    const [books, setBooks] = useState<BookDto[]>([]); 
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -24,21 +21,11 @@ const CategoryDetail: React.FC = () => {
             if (!slug) return;
             setLoading(true);
             try {
-                // 1. Fetch all categories (limit 100 to be safe) and find the one matching the slug
-                const catRes = await categoryService.getList(1, 100, ""); 
-                
-                // Manually filter out the category that matches the URL slug
+                const catRes = await categoryService.getList(1, 100, "");
                 const currentCat = catRes.data?.find((c: any) => c.slug === slug);
 
                 if (currentCat) {
                     setCategory(currentCat);
-                    
-                    // 2. Fetch books by slug
-                    const bookRes = await BookService.fetchAll({ 
-                        category: slug, 
-                        limit: 20 
-                    });
-                    setBooks(bookRes.data || []);
                 } else {
                     console.warn("Category not found for this slug:", slug);
                 }
@@ -54,9 +41,9 @@ const CategoryDetail: React.FC = () => {
     if (loading) return <LoadingSkeleton />;
 
     return (
-        <Container maxWidth="xl" sx={{ py: 6 }}>
-            {/* Breadcrumbs - Navigation bar */}
-            <Breadcrumbs sx={{ mb: 4, px: 2 }}>
+        <>
+            {/* Breadcrumbs */}
+            <Breadcrumbs sx={{ mb: 4, px: 0.5 }}>
                 <MuiLink component={Link} to="/categories" underline="hover" color="inherit">
                     Categories
                 </MuiLink>
@@ -65,25 +52,73 @@ const CategoryDetail: React.FC = () => {
                 </Typography>
             </Breadcrumbs>
 
-            {/* Header Banner - Display category name and description */}
-            <Box sx={{ 
-                mb: 8, p: { xs: 4, md: 6 }, 
-                bgcolor: 'primary.main', 
-                color: 'white', 
-                borderRadius: 6,
-                textAlign: 'center',
-                boxShadow: '0 10px 40px rgba(25, 118, 210, 0.2)'
-            }}>
-                <Typography variant="h2" fontWeight={900} gutterBottom sx={{ letterSpacing: '-0.02em' }}>
+            {/* Header Banner */}
+            <Box
+                sx={{
+                    mb: 8,
+                    p: { xs: 4, md: 6 },
+                    bgcolor: "primary.main",
+                    color: "white",
+                    borderRadius: 5,
+                    textAlign: "center",
+                    boxShadow: "0 12px 40px rgba(25,118,210,0.22)",
+                    position: "relative",
+                    overflow: "hidden",
+                    // Subtle decorative ring
+                    "&::before": {
+                        content: '""',
+                        position: "absolute",
+                        top: -60,
+                        right: -60,
+                        width: 220,
+                        height: 220,
+                        borderRadius: "50%",
+                        bgcolor: "rgba(255,255,255,0.07)",
+                        pointerEvents: "none",
+                    },
+                    "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        bottom: -80,
+                        left: -40,
+                        width: 280,
+                        height: 280,
+                        borderRadius: "50%",
+                        bgcolor: "rgba(255,255,255,0.05)",
+                        pointerEvents: "none",
+                    },
+                }}
+            >
+                <Typography
+                    variant="h2"
+                    fontWeight={900}
+                    gutterBottom
+                    sx={{ letterSpacing: "-0.02em", position: "relative", zIndex: 1 }}
+                >
                     {category?.name}
                 </Typography>
-                <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 400, maxWidth: 800, mx: 'auto' }}>
+                <Typography
+                    variant="h6"
+                    sx={{
+                        opacity: 0.88,
+                        fontWeight: 400,
+                        maxWidth: 680,
+                        mx: "auto",
+                        position: "relative",
+                        zIndex: 1,
+                    }}
+                >
                     {category?.description || "Explore our special collection of books in this topic."}
                 </Typography>
             </Box>
 
             <Divider sx={{ mb: 6 }}>
-                <Typography variant="h5" fontWeight={800} color="text.secondary" sx={{ px: 3 }}>
+                <Typography
+                    variant="overline"
+                    fontWeight={800}
+                    color="text.secondary"
+                    sx={{ px: 3, fontSize: "0.75rem", letterSpacing: 2 }}
+                >
                     BOOK LIST
                 </Typography>
             </Divider>
@@ -226,6 +261,8 @@ const CategoryDetail: React.FC = () => {
                 )}
             </Grid>
         </Container>
+            <BookGrid categorySlug={slug} pageSize={20} />
+        </>
     );
 };
 

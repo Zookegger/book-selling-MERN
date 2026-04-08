@@ -17,7 +17,7 @@ import type { BookDto, BookFormatType } from "@my-types/book.dto";
 const formatLabel = (format: BookFormatType) => {
 	switch (format) {
 		case "physical":
-			return "Bản in";
+			return "Physical";
 		case "digital":
 			return "Ebook";
 		case "audiobook":
@@ -64,11 +64,11 @@ const CartPage = () => {
 				selectedFormat: item.selectedFormat,
 				quantity: nextQuantity,
 			});
-			setSnackbar({ open: true, message: "Đã cập nhật số lượng.", severity: "success" });
+			setSnackbar({ open: true, message: "Quantity updated.", severity: "success" });
 		} catch (error: any) {
 			setSnackbar({
 				open: true,
-				message: error?.message ?? "Không thể cập nhật số lượng.",
+				message: error?.message ?? "Unable to update quantity.",
 				severity: "error",
 			});
 		}
@@ -85,11 +85,11 @@ const CartPage = () => {
 				bookId: String(bookId),
 				selectedFormat: item.selectedFormat,
 			});
-			setSnackbar({ open: true, message: "Đã xoá sản phẩm khỏi giỏ.", severity: "success" });
+			setSnackbar({ open: true, message: "Item removed from cart.", severity: "success" });
 		} catch (error: any) {
 			setSnackbar({
 				open: true,
-				message: error?.message ?? "Không thể xoá sản phẩm.",
+				message: error?.message ?? "Unable to remove item.",
 				severity: "error",
 			});
 		}
@@ -107,9 +107,9 @@ const CartPage = () => {
 		<>
 			<Box mt={4} mb={2}>
 				<Typography variant="h4" fontWeight={800}>
-					Giỏ hàng
+					Shopping Cart
 				</Typography>
-				<Typography color="text.secondary">Bạn đang có {itemCount} sản phẩm trong giỏ.</Typography>
+				<Typography color="text.secondary">You have {itemCount} items in your cart.</Typography>
 			</Box>
 
 			<Box
@@ -150,10 +150,10 @@ const CartPage = () => {
 													{info.title}
 												</Typography>
 												<Typography variant="body2" color="text.secondary">
-													Định dạng: {formatLabel(item.selectedFormat)}
+													Format: {formatLabel(item.selectedFormat)}
 												</Typography>
 												<Typography variant="body2" color="text.secondary">
-													Đơn giá: {Number(item.unitPrice).toLocaleString()} {DISPLAY_CURRENCY}
+													Unit price: {Number(item.unitPrice).toLocaleString()} {DISPLAY_CURRENCY}
 												</Typography>
 											</Box>
 
@@ -162,7 +162,7 @@ const CartPage = () => {
 												<TextField
 													size="small"
 													type="number"
-													label="SL"
+													label="Qty"
 													value={item.quantity}
 													inputProps={{ min: 1 }}
 													onChange={(e) => {
@@ -190,7 +190,7 @@ const CartPage = () => {
 													disabled={isMutating}
 													onClick={() => void handleRemoveItem(item)}
 												>
-													Xoá
+													Remove
 												</Button>
 											</Box>
 										</Box>
@@ -209,19 +209,19 @@ const CartPage = () => {
 				<Box sx={{ width: { xs: "100%", md: 380 }, flexShrink: 0 }}>
 					<Card sx={{ p: 2 }}>
 						<Typography variant="h6" fontWeight={800} mb={1}>
-							Tổng tiền
+							Order Summary
 						</Typography>
 						<Divider sx={{ mb: 2 }} />
 
 						<Box display="flex" justifyContent="space-between" mb={1}>
-							<Typography color="text.secondary">Tạm tính</Typography>
+							<Typography color="text.secondary">Subtotal</Typography>
 							<Typography fontWeight={700}>
 								{Number(cart?.subtotal ?? 0).toLocaleString()} {DISPLAY_CURRENCY}
 							</Typography>
 						</Box>
 
 						<Box display="flex" justifyContent="space-between" mb={1}>
-							<Typography color="text.secondary">Giảm giá</Typography>
+							<Typography color="text.secondary">Discount</Typography>
 							<Typography fontWeight={700}>
 								- {Number(cart?.discountAmount ?? 0).toLocaleString()} {DISPLAY_CURRENCY}
 							</Typography>
@@ -230,14 +230,14 @@ const CartPage = () => {
 						<Divider sx={{ my: 2 }} />
 
 						<Box display="flex" justifyContent="space-between" mb={2}>
-							<Typography fontWeight={800}>Tổng cộng</Typography>
+							<Typography fontWeight={800}>Total</Typography>
 							<Typography fontWeight={900} color="primary">
 								{Number(cart?.totalAmount ?? 0).toLocaleString()} {DISPLAY_CURRENCY}
 							</Typography>
 						</Box>
 
 						<Button variant="contained" fullWidth disabled={!cart || cart.items.length === 0}>
-							Thanh toán
+							Checkout
 						</Button>
 					</Card>
 				</Box>
