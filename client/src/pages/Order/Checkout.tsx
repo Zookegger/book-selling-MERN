@@ -35,6 +35,7 @@ const CheckoutPage = () => {
 	const navigate = useNavigate();
 	const { cart, fetchCart, isLoading } = useOrder();
 	const [paymentMethod, setPaymentMethod] = useState<PaymentMethodDto>("cod");
+	const [couponCode, setCouponCode] = useState("");
 	const [shippingAddress, setShippingAddress] = useState(DEFAULT_ADDRESS);
 	const [savedAddresses, setSavedAddresses] = useState<AddressDto[]>([]);
 	const [selectedAddressId, setSelectedAddressId] = useState<string>("");
@@ -88,6 +89,7 @@ const CheckoutPage = () => {
 
 		const payload: ConfirmOrderRequestDto = {
 			paymentMethod,
+			couponCode: couponCode.trim() || undefined,
 			shippingAddress,
 		};
 
@@ -215,6 +217,12 @@ const CheckoutPage = () => {
 							<MenuItem value="credit_card">Thẻ tín dụng</MenuItem>
 							<MenuItem value="paypal">PayPal</MenuItem>
 						</TextField>
+
+						<TextField
+							label="Mã giảm giá (nếu có)"
+							value={couponCode}
+							onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+						/>
 					</Stack>
 				</Card>
 

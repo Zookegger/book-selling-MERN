@@ -57,5 +57,6 @@ export interface ConfirmOrderRequestDto {
 	paymentMethod?: PaymentMethodDto;
 	note?: string;
 	shippingAddress?: OrderAddressDto;
+	couponCode?: string;
 }
 

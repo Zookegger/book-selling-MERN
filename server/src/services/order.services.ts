@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import { Cart, Order, User } from "@models";
-import type { PaymentMethod } from "@models/order.model";
+import { Book, Cart, Coupon, Order, Payment, User } from "@models";
+import type { PaymentMethod, PaymentStatus } from "@models/order.model";
 import { HttpError } from "@middleware/error.middleware";
 import { EmailService } from "./email.service";
 
@@ -18,12 +18,37 @@ type ConfirmOrderInput = {
 	paymentMethod?: PaymentMethod;
 	note?: string;
 	shippingAddress?: ShippingAddressInput;
+	couponCode?: string;
 };
 
 const ensureValidObjectId = (value: string, label = "ID"): void => {
 	if (!mongoose.Types.ObjectId.isValid(value)) {
 		throw new HttpError(`Invalid ${label}`, 400);
 	}
+};
+
+const calculateCouponDiscount = (subtotal: number, coupon: any): number => {
+	if (subtotal < Number(coupon.minOrderAmount ?? 0)) {
+		throw new HttpError(`Order does not meet minimum amount for coupon ${coupon.code}`, 400);
+	}
+
+	let discount = 0;
+	if (coupon.type === "percentage") {
+		discount = subtotal * (Number(coupon.value) / 100);
+		if (coupon.maxDiscountAmount != null) {
+			discount = Math.min(discount, Number(coupon.maxDiscountAmount));
+		}
+	} else {
+		discount = Number(coupon.value);
+	}
+
+	discount = Number(discount.toFixed(2));
+	return Math.min(discount, subtotal);
+};
+
+const resolvePaymentStatus = (paymentMethod: PaymentMethod): PaymentStatus => {
+	// Mô phỏng xử lý thanh toán: COD là pending, các phương thức online đánh dấu paid.
+	return paymentMethod === "cod" ? "pending" : "paid";
 };
 
 export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) => {
@@ -58,6 +83,16 @@ export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) 
 		if (!book || !book._id) throw new HttpError("Invalid cart item: book not found", 400);
 
 		const matchedFormat = book.formats?.find((f: any) => f.formatType === item.selectedFormat);
+		if (!matchedFormat || matchedFormat.active === false) {
+			throw new HttpError(`Selected format is not available for book ${book.title}`, 400);
+		}
+
+		if (item.selectedFormat === "physical") {
+			const stock = Number(matchedFormat.stockQuantity ?? 0);
+			if (stock < Number(item.quantity)) {
+				throw new HttpError(`Insufficient stock for "${book.title}"`, 400);
+			}
+		}
 
 		return {
 			book: book._id,
@@ -71,10 +106,30 @@ export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) 
 		};
 	});
 
-	const subtotal = Number(cart.subtotal.toFixed(2));
-	const discountAmount = Number((cart.discountAmount ?? 0).toFixed(2));
+	const subtotal = Number(cart.items.reduce((sum: number, i: any) => sum + i.unitPrice * i.quantity, 0).toFixed(2));
+	let discountAmount = Number((cart.discountAmount ?? 0).toFixed(2));
+	let appliedCouponCode = cart.couponCode;
+
+	if (dto.couponCode) {
+		const couponCode = dto.couponCode.trim().toUpperCase();
+		const coupon = await Coupon.findOne({ code: couponCode, isActive: true }).exec();
+		if (!coupon) throw new HttpError("Coupon is invalid or inactive", 400);
+
+		const now = new Date();
+		if (coupon.startsAt && coupon.startsAt > now) throw new HttpError("Coupon is not active yet", 400);
+		if (coupon.expiresAt && coupon.expiresAt < now) throw new HttpError("Coupon has expired", 400);
+		if (coupon.usageLimit != null && coupon.usageCount >= coupon.usageLimit) {
+			throw new HttpError("Coupon usage limit exceeded", 400);
+		}
+
+		discountAmount = calculateCouponDiscount(subtotal, coupon);
+		appliedCouponCode = coupon.code;
+	}
+
 	const shippingFee = 0;
 	const totalAmount = Number((subtotal - discountAmount + shippingFee).toFixed(2));
+	const paymentMethod = dto.paymentMethod ?? "cod";
+	const paymentStatus = resolvePaymentStatus(paymentMethod);
 
 	const order = await Order.create({
 		user: user._id,
@@ -82,9 +137,9 @@ export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) 
 		shippingAddress,
 		status: "confirmed",
 		confirmedAt: new Date(),
-		paymentMethod: dto.paymentMethod ?? "cod",
-		paymentStatus: "pending",
-		couponCode: cart.couponCode,
+		paymentMethod,
+		paymentStatus,
+		couponCode: appliedCouponCode,
 		discountAmount,
 		shippingFee,
 		subtotal,
@@ -92,6 +147,40 @@ export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) 
 		note: dto.note,
 		placedAt: new Date(),
 	});
+
+	await Payment.create({
+		order: order._id,
+		user: user._id,
+		method: paymentMethod,
+		status: paymentStatus,
+		amount: totalAmount,
+		currency: cart.currency ?? "VND",
+		provider: paymentMethod === "paypal" ? "paypal" : paymentMethod === "credit_card" ? "stripe" : undefined,
+		paidAt: paymentStatus === "paid" ? new Date() : undefined,
+		metadata: {
+			source: "checkout",
+		},
+	});
+
+	// Trừ tồn kho cho định dạng physical
+	for (const item of cart.items as any[]) {
+		if (item.selectedFormat !== "physical") continue;
+		await Book.updateOne(
+			{ _id: item.book._id, "formats.formatType": "physical" },
+			{ $inc: { "formats.$.stockQuantity": -Number(item.quantity) } },
+		).exec();
+	}
+
+	// Ghi nhận sử dụng coupon
+	if (appliedCouponCode) {
+		await Coupon.findOneAndUpdate(
+			{ code: appliedCouponCode },
+			{
+				$inc: { usageCount: 1 },
+				$push: { usageHistory: { user: user._id, order: order._id, usedAt: new Date() } },
+			},
+		).exec();
+	}
 
 	// Sau khi đặt hàng thành công, làm rỗng giỏ.
 	cart.items = [];

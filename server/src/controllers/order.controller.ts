@@ -11,6 +11,8 @@ export const confirmOrder = async (req: AuthRequest, res: Response, next: NextFu
 		const order = await orderServices.confirmOrder(userId, {
 			paymentMethod: req.body.paymentMethod,
 			note: req.body.note,
+			shippingAddress: req.body.shippingAddress,
+			couponCode: req.body.couponCode,
 		});
 
 		return res.status(201).json(order);

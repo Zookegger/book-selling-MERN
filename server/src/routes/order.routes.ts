@@ -18,6 +18,7 @@ orderRouter.post(
 			.isIn(["cod", "credit_card", "bank_transfer", "paypal"])
 			.withMessage("Payment method must be cod, credit_card, bank_transfer, or paypal"),
 		body("note").optional().isString().withMessage("Note must be a string"),
+		body("couponCode").optional().isString().withMessage("Coupon code must be a string"),
 		body("shippingAddress").optional().isObject().withMessage("Shipping address must be an object"),
 		body("shippingAddress.recipientName")
 			.optional()
