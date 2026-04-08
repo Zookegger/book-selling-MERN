@@ -11,6 +11,8 @@ import {
 import React, { useState } from "react";
 import ProfileTab from "./ProfileTab";
 import AddressesTab from "./AddressesTab";
+import ChangePasswordTab from "./ChangePasswordTab";
+import OrderHistoryTab from "./OrderHistoryTab"; 
 
 // ─── CustomTabPanel ───────────────────────────────────────────────────────────
 
@@ -61,8 +63,8 @@ export default function ProfilePage() {
                     {errorMessage}
                 </Alert>
             )}
-            <Paper>
 
+            <Paper>
                 <Stack direction="row">
                     <Tabs
                         value={tabValue}
@@ -72,37 +74,46 @@ export default function ProfilePage() {
                             indicator: {
                                 sx: {
                                     left: 0,
-                                    right: "unset"
-                                }
-                            }
+                                    right: "unset",
+                                },
+                            },
                         }}
                     >
                         <Tab value={0} label="Profile" />
                         <Tab value={1} label="Order History" />
                         <Tab value={2} label="Addresses" />
+                        <Tab value={3} label="Change Password" />
                     </Tabs>
 
+                    {/* PROFILE */}
                     <CustomTabPanel value={tabValue} index={0}>
-
                         <ProfileTab
                             setErrorMessage={setErrorMessage}
                             onSnack={handleSnack}
                         />
                     </CustomTabPanel>
 
+                    {/* 🔥 ORDER HISTORY (FIX Ở ĐÂY) */}
                     <CustomTabPanel value={tabValue} index={1}>
-                        {/* TODO: OrderHistoryTab */}
+                        <OrderHistoryTab />
                     </CustomTabPanel>
 
+                    {/* ADDRESSES */}
                     <CustomTabPanel value={tabValue} index={2}>
                         <AddressesTab
                             setErrorMessage={setErrorMessage}
                             onSnack={handleSnack}
                         />
                     </CustomTabPanel>
+
+                    {/* CHANGE PASSWORD */}
+                    <CustomTabPanel value={tabValue} index={3}>
+                        <ChangePasswordTab onSnack={handleSnack} />
+                    </CustomTabPanel>
                 </Stack>
             </Paper>
 
+            {/* SNACKBAR */}
             <Snackbar
                 open={snack.open}
                 autoHideDuration={3500}
