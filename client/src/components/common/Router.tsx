@@ -1,22 +1,23 @@
 import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router-dom";
 import { Suspense, type ReactElement } from "react";
 import MainLayout from "@layout/MainLayout";
-import { RootErrorBoundaryPage, HomePage, LoginPage, NotFoundPage, RegisterPage, UnauthorizePage, VerifyEmailPage, ResendVerificationPage, ProfilePage, CategoryPage } from "@pages";
+import LoadingSkeleton from "@components/layout/LoadingSkeleton";
+import useAuth from "@hooks/useAuth";
+import { ROUTES } from "@constants/index";
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryPage } from "@pages";
 import ProtectedRoute from "./ProtectedRoute";
+import CategoryList from "@pages/Category/List";
 
-export const ROUTER_PATHS = {
-    HOME: "/",
-    LOGIN: "/account/sign-in",
-    REGISTER: "/account/sign-up",
-    FORGOT_PASSWORD: "/account/forgot-password",
-    UNAUTHORIZE: "/unauthorized",
-    ERROR: "/error",
-    VERIFY_EMAIL: "/verify-email",
-    RESEND_VERIFICATION: "/resend-verification",
-    PROFILE: "/account/profile",
-    CATEGORY: "/categories"
-    
-}
+export const ROUTER_PATHS = ROUTES;
+
+const RequireAuth = ({ children }: { children: ReactElement }) => {
+	const { isLoading, isAuthenticated } = useAuth();
+	const location = useLocation();
+
+	if (isLoading) return <LoadingSkeleton />;
+	if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
+	return children;
+};
 
 const router = createBrowserRouter([
     {
@@ -93,11 +94,14 @@ const router = createBrowserRouter([
                 element: <Navigate to={ROUTES.NOT_FOUND} replace />,
             },
             {
-                path: ROUTER_PATHS.CATEGORY,
-                element: <ProtectedRoute allowedRoles={["admin"]}><CategoryPage /></ProtectedRoute>
+                path: "/categories",
+                element: <CategoryList />
             },
         ]
     }
 ]);
 
 export default router;
+
+
+

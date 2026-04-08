@@ -12,6 +12,7 @@ export const ROUTES = {
 	BOOKS: "/books",
 	BOOK_DETAIL: "/books/:bookId",
 	BOOK: (bookId: string) => `/books/${bookId}`,
+	CATEGORY: "/categories",
 } as const;
 
 export const ROUTER_PATHS = ROUTES;
