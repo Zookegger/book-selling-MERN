@@ -1,7 +1,3 @@
-Dưới đây là bản dịch tiếng Việt cho phần hướng dẫn sử dụng các tập lệnh (scripts) và thiết lập kiểm thử cho dự án của bạn.
-
----
-
 # Hướng dẫn Sử dụng & Các câu lệnh trong Dự án
 
 Tài liệu này hướng dẫn các câu lệnh thiết yếu để chạy, xây dựng (build), khởi tạo dữ liệu (seed) và kiểm thử ứng dụng **book-selling-MERN**.
