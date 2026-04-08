@@ -71,6 +71,7 @@ export interface ListBooksQueryDto {
   limit?: number;
   search?: string;
   language?: string;
+  category?: string;
   order?: "asc" | "desc";
 }
 

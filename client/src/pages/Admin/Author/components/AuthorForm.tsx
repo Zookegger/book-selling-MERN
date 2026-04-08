@@ -81,7 +81,7 @@ export default function AuthorForm({ author, onSubmit, onCancel, isLoading = fal
 		<div className="author-form-overlay">
 			<div className="author-form">
 				<div className="author-form__header">
-					<h2>{author ? "Chỉnh Sửa Tác Giả" : "Thêm Tác Giả Mới"}</h2>
+					<h2>{author ? "Edit Author" : "Add New Author"}</h2>
 					<button
 						type="button"
 						className="author-form__close"
@@ -95,13 +95,13 @@ export default function AuthorForm({ author, onSubmit, onCancel, isLoading = fal
 				<form onSubmit={handleSubmit} className="author-form__body">
 					<div className="form-group">
 						<label htmlFor="name">
-							Tên Tác Giả <span className="required">*</span>
+							Author Name <span className="required">*</span>
 						</label>
 						<input
 							id="name"
 							type="text"
 							name="name"
-							placeholder="Nhập tên tác giả"
+							placeholder="Enter author name"
 							value={formData.name || ""}
 							onChange={handleChange}
 							disabled={isLoading}
@@ -118,7 +118,7 @@ export default function AuthorForm({ author, onSubmit, onCancel, isLoading = fal
 							id="email"
 							type="email"
 							name="email"
-							placeholder="Nhập email"
+							placeholder="Enter email"
 							value={formData.email || ""}
 							onChange={handleChange}
 							disabled={isLoading || !!author} // Email không thể chỉnh sửa khi cập nhật
@@ -128,7 +128,7 @@ export default function AuthorForm({ author, onSubmit, onCancel, isLoading = fal
 					</div>
 
 					<div className="form-group">
-						<label htmlFor="birthDate">Ngày Sinh</label>
+						<label htmlFor="birthDate">Birth Date</label>
 						<input
 							id="birthDate"
 							type="date"
@@ -157,11 +157,11 @@ export default function AuthorForm({ author, onSubmit, onCancel, isLoading = fal
 					</div>
 
 					<div className="form-group">
-						<label htmlFor="bio">Tiểu Sử</label>
+						<label htmlFor="bio">Biography</label>
 						<textarea
 							id="bio"
 							name="bio"
-							placeholder="Nhập tiểu sử tác giả"
+							placeholder="Enter author bio"
 							value={formData.bio || ""}
 							onChange={handleChange}
 							disabled={isLoading}
@@ -176,14 +176,14 @@ export default function AuthorForm({ author, onSubmit, onCancel, isLoading = fal
 							onClick={onCancel}
 							disabled={isLoading}
 						>
-							Hủy
+							Cancel
 						</button>
 						<button
 							type="submit"
 							className="btn btn-primary"
 							disabled={isLoading}
 						>
-							{isLoading ? "Đang lưu..." : author ? "Cập Nhật" : "Thêm Mới"}
+							{isLoading ? "Saving..." : author ? "Update" : "Add New"}
 						</button>
 					</div>
 				</form>

@@ -12,15 +12,29 @@ import { BookIcon, Headphones, TabletSmartphone } from "lucide-react";
 import { BookService } from "@services/book.services";
 import WishlistButton from "@components/common/WishlistButton";
 
+const API_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
 
 interface BookGridProps {
     books?: BookDto[];
     categorySlug?: string;
+    searchTerm?: string;
     pageSize?: number;
     wishlistMode?: boolean;
+    emptyStateTitle?: string;
+    emptyStateActionLabel?: string;
+    emptyStateActionTo?: string;
 }
 
-const BookGrid: React.FC<BookGridProps> = ({ books: initialBooks, categorySlug, pageSize = 20, wishlistMode = false }) => {
+const BookGrid: React.FC<BookGridProps> = ({
+    books: initialBooks,
+    categorySlug,
+    searchTerm,
+    pageSize = 20,
+    wishlistMode = false,
+    emptyStateTitle,
+    emptyStateActionLabel,
+    emptyStateActionTo,
+}) => {
     const isLocalSource = Array.isArray(initialBooks);
     const [books, setBooks] = useState<BookDto[]>(initialBooks || []);
     const [page, setPage] = useState(1);
@@ -30,7 +44,7 @@ const BookGrid: React.FC<BookGridProps> = ({ books: initialBooks, categorySlug, 
 
     useEffect(() => {
         setPage(1);
-    }, [categorySlug]);
+    }, [categorySlug, searchTerm]);
 
     useEffect(() => {
         if (!isLocalSource) return;
@@ -53,6 +67,7 @@ const BookGrid: React.FC<BookGridProps> = ({ books: initialBooks, categorySlug, 
             try {
                 const response = await BookService.fetchAll({
                     category: categorySlug,
+                    search: searchTerm,
                     page,
                     limit: pageSize,
                 });
@@ -77,7 +92,7 @@ const BookGrid: React.FC<BookGridProps> = ({ books: initialBooks, categorySlug, 
         };
 
         void loadBooks();
-    }, [categorySlug, isLocalSource, page, pageSize]);
+    }, [categorySlug, isLocalSource, page, pageSize, searchTerm]);
 
     const visibleBooks = isLocalSource
         ? books.slice((page - 1) * pageSize, page * pageSize)
@@ -108,13 +123,21 @@ const BookGrid: React.FC<BookGridProps> = ({ books: initialBooks, categorySlug, 
     }
 
     if (books.length === 0) {
+        const resolvedEmptyTitle =
+            emptyStateTitle ??
+            (searchTerm
+                ? `No books matched "${searchTerm}".`
+                : "No books found in this category.");
+        const resolvedEmptyActionLabel = emptyStateActionLabel ?? "Return to categories";
+        const resolvedEmptyActionTo = emptyStateActionTo ?? ROUTES.CATEGORY;
+
         return (
             <Box sx={{ py: 14, textAlign: "center" }}>
                 <Typography variant="h5" color="text.disabled" fontWeight={600} gutterBottom>
-                    No books found in this category.
+                    {resolvedEmptyTitle}
                 </Typography>
-                <Link to={ROUTES.CATEGORY} style={{ fontWeight: 700 }}>
-                    Return to categories
+                <Link to={resolvedEmptyActionTo} style={{ fontWeight: 700 }}>
+                    {resolvedEmptyActionLabel}
                 </Link>
             </Box>
         );
@@ -179,7 +202,7 @@ const BookGrid: React.FC<BookGridProps> = ({ books: initialBooks, categorySlug, 
                                         <Box
                                             component="img"
                                             className="cover-img"
-                                            src={book.coverImage || "https://via.placeholder.com/300x400?text=No+Cover"}
+                                            src={API_URL + book.coverImage || "https://via.placeholder.com/300x400?text=No+Cover"}
                                             alt={book.title}
                                             sx={{
                                                 width: "100%",
@@ -189,7 +212,6 @@ const BookGrid: React.FC<BookGridProps> = ({ books: initialBooks, categorySlug, 
                                                 transition: "transform 0.4s ease",
                                             }}
                                         />
-
                                         {/* Discount badge */}
                                         {hasDiscount && (
                                             <Box

@@ -16,14 +16,15 @@ export const ROUTES = {
 	BOOKS: "/books",
 	BOOK: (bookId: string) => `/books/${bookId}`,
 	BOOK_DETAIL: (bookIdentifier: string) => `/books/${bookIdentifier}`,
+	SEARCH: "/search",
 	
 	CATEGORY: "/categories",
 	WISHLIST: "/wishlist",
 	CATEGORY_DETAIL: (slug: string) => `/categories/${slug}`,
-
 	
 	ADMIN_DASHBOARD: "/admin",
 	ADMIN_PUBLISHERS: "/admin/publishers",
+	ADMIN_BOOKS: "/admin/books",
 	ADMIN_AUTHORS: "/admin/authors",
 	ADMIN_CATEGORIES: "/admin/categories",
 } as const;

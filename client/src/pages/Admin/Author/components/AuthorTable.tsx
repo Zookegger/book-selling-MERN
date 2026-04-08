@@ -11,7 +11,7 @@ export default function AuthorTable({ authors, onEdit, onDelete }: AuthorTablePr
 	const formatDate = (date: Date | string | undefined) => {
 		if (!date) return "-";
 		const d = new Date(date);
-		return d.toLocaleDateString("vi-VN");
+		return d.toLocaleDateString("en-US");
 	};
 
 	return (
@@ -19,12 +19,13 @@ export default function AuthorTable({ authors, onEdit, onDelete }: AuthorTablePr
 			<table className="author-table">
 				<thead>
 					<tr>
-						<th>Tên</th>
+						<th>Name</th>
 						<th>Email</th>
-						<th>Ngày Sinh</th>
+						<th>Birth Date</th>
 						<th>Website</th>
-						<th>Ngày Tạo</th>
-						<th>Hành Động</th>
+						<th>Created At</th>
+						<th>Updated At</th>
+						<th>Actions</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -39,25 +40,26 @@ export default function AuthorTable({ authors, onEdit, onDelete }: AuthorTablePr
 							<td>
 								{author.website ? (
 									<a href={author.website} target="_blank" rel="noopener noreferrer">
-										Xem
+										View
 									</a>
 								) : (
 									"-"
 								)}
 							</td>
 							<td>{formatDate(author.createdAt)}</td>
+							<td>{formatDate(author.updatedAt)}</td>
 							<td className="actions">
 								<button
 									className="btn btn-sm btn-edit"
 									onClick={() => onEdit(author)}
-									title="Chỉnh sửa"
+									title="Edit"
 								>
 									✎
 								</button>
 								<button
 									className="btn btn-sm btn-delete"
 									onClick={() => onDelete(author.id)}
-									title="Xóa"
+									title="Delete"
 								>
 									🗑
 								</button>

@@ -23,7 +23,7 @@ const storage = multer.diskStorage({
 // Filter
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
 	// Accept images for covers, and PDFs/EPUBs for the digital library
-	const allowedMimeTypes = ["image/jpeg", "image/png", "application/pdf", "application/epub+zip"];
+	const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf", "application/epub+zip"];
 
 	if (allowedMimeTypes.includes(file.mimetype)) {
 		cb(null, true);

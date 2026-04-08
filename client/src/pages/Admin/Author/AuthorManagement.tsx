@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { authorService, type ListAuthorsParams } from "@services/author.services";
 import type { AuthorDto, ListAuthorsResponseDto } from "@my-types/author.dto";
 import { ApiError } from "@services/api";
-import AuthorForm from "../components/AuthorForm";
-import AuthorTable from "../components/AuthorTable";
+import AuthorForm from "./components/AuthorForm";
+import AuthorTable from "./components/AuthorTable";
 import "./AuthorManagement.css";
+import useSnackbar from "@hooks/useSnackbar";
 
 export default function AuthorManagement() {
 	const [authors, setAuthors] = useState<AuthorDto[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
@@ -18,10 +18,11 @@ export default function AuthorManagement() {
 	const [selectedAuthor, setSelectedAuthor] = useState<AuthorDto | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	const { success, error } = useSnackbar();
+
 	// Fetch authors list
 	const fetchAuthors = async (page: number = 1, search: string = "") => {
 		setLoading(true);
-		setError(null);
 		try {
 			const params: ListAuthorsParams = {
 				page,
@@ -36,7 +37,7 @@ export default function AuthorManagement() {
 			setCurrentPage(response.page);
 		} catch (err) {
 			const message = err instanceof ApiError ? err.message : "Failed to fetch authors";
-			setError(message);
+			error(message);
 		} finally {
 			setLoading(false);
 		}
@@ -79,9 +80,14 @@ export default function AuthorManagement() {
 		try {
 			await authorService.deleteAuthor(id);
 			await fetchAuthors(currentPage, searchTerm);
+			success("Author deleted successfully");
+			// If the current page becomes empty after deletion, go back to previous page
+			if (authors.length === 1 && currentPage > 1) {
+				handlePageChange(currentPage - 1);
+			}
 		} catch (err) {
 			const message = err instanceof ApiError ? err.message : "Failed to delete author";
-			setError(message);
+			error(message);
 		}
 	};
 
@@ -99,9 +105,10 @@ export default function AuthorManagement() {
 			setShowForm(false);
 			setSelectedAuthor(null);
 			await fetchAuthors(currentPage, searchTerm);
+			success(`Author ${selectedAuthor ? "updated" : "created"} successfully`);
 		} catch (err) {
 			const message = err instanceof ApiError ? err.message : "Failed to save author";
-			setError(message);
+			error(message);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -116,26 +123,19 @@ export default function AuthorManagement() {
 	return (
 		<div className="author-management">
 			<div className="author-management__header">
-				<h1>Quản Lý Tác Giả</h1>
+				<h1>Author Management</h1>
 				<button
 					className="btn btn-primary"
 					onClick={handleCreateNew}
 				>
-					Thêm Tác Giả Mới
+					Add New Author
 				</button>
 			</div>
 
-			{error && (
-				<div className="alert alert-error">
-					<p>{error}</p>
-					<button onClick={() => setError(null)}>✕</button>
-				</div>
-			)}
-
 			<div className="author-management__filters">
-				<input
-					type="text"
-					placeholder="Tìm kiếm theo tên tác giả..."
+					<input
+						type="text"
+						placeholder="Search by author name..."
 					value={searchTerm}
 					onChange={handleSearch}
 					className="input-search"
@@ -145,10 +145,10 @@ export default function AuthorManagement() {
 					onChange={(e) => setPageSize(Number(e.target.value))}
 					className="input-select"
 				>
-					<option value={5}>5 mỗi trang</option>
-					<option value={10}>10 mỗi trang</option>
-					<option value={20}>20 mỗi trang</option>
-					<option value={50}>50 mỗi trang</option>
+						<option value={5}>5 per page</option>
+						<option value={10}>10 per page</option>
+						<option value={20}>20 per page</option>
+						<option value={50}>50 per page</option>
 				</select>
 			</div>
 
@@ -162,7 +162,7 @@ export default function AuthorManagement() {
 			)}
 
 			{loading && !showForm ? (
-				<div className="loading">Đang tải dữ liệu...</div>
+				<div className="loading">Loading...</div>
 			) : (
 				<>
 					<AuthorTable
@@ -178,11 +178,11 @@ export default function AuthorManagement() {
 								onClick={() => handlePageChange(currentPage - 1)}
 								className="pagination__btn"
 							>
-								← Trước
+								← Prev
 							</button>
 
 							<div className="pagination__info">
-								Trang {currentPage} / {totalPages}
+								Page {currentPage} / {totalPages}
 							</div>
 
 							<button
@@ -190,14 +190,14 @@ export default function AuthorManagement() {
 								onClick={() => handlePageChange(currentPage + 1)}
 								className="pagination__btn"
 							>
-								Sau →
+								Next →
 							</button>
 						</div>
 					)}
 
 					{authors.length === 0 && !loading && (
 						<div className="empty-state">
-							<p>Không tìm thấy tác giả nào</p>
+							<p>No authors found</p>
 						</div>
 					)}
 				</>

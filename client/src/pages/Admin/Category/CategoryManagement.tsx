@@ -1,62 +1,61 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import {
+	Box, Typography, Button, TextField, MenuItem, Select,
+	FormControl, InputLabel, Alert, Snackbar, Skeleton,
+	Stack, Paper,
+} from "@mui/material";
+import { Add, Refresh } from "@mui/icons-material";
+import { BookMarked } from "lucide-react";
 import { categoryService, type ListCategoriesParams } from "@services/category.services";
-import type { CategoryDto, ListCategoriesResponseDto, CreateCategoryDto, UpdateCategoryDto } from "@my-types/category.dto";
+import type {
+	CategoryDto, ListCategoriesResponseDto,
+	CreateCategoryDto, UpdateCategoryDto,
+} from "@my-types/category.dto";
 import { ApiError } from "@services/api";
-import CategoryForm from "../components/CategoryForm";
-import CategoryTable from "../components/CategoryTable";
-import "./CategoryManagement.css";
+import CategoryForm from "./components/CategoryForm";
+import CategoryTable from "./components/CategoryTable";
 
 export default function CategoryManagement() {
 	const [categories, setCategories] = useState<CategoryDto[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [successMsg, setSuccessMsg] = useState<string | null>(null);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
 	const [totalPages, setTotalPages] = useState(0);
+	const [total, setTotal] = useState(0);
 	const [showForm, setShowForm] = useState(false);
 	const [selectedCategory, setSelectedCategory] = useState<CategoryDto | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const fetchCategories = async (page: number = 1, search: string = "") => {
+	const fetchCategories = useCallback(async (page: number = 1, search: string = "") => {
 		setLoading(true);
 		setError(null);
 		try {
-			const params: ListCategoriesParams = {
-				page,
-				limit: pageSize,
-			};
+			const params: ListCategoriesParams = { page, limit: pageSize };
 			if (search) params.search = search;
 			const response: ListCategoriesResponseDto = await categoryService.listCategories(params);
 			setCategories(response.data);
 			setTotalPages(response.totalPages);
 			setCurrentPage(response.page);
+			setTotal(response.total);
 		} catch (err) {
-			setError(err instanceof ApiError ? err.message : "Failed to fetch categories");
+			setError(err instanceof ApiError ? err.message : "Unable to load categories");
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [pageSize]);
 
 	useEffect(() => {
 		fetchCategories(1, searchTerm);
 	}, [pageSize]);
 
-	const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		setSearchTerm(value);
-		setCurrentPage(1);
-		fetchCategories(1, value);
-	};
-
-	const handlePageChange = (page: number) => {
-		fetchCategories(page, searchTerm);
-	};
-
-	const handleCreateNew = () => {
-		setSelectedCategory(null);
-		setShowForm(true);
-	};
+	// Debounced search
+	useEffect(() => {
+		const timer = setTimeout(() => fetchCategories(1, searchTerm), 300);
+		return () => clearTimeout(timer);
+	}, [searchTerm]);
 
 	const handleEdit = (category: CategoryDto) => {
 		setSelectedCategory(category);
@@ -64,12 +63,12 @@ export default function CategoryManagement() {
 	};
 
 	const handleDelete = async (id: string) => {
-		if (!window.confirm("Bạn có chắc chắn muốn xóa thể loại này không?")) return;
 		try {
 			await categoryService.deleteCategory(id);
+			setSuccessMsg("Đã xóa thể loại thành công");
 			await fetchCategories(currentPage, searchTerm);
 		} catch (err) {
-			setError(err instanceof ApiError ? err.message : "Failed to delete category");
+			setError(err instanceof ApiError ? err.message : "Unable to delete category");
 		}
 	};
 
@@ -78,95 +77,133 @@ export default function CategoryManagement() {
 		try {
 			if (selectedCategory?.id) {
 				await categoryService.updateCategory(selectedCategory.id, formData as UpdateCategoryDto);
+				setSuccessMsg("Cập nhật thể loại thành công");
 			} else {
 				await categoryService.createCategory(formData as CreateCategoryDto);
+				setSuccessMsg("Tạo thể loại mới thành công");
 			}
 			setShowForm(false);
 			setSelectedCategory(null);
 			await fetchCategories(currentPage, searchTerm);
 		} catch (err) {
-			setError(err instanceof ApiError ? err.message : "Failed to save category");
+			setError(err instanceof ApiError ? err.message : "Unable to save category");
 		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
-	const handleFormClose = () => {
-		setShowForm(false);
-		setSelectedCategory(null);
-	};
+	const rootCount = categories.filter((c) => !c.parent).length;
+	const childCount = categories.filter((c) => c.parent).length;
 
 	return (
-		<div className="category-management">
-			<div className="category-management__header">
-				<h1>Quản Lý Thể Loại Sách</h1>
-				<button className="btn btn-primary" onClick={handleCreateNew}>
-					Thêm Thể Loại Mới
-				</button>
-			</div>
+		<>
+			{/* Header */}
+			<Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 4, flexWrap: "wrap", gap: 2 }}>
+				<Box>
+					<Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.5 }}>
+						<Box sx={{ p: 1, borderRadius: 2, bgcolor: "primary.main", display: "flex", color: "white" }}>
+							<BookMarked size={20} />
+						</Box>
+						<Typography variant="h5" fontWeight={700} color="text.primary">
+							Category Management
+						</Typography>
+					</Box>
+					<Typography variant="body2" color="text.secondary">
+						Total <strong>{total}</strong> categories — {rootCount} root, {childCount} child
+					</Typography>
+				</Box>
+				<Stack direction="row" spacing={1}>
+						<Button
+						variant="outlined"
+						startIcon={<Refresh />}
+						onClick={() => fetchCategories(currentPage, searchTerm)}
+						disabled={loading}
+						size="small"
+					>
+							Refresh
+					</Button>
+					<Button
+						variant="contained"
+						startIcon={<Add />}
+						onClick={() => { setSelectedCategory(null); setShowForm(true); }}
+						disableElevation
+					>
+							Add Category
+					</Button>
+				</Stack>
+			</Box>
 
+			{/* Error */}
 			{error && (
-				<div className="alert alert-error">
-					<p>{error}</p>
-					<button onClick={() => setError(null)}>✕</button>
-				</div>
+				<Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
+					{error}
+				</Alert>
 			)}
 
-			<div className="category-management__filters">
-				<input
-					type="text"
-					placeholder="Tìm kiếm theo thể loại..."
+			{/* Filters */}
+			<Paper variant="outlined" sx={{ p: 2, mb: 3, display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+				<TextField
+					placeholder="Search categories..."
 					value={searchTerm}
-					onChange={handleSearch}
-					className="input-search"
+					onChange={(e) => setSearchTerm(e.target.value)}
+					size="small"
+					sx={{ flex: 1, minWidth: 220 }}
+					InputProps={{ sx: { borderRadius: 2 } }}
 				/>
-				<select
-					value={pageSize}
-					onChange={(e) => setPageSize(Number(e.target.value))}
-					className="input-select"
-				>
-					<option value={5}>5 mỗi trang</option>
-					<option value={10}>10 mỗi trang</option>
-					<option value={20}>20 mỗi trang</option>
-					<option value={50}>50 mỗi trang</option>
-				</select>
-			</div>
+				<FormControl size="small" sx={{ minWidth: 150 }}>
+					<InputLabel>Rows per page</InputLabel>
+					<Select
+						value={pageSize}
+						label="Rows per page"
+						onChange={(e) => setPageSize(Number(e.target.value))}
+					>
+						{[5, 10, 20, 50].map((n) => (
+							<MenuItem key={n} value={n}>{n} rows</MenuItem>
+						))}
+					</Select>
+				</FormControl>
+			</Paper>
 
-			{showForm && (
-				<CategoryForm
-					category={selectedCategory}
-                    categories={categories}
-					onSubmit={handleFormSubmit}
-					onCancel={handleFormClose}
-					isLoading={isSubmitting}
-				/>
-			)}
-
-			{loading && !showForm ? (
-				<div className="loading">Đang tải dữ liệu...</div>
+			{/* Table */}
+			{loading ? (
+				<Stack spacing={1}>
+					{Array.from({ length: 5 }).map((_, i) => (
+						<Skeleton key={i} variant="rectangular" height={52} sx={{ borderRadius: 1 }} />
+					))}
+				</Stack>
 			) : (
-				<>
-					<CategoryTable categories={categories} onEdit={handleEdit} onDelete={handleDelete} />
-
-					{totalPages > 1 && (
-						<div className="pagination">
-							<button disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} className="pagination__btn">
-								← Trước
-							</button>
-							<div className="pagination__info">Trang {currentPage} / {totalPages}</div>
-							<button disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} className="pagination__btn">
-								Sau →
-							</button>
-						</div>
-					)}
-
-					{categories.length === 0 && !loading && (
-						<div className="empty-state">
-							<p>Không tìm thấy thể loại nào</p>
-						</div>
-					)}
-				</>
+				<CategoryTable
+					categories={categories}
+					onEdit={handleEdit}
+					onDelete={handleDelete}
+					currentPage={currentPage}
+					pageSize={pageSize}
+					totalPages={totalPages}
+					onPageChange={(page) => fetchCategories(page, searchTerm)}
+				/>
 			)}
-		</div>
+
+			{/* Form Dialog */}
+			<CategoryForm
+				open={showForm}
+				category={selectedCategory}
+				allCategories={categories}
+				onSubmit={handleFormSubmit}
+				onCancel={() => { setShowForm(false); setSelectedCategory(null); }}
+				isLoading={isSubmitting}
+			/>
+
+			{/* Success toast */}
+			<Snackbar
+				open={!!successMsg}
+				autoHideDuration={3000}
+				onClose={() => setSuccessMsg(null)}
+				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+			>
+				<Alert severity="success" onClose={() => setSuccessMsg(null)} variant="filled">
+					{successMsg}
+				</Alert>
+			</Snackbar>
+		</>
 	);
 }

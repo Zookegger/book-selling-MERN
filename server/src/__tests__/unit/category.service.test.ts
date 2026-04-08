@@ -30,6 +30,8 @@ describe("createCategory()", () => {
 	it("creates a category with the correct fields", async () => {
 		const category = await makeCategory();
 
+		console.log(category);
+
 		expect(category._id).toBeDefined();
 		expect(category.name).toBe("Fiction");
 		expect(category.slug).toBe("fiction");

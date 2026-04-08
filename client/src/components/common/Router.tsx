@@ -21,16 +21,6 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: ReactElement, al
     return children;
 };
 
-const RequireAdmin = ({ children }: { children: ReactElement }) => {
-	const { isLoading, isAuthenticated, isAdmin } = useAuth();
-	const location = useLocation();
-
-	if (isLoading) return <LoadingSkeleton />;
-	if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
-	if (!isAdmin) return <Navigate to={ROUTES.UNAUTHORIZE} state={{ from: location }} replace />;
-	return children;
-};
-
 const router = createBrowserRouter([
     {
         path: ROUTES.HOME,
@@ -52,10 +42,24 @@ const router = createBrowserRouter([
                 },
             },
             {
+                path: ROUTES.BOOKS,
+                lazy: async () => {
+                    const { default: BooksPage } = await import("@pages/Book/BooksPage");
+                    return { Component: BooksPage };
+                },
+            },
+            {
                 path: ROUTES.BOOK_DETAIL(":bookId"),
                 lazy: async () => {
                     const { default: BookDetail } = await import("@pages/Book/BookDetail");
                     return { Component: BookDetail };
+                },
+            },
+            {
+                path: ROUTES.SEARCH,
+                lazy: async () => {
+                    const { default: SearchResults } = await import("@pages/Book/SearchResults");
+                    return { Component: SearchResults };
                 },
             },
             {
@@ -176,6 +180,13 @@ const router = createBrowserRouter([
                     const { default: PublisherManagement } = await import("@pages/Admin/Publisher/PublisherManagement");
                     return { Component: PublisherManagement }
                 },
+            },
+            {
+                path: ROUTES.ADMIN_BOOKS,
+                lazy: async () => {
+                    const { default: BookManagement } = await import("@pages/Admin/Book/BookManagement");
+                    return { Component: BookManagement }
+                }
             },
             {
                 path: ROUTES.ADMIN_AUTHORS,

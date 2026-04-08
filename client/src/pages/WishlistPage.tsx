@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-    Container, Typography, Box, Divider
-} from "@mui/material";
+import { Typography, Box, Divider } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 
 // Import Service và Component dùng chung
@@ -34,7 +32,7 @@ const WishlistPage: React.FC = () => {
     if (loading) return <LoadingSkeleton />;
 
     return (
-        <Container maxWidth="xl" sx={{ py: 6 }}>
+        <>
             {/* Header của trang */}
             <Box sx={{ mb: 6, display: 'flex', alignItems: 'center', gap: 2 }}>
                 <FavoriteIcon sx={{ fontSize: 40, color: 'error.main' }} />
@@ -52,7 +50,7 @@ const WishlistPage: React.FC = () => {
 
             {/* Hiển thị danh sách */}
             <BookGrid books={wishlistItems.map(item => item.book)} wishlistMode />
-        </Container>
+        </>
     );
 };
 

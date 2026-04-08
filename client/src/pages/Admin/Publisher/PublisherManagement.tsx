@@ -10,6 +10,7 @@ import {
 	DialogContent,
 	DialogTitle,
 	FormControlLabel,
+	IconButton,
 	Paper,
 	Stack,
 	Table,
@@ -19,6 +20,7 @@ import {
 	TableHead,
 	TableRow,
 	TextField,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import publisherService from "@services/publisher.services";
@@ -28,6 +30,7 @@ import type {
 	PublisherDto,
 } from "@my-types/publisher.dto";
 import useSnackbar from "@hooks/useSnackbar";
+import { DeleteOutline, Edit } from "@mui/icons-material";
 
 const defaultFormState: CreatePublisherDto = {
 	name: "",
@@ -228,6 +231,8 @@ export default function AdminPublishersPage() {
 								<TableCell>Contact email</TableCell>
 								<TableCell>Website</TableCell>
 								<TableCell>Status</TableCell>
+								<TableCell>Created At</TableCell>
+								<TableCell>Updated At</TableCell>
 								<TableCell align="right">Actions</TableCell>
 							</TableRow>
 						</TableHead>
@@ -239,19 +244,26 @@ export default function AdminPublishersPage() {
 										<TableCell>{publisher.contactEmail}</TableCell>
 										<TableCell>{publisher.website || "-"}</TableCell>
 										<TableCell>{publisher.isActive ? "Active" : "Inactive"}</TableCell>
-										<TableCell align="right">
-											<Stack direction="row" spacing={1} justifyContent="flex-end">
-												<Button size="small" variant="outlined" onClick={() => openEditDialog(publisher)}>
-													Edit
-												</Button>
-												<Button
-													size="small"
-													variant="contained"
-													color="error"
-													onClick={() => handleDelete(publisher.id)}
-												>
-													Delete
-												</Button>
+										<TableCell>{new Date(publisher.createdAt).toLocaleDateString("vi-VN")} - {new Date(publisher.createdAt).toLocaleTimeString("vi-VN")}</TableCell>
+										<TableCell>{new Date(publisher.updatedAt).toLocaleDateString("vi-VN")} - {new Date(publisher.updatedAt).toLocaleTimeString("vi-VN")}</TableCell>
+										<TableCell align="right" sx={{ pr: 2 }}>
+											<Stack direction="row" spacing={0.5} justifyContent="flex-end">
+												<Tooltip title="Edit">
+													<IconButton size="small" onClick={() => openEditDialog(publisher)} color="primary">
+														<Edit fontSize="small" />
+													</IconButton>
+												</Tooltip>
+												<Tooltip title="Delete">
+													<IconButton
+														size="small"
+														color="error"
+														onClick={() => {
+															if (window.confirm(`Delete Publisher "${publisher.name}"?`)) handleDelete(publisher.id);
+														}}
+													>
+														<DeleteOutline fontSize="small" />
+													</IconButton>
+												</Tooltip>
 											</Stack>
 										</TableCell>
 									</TableRow>
