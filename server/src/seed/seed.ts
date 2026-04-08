@@ -1,5 +1,7 @@
 import connectDB from "../config/db";
 import { Author, Publisher, Category, Book } from "@models";
+import dotenv from "dotenv";
+dotenv.config();
 
 const seed = async () => {
 	await connectDB();

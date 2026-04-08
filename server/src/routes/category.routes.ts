@@ -1,13 +1,17 @@
 import { Router } from "express";
 import * as categoryController from "@controllers/category.controller";
+import { authMiddleware } from "@middleware/auth.middleware";
 
 const router = Router();
 
-router.post("/", categoryController.createCategory);
+// Các route cho danh mục
 router.get("/", categoryController.listCategories);
 router.get("/tree", categoryController.getCategoryTree);
 router.get("/:id", categoryController.getCategory);
-router.patch("/:id", categoryController.updateCategory);
-router.delete("/:id", categoryController.deleteCategory);
+
+// Thêm middleware vào trước controller để bảo vệ các route yêu cầu xác thực
+router.post("/", authMiddleware, categoryController.createCategory);
+router.patch("/:id", authMiddleware, categoryController.updateCategory);
+router.delete("/:id", authMiddleware, categoryController.deleteCategory);
 
 export default router;
