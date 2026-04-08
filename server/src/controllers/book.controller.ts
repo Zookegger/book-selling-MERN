@@ -16,13 +16,14 @@ export const createBook = async (req: Request, res: Response, next: NextFunction
 
 export const listBooks = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const { page, limit, search, language, order } = req.query as Record<string, string>;
+		const { page, limit, search, language, category, order } = req.query as Record<string, string>;
 
 		const result = await bookServices.listBooks({
 			page: page ? Number(page) : undefined,
 			limit: limit ? Number(limit) : undefined,
 			search,
 			language,
+			category,
 			order: order as "asc" | "desc" | undefined,
 		});
 

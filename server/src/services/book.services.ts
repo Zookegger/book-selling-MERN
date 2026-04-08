@@ -1,4 +1,4 @@
-import { Book } from "@models";
+import { Book, Category } from "@models";
 import { HttpError } from "@middleware/error.middleware";
 import type { IBook } from "@models/book.model";
 import {
@@ -104,6 +104,7 @@ export const listBooks = async (query: {
 	limit?: number;
 	search?: string;
 	language?: string;
+	category?: string;
 	order?: "asc" | "desc";
 }) => {
 	const { page, limit, skip } = getPagination({ limit: query.limit, page: query.page });
@@ -118,13 +119,31 @@ export const listBooks = async (query: {
 		filter.language = query.language;
 	}
 
+	if (query.category) {
+        const isObjectId = mongoose.Types.ObjectId.isValid(query.category);
+
+        if (isObjectId) {
+            filter.categories = query.category;
+        } else {
+            const foundCategory = await Category.findOne({ slug: query.category }).select("_id").exec();
+            
+            if (foundCategory) {
+                filter.categories = foundCategory._id;
+            } else {
+                return { data: [], total: 0, page, totalPages: 0 };
+            }
+        }
+    }
+
 	const total = await Book.countDocuments(filter);
 
 	const data = await Book.find(filter)
 		.skip(skip)
 		.limit(limit)
-		.sort({ createdAt: query.order === "desc" ? -1 : 1 }); // Sort by newest
-
+		.sort({ createdAt: query.order === "desc" ? -1 : 1 }) // Sort by newest
+		.populate("categories")
+		.populate("authors")
+		.exec();;
 	const totalPages = Math.ceil(total / limit);
 	return { data, total, page, totalPages };
 };

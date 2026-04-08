@@ -4,9 +4,9 @@ import MainLayout from "@layout/MainLayout";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryPage } from "@pages";
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList } from "@pages";
 import ProtectedRoute from "./ProtectedRoute";
-import CategoryList from "@pages/Category/List";
+
 
 export const ROUTER_PATHS = ROUTES;
 
@@ -97,6 +97,10 @@ const router = createBrowserRouter([
                 path: "/categories",
                 element: <CategoryList />
             },
+            {
+                path: "/the-loai/:slug",
+                element: <CategoryDetail />
+            }
         ]
     }
 ]);
