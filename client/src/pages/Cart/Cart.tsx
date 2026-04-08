@@ -22,6 +22,8 @@ import { ROUTES } from "@constants/index";
 import type { CartItemDto } from "@my-types/cart.dto";
 import type { BookDto, BookFormatType } from "@my-types/book.dto";
 
+const API_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
+
 const formatLabel = (format: BookFormatType) => {
 	switch (format) {
 		case "physical":
@@ -165,7 +167,7 @@ const CartPage = () => {
 														>
 															{info.coverImage ? (
 																<img
-																	src={info.coverImage}
+																	src={API_URL + info.coverImage}
 																	alt={info.title}
 																	style={{ width: "100%", height: "100%", objectFit: "cover" }}
 																/>
