@@ -9,7 +9,7 @@ export type OrderStatusDto =
 	| "cancelled"
 	| "refunded";
 
-export type PaymentMethodDto = "cod" | "credit_card" | "bank_transfer" | "paypal";
+export type PaymentMethodDto = "cod" | "vnpay";
 export type PaymentStatusDto = "pending" | "paid" | "failed" | "refunded";
 
 export interface OrderAddressDto {
@@ -59,11 +59,32 @@ export interface ConfirmOrderRequestDto {
 	shippingAddress?: OrderAddressDto;
 	couponCode?: string;
 	paymentDetails?: {
-		cardHolderName?: string;
-		cardLast4?: string;
 		bankCode?: string;
-		transferReference?: string;
-		paypalEmail?: string;
+		ipAddress?: string;
+		locale?: "vn" | "en";
+		orderInfo?: string;
+		returnUrl?: string;
+	};
+}
+
+export interface InitiateVNPayPaymentRequestDto {
+	orderId: string;
+	additionalData?: {
+		ipAddress?: string;
+		locale?: "vn" | "en";
+		orderInfo?: string;
+		bankCode?: string;
+		returnUrl?: string;
+	};
+}
+
+export interface InitiateVNPayPaymentResponseDto {
+	paymentUrl: string;
+	payment: {
+		id: string;
+		orderId: string;
+		method: PaymentMethodDto;
+		status: PaymentStatusDto;
 	};
 }
 

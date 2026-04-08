@@ -183,7 +183,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 												Profile
 											</Link>
 										</MenuItem>
-										<MenuItem><Link to={ROUTER_PATHS.ORDER_HISTORY} style={{ textDecoration: "none", color: "inherit" }}>Order History</Link></MenuItem>
 										<MenuItem onClick={async () => {
 											handleClose();
 											await logout();

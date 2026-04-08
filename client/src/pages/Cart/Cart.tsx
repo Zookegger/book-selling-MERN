@@ -8,6 +8,12 @@ import {
 	CircularProgress,
 	Divider,
 	Snackbar,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
 	TextField,
 	Typography,
 } from "@mui/material";
@@ -127,84 +133,104 @@ const CartPage = () => {
 			>
 				<Box flex={1} minWidth={0}>
 					{cart && cart.items.length > 0 ? (
-						<Box display="flex" flexDirection="column" gap={2}>
-							{cart.items.map((item, idx) => {
-								const info = getBookInfo(item);
-								return (
-									<Card key={`${idx}-${String((item as any)?.addedAt ?? "")}`} sx={{ p: 2 }}>
-										<Box display="flex" gap={2} alignItems="center">
-											<Box
-												sx={{
-													width: 72,
-													height: 96,
-													borderRadius: 1,
-													bgcolor: "#f2f2f2",
-													overflow: "hidden",
-													flexShrink: 0,
-												}}
-											>
-												{info.coverImage ? (
-													<img
-														src={info.coverImage}
-														alt={info.title}
-														style={{ width: "100%", height: "100%", objectFit: "cover" }}
+						<TableContainer component={Card} sx={{ overflowX: "auto" }}>
+							<Table size="small" sx={{ minWidth: 760 }}>
+								<TableHead>
+									<TableRow>
+										<TableCell>Book</TableCell>
+										<TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Format</TableCell>
+										<TableCell align="right" sx={{ display: { xs: "none", md: "table-cell" } }}>Unit price</TableCell>
+										<TableCell align="right">Quantity</TableCell>
+										<TableCell align="right">Total</TableCell>
+										<TableCell align="right">Actions</TableCell>
+									</TableRow>
+								</TableHead>
+								<TableBody>
+									{cart.items.map((item, idx) => {
+										const info = getBookInfo(item);
+
+										return (
+											<TableRow key={`${idx}-${String((item as any)?.addedAt ?? "")}`}>
+												<TableCell>
+													<Box display="flex" alignItems="center" gap={1.25} minWidth={0}>
+														<Box
+															sx={{
+																width: 44,
+																height: 60,
+																borderRadius: 1,
+																bgcolor: "#f2f2f2",
+																overflow: "hidden",
+																flexShrink: 0,
+															}}
+														>
+															{info.coverImage ? (
+																<img
+																	src={info.coverImage}
+																	alt={info.title}
+																	style={{ width: "100%", height: "100%", objectFit: "cover" }}
+																/>
+															) : null}
+														</Box>
+														<Typography fontWeight={600} noWrap title={info.title}>
+															{info.title}
+														</Typography>
+													</Box>
+												</TableCell>
+
+												<TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+													{formatLabel(item.selectedFormat)}
+												</TableCell>
+
+												<TableCell align="right" sx={{ display: { xs: "none", md: "table-cell" } }}>
+													{Number(item.unitPrice).toLocaleString()} {DISPLAY_CURRENCY}
+												</TableCell>
+
+												<TableCell align="right">
+													<TextField
+														size="small"
+														type="number"
+														label="Qty"
+														value={item.quantity}
+														inputProps={{ min: 1 }}
+														onChange={(e) => {
+															const next = Number(e.target.value);
+															const safe = Number.isNaN(next) || next < 1 ? 1 : next;
+
+															setCart((prev) => {
+																if (!prev) return prev;
+																const items = [...prev.items];
+																items[idx] = { ...items[idx], quantity: safe };
+																return { ...prev, items };
+															});
+														}}
+														onBlur={() => {
+															const safe = item.quantity < 1 ? 1 : item.quantity;
+															void handleUpdateQuantity(item, safe);
+														}}
+														sx={{ width: 90 }}
 													/>
-												) : null}
-											</Box>
+												</TableCell>
 
-											<Box flex={1} minWidth={0}>
-												<Typography fontWeight={700} noWrap title={info.title}>
-													{info.title}
-												</Typography>
-												<Typography variant="body2" color="text.secondary">
-													Format: {formatLabel(item.selectedFormat)}
-												</Typography>
-												<Typography variant="body2" color="text.secondary">
-													Unit price: {Number(item.unitPrice).toLocaleString()} {DISPLAY_CURRENCY}
-												</Typography>
-											</Box>
+												<TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+													{Number(item.quantity * item.unitPrice).toLocaleString()} {DISPLAY_CURRENCY}
+												</TableCell>
 
-											<Box display="flex" gap={1} alignItems="center">
-												{/* Cập nhật số lượng sản phẩm trong giỏ (PATCH /cart/items) */}
-												<TextField
-													size="small"
-													type="number"
-													label="Qty"
-													value={item.quantity}
-													inputProps={{ min: 1 }}
-													onChange={(e) => {
-														const next = Number(e.target.value);
-														const safe = Number.isNaN(next) || next < 1 ? 1 : next;
-														// Optimistic UI: update local state trước để UX mượt hơn
-														setCart((prev) => {
-															if (!prev) return prev;
-															const items = [...prev.items];
-															items[idx] = { ...items[idx], quantity: safe };
-															return { ...prev, items };
-														});
-													}}
-													onBlur={() => {
-														const safe = item.quantity < 1 ? 1 : item.quantity;
-														void handleUpdateQuantity(item, safe);
-													}}
-													sx={{ width: 90 }}
-												/>
-
-												{/* Xoá sản phẩm khỏi giỏ (DELETE /cart/items) */}
-												<Button
-													variant="outlined"
-													color="error"
-													disabled={isMutating}
-													onClick={() => void handleRemoveItem(item)}
-												>
-													Remove
-												</Button>
-											</Box>
-										</Box>
-									</Card>
-								);
-							})}
-						</Box>
+												<TableCell align="right">
+													<Button
+														variant="outlined"
+														color="error"
+														disabled={isMutating}
+														onClick={() => void handleRemoveItem(item)}
+													>
+														Remove
+													</Button>
+												</TableCell>
+											</TableRow>
+										);
+									})}
+								</TableBody>
+							</Table>
+						</TableContainer>
 					) : (
 						<Card sx={{ p: 3 }}>
 							<Typography fontWeight={700}>Empty Cart</Typography>

@@ -1,22 +1,54 @@
 import { useEffect, useState } from "react";
-import { Alert, Box, Card, CircularProgress, Divider, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Card, CircularProgress, Divider, Stack, Typography } from "@mui/material";
+import { ROUTES } from "@constants/index";
 import OrderService from "@services/order.services";
+import paymentService from "@services/payment.services";
 import type { OrderDto } from "@my-types/order.dto";
 
 const STATUS_LABELS: Record<string, string> = {
-	pending: "Chờ xử lý",
-	confirmed: "Đã xác nhận",
-	processing: "Đang xử lý",
-	shipped: "Đang giao",
-	delivered: "Đã giao",
-	cancelled: "Đã hủy",
-	refunded: "Đã hoàn tiền",
+	pending: "Pending",
+	confirmed: "Confirmed",
+	processing: "Processing",
+	shipped: "Shipping",
+	delivered: "Delivered",
+	cancelled: "Cancelled",
+	refunded: "Refunded",
+};
+
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+	pending: "Pending Payment",
+	paid: "Paid",
+	failed: "Payment Failed",
+	refunded: "Refunded",
 };
 
 export default function OrderHistoryTab() {
 	const [orders, setOrders] = useState<OrderDto[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
+
+	const handlePayNow = async (order: OrderDto) => {
+		try {
+			setError(null);
+			setPayingOrderId(order.id);
+				const { paymentUrl } = await paymentService.initiateVNPayPayment({
+					orderId: order.id,
+					additionalData: {
+						locale: "vn",
+						orderInfo: `Payment for order ${order.id}`,
+						// point VNPay return to backend so server can verify and update payment
+						returnUrl: `${import.meta.env.VITE_API_URL ?? "http://localhost:5000/api"}/payments/vnpay/return`,
+					},
+				});
+
+			window.location.href = paymentUrl;
+		} catch (err: any) {
+			setError(err?.message ?? "Unable to initiate VNPay payment.");
+		} finally {
+			setPayingOrderId(null);
+		}
+	};
 
 	useEffect(() => {
 		void (async () => {
@@ -48,8 +80,8 @@ export default function OrderHistoryTab() {
 	if (orders.length === 0) {
 		return (
 			<Card sx={{ p: 2 }}>
-				<Typography fontWeight={700}>Chưa có đơn hàng nào</Typography>
-				<Typography color="text.secondary">Bạn hãy mua sản phẩm để hệ thống lưu lịch sử mua hàng.</Typography>
+				<Typography fontWeight={700}>No orders yet</Typography>
+				<Typography color="text.secondary">Make a purchase to save your order history.</Typography>
 			</Card>
 		);
 	}
@@ -59,13 +91,16 @@ export default function OrderHistoryTab() {
 			{orders.map((order) => (
 				<Card key={order.id} sx={{ p: 2 }}>
 					<Box display="flex" justifyContent="space-between" alignItems="center">
-						<Typography fontWeight={700}>Mã đơn: {order.id}</Typography>
+						<Typography fontWeight={700}>Order ID: {order.id}</Typography>
 						<Typography color="primary" fontWeight={700}>
 							{STATUS_LABELS[order.status] ?? order.status}
 						</Typography>
 					</Box>
 					<Typography variant="body2" color="text.secondary" mt={0.5}>
-						Ngày đặt: {new Date(order.placedAt).toLocaleString()}
+						Placed At: {new Date(order.placedAt).toLocaleString()}
+					</Typography>
+					<Typography variant="body2" color="text.secondary" mt={0.5}>
+						Payment: {PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus}
 					</Typography>
 					<Divider sx={{ my: 1.5 }} />
 					{order.items.map((item, idx) => (
@@ -78,11 +113,22 @@ export default function OrderHistoryTab() {
 					))}
 					<Divider sx={{ my: 1.5 }} />
 					<Box display="flex" justifyContent="space-between">
-						<Typography fontWeight={700}>Tổng cộng</Typography>
+						<Typography fontWeight={700}>Total</Typography>
 						<Typography fontWeight={800} color="primary">
 							{Number(order.totalAmount).toLocaleString()} VND
 						</Typography>
 					</Box>
+					{order.paymentMethod === "vnpay" && order.paymentStatus === "pending" && (
+						<Box mt={1.5}>
+							<Button
+								variant="contained"
+								disabled={payingOrderId === order.id}
+								onClick={() => void handlePayNow(order)}
+							>
+								{payingOrderId === order.id ? "Redirecting to VNPay..." : "Pay with VNPay"}
+							</Button>
+						</Box>
+					)}
 				</Card>
 			))}
 		</Stack>

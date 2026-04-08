@@ -20,11 +20,11 @@ type ConfirmOrderInput = {
 	shippingAddress?: ShippingAddressInput;
 	couponCode?: string;
 	paymentDetails?: {
-		cardHolderName?: string;
-		cardLast4?: string;
 		bankCode?: string;
-		transferReference?: string;
-		paypalEmail?: string;
+		ipAddress?: string;
+		locale?: "vn" | "en";
+		orderInfo?: string;
+		returnUrl?: string;
 	};
 };
 
@@ -54,32 +54,16 @@ const calculateCouponDiscount = (subtotal: number, coupon: any): number => {
 };
 
 const resolvePaymentStatus = (paymentMethod: PaymentMethod): PaymentStatus => {
-	// Mô phỏng xử lý thanh toán: COD là pending, các phương thức online đánh dấu paid.
-	return paymentMethod === "cod" ? "pending" : "paid";
+	// COD and VNPay both start as pending; VNPay is finalized by callback.
+	return "pending";
 };
 
 const validatePaymentDetails = (paymentMethod: PaymentMethod, details?: ConfirmOrderInput["paymentDetails"]) => {
 	if (paymentMethod === "cod") return;
 
-	if (!details) {
-		throw new HttpError("Payment details are required for selected payment method", 400);
-	}
-
-	if (paymentMethod === "credit_card") {
-		if (!details.cardHolderName?.trim()) throw new HttpError("Card holder name is required", 400);
-		if (!details.cardLast4 || !/^\d{4}$/.test(details.cardLast4)) {
-			throw new HttpError("Card last 4 digits are invalid", 400);
-		}
-	}
-
-	if (paymentMethod === "bank_transfer") {
-		if (!details.bankCode?.trim()) throw new HttpError("Bank code is required", 400);
-		if (!details.transferReference?.trim()) throw new HttpError("Transfer reference is required", 400);
-	}
-
-	if (paymentMethod === "paypal") {
-		if (!details.paypalEmail?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.paypalEmail)) {
-			throw new HttpError("PayPal email is invalid", 400);
+	if (paymentMethod === "vnpay") {
+		if (details?.locale && details.locale !== "vn" && details.locale !== "en") {
+			throw new HttpError("Locale must be vn or en", 400);
 		}
 	}
 };
@@ -189,7 +173,7 @@ export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) 
 		status: paymentStatus,
 		amount: totalAmount,
 		currency: cart.currency ?? "VND",
-		provider: paymentMethod === "paypal" ? "paypal" : paymentMethod === "credit_card" ? "stripe" : undefined,
+		provider: paymentMethod === "vnpay" ? "vnpay" : undefined,
 		paidAt: paymentStatus === "paid" ? new Date() : undefined,
 		metadata: {
 			source: "checkout",

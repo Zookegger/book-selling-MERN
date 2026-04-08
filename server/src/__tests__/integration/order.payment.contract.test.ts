@@ -115,7 +115,7 @@ describe("Contract Tests: Order Payment Validation", () => {
 		jest.restoreAllMocks();
 	});
 
-	it("returns 400 for credit_card when card details are missing", async () => {
+	it("returns 400 for unsupported payment method", async () => {
 		const { token, userId } = await registerAndLogin("missing-card-details@example.com");
 		const book = await createBook();
 		await addDefaultAddressForUser(userId);
@@ -126,60 +126,59 @@ describe("Contract Tests: Order Payment Validation", () => {
 		});
 
 		expect(res.status).toBe(400);
-		expect(res.body.message).toMatch(/Payment details are required|Card holder name is required/i);
+		expect(res.body.message).toMatch(/Payment method must be cod or vnpay/i);
 	});
 
-	it("returns 400 for bank_transfer when transferReference is missing", async () => {
+	it("returns 400 for vnpay when locale is invalid", async () => {
 		const { token, userId } = await registerAndLogin("missing-bank-ref@example.com");
 		const book = await createBook();
 		await addDefaultAddressForUser(userId);
 		await addBookToCart(token, book._id);
 
 		const res = await request(app).post(`${ORDERS}/confirm`).set("Authorization", `Bearer ${token}`).send({
-			paymentMethod: "bank_transfer",
+			paymentMethod: "vnpay",
 			paymentDetails: {
-				bankCode: "VCB",
+				locale: "jp",
 			},
 		});
 
 		expect(res.status).toBe(400);
-		expect(res.body.message).toMatch(/Transfer reference is required/i);
+		expect(res.body.message).toMatch(/Locale must be vn or en/i);
 	});
 
-	it("returns 400 for paypal when paypalEmail is invalid", async () => {
+	it("confirms order successfully with COD and pending payment status", async () => {
 		const { token, userId } = await registerAndLogin("invalid-paypal-email@example.com");
 		const book = await createBook();
 		await addDefaultAddressForUser(userId);
 		await addBookToCart(token, book._id);
 
 		const res = await request(app).post(`${ORDERS}/confirm`).set("Authorization", `Bearer ${token}`).send({
-			paymentMethod: "paypal",
-			paymentDetails: {
-				paypalEmail: "not-an-email",
-			},
+			paymentMethod: "cod",
 		});
 
-		expect(res.status).toBe(400);
-		expect(res.body.message).toMatch(/PayPal email is invalid/i);
+		expect(res.status).toBe(201);
+		expect(res.body.paymentMethod).toBe("cod");
+		expect(res.body.paymentStatus).toBe("pending");
+		expect(sendOrderConfirmationEmailSpy).toHaveBeenCalledTimes(1);
 	});
 
-	it("confirms order successfully with valid credit_card details", async () => {
+	it("confirms order successfully with vnpay and pending payment status", async () => {
 		const { token, userId } = await registerAndLogin("valid-credit-card@example.com");
 		const book = await createBook();
 		await addDefaultAddressForUser(userId);
 		await addBookToCart(token, book._id);
 
 		const res = await request(app).post(`${ORDERS}/confirm`).set("Authorization", `Bearer ${token}`).send({
-			paymentMethod: "credit_card",
+			paymentMethod: "vnpay",
 			paymentDetails: {
-				cardHolderName: "NGUYEN VAN B",
-				cardLast4: "1234",
+				bankCode: "NCB",
+				locale: "vn",
 			},
 		});
 
 		expect(res.status).toBe(201);
-		expect(res.body.paymentMethod).toBe("credit_card");
-		expect(res.body.paymentStatus).toBe("paid");
+		expect(res.body.paymentMethod).toBe("vnpay");
+		expect(res.body.paymentStatus).toBe("pending");
 		expect(sendOrderConfirmationEmailSpy).toHaveBeenCalledTimes(1);
 	});
 });

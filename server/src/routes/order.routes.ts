@@ -13,18 +13,15 @@ orderRouter.post(
 	"/confirm",
 	authMiddleware,
 	[
-		body("paymentMethod")
-			.optional()
-			.isIn(["cod", "credit_card", "bank_transfer", "paypal"])
-			.withMessage("Payment method must be cod, credit_card, bank_transfer, or paypal"),
+		body("paymentMethod").optional().isIn(["cod", "vnpay"]).withMessage("Payment method must be cod or vnpay"),
 		body("note").optional().isString().withMessage("Note must be a string"),
 		body("couponCode").optional().isString().withMessage("Coupon code must be a string"),
 		body("paymentDetails").optional().isObject().withMessage("Payment details must be an object"),
-		body("paymentDetails.cardHolderName").optional().isString(),
-		body("paymentDetails.cardLast4").optional().isString(),
 		body("paymentDetails.bankCode").optional().isString(),
-		body("paymentDetails.transferReference").optional().isString(),
-		body("paymentDetails.paypalEmail").optional().isEmail().withMessage("PayPal email is invalid"),
+		body("paymentDetails.ipAddress").optional().isString(),
+		body("paymentDetails.locale").optional().isIn(["vn", "en"]).withMessage("Locale must be vn or en"),
+		body("paymentDetails.orderInfo").optional().isString(),
+		body("paymentDetails.returnUrl").optional().isString(),
 		body("shippingAddress").optional().isObject().withMessage("Shipping address must be an object"),
 		body("shippingAddress.recipientName")
 			.optional()
@@ -39,7 +36,11 @@ orderRouter.post(
 			.withMessage("Province/City is required"),
 		body("shippingAddress.district").optional().isString().notEmpty().withMessage("District is required"),
 		body("shippingAddress.ward").optional().isString().notEmpty().withMessage("Ward is required"),
-		body("shippingAddress.streetDetails").optional().isString().notEmpty().withMessage("Street details is required"),
+		body("shippingAddress.streetDetails")
+			.optional()
+			.isString()
+			.notEmpty()
+			.withMessage("Street details is required"),
 		body("shippingAddress.country").optional().isString(),
 	],
 	validateRequest,
@@ -48,4 +49,3 @@ orderRouter.post(
 );
 
 export default orderRouter;
-

@@ -6,3 +6,4 @@ export * as publisherController from "./publisher.controller";
 export * as categoryController from "./category.controller";
 export * as cartController from "./cart.controller";
 export * as orderController from "./order.controller";
+export * as paymentController from "./payment.controller";

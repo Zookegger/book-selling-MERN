@@ -10,3 +10,4 @@ export * as publisherServices from "./publisher.services";
 export * as categoryServices from "./category.services";
 export * as cartServices from "./cart.services";
 export * as orderServices from "./order.services";
+export * as paymentServices from "./payment.services";

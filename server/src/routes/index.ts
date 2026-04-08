@@ -20,6 +20,7 @@ import categoryRouter from "./category.routes";
 import cartRouter from "./cart.routes";
 import orderRouter from "./order.routes";
 import wishlistRouter from "./wishlist.route";
+import paymentRouter from "./payment.routes";
 
 
 router.use("/auth", authRouter);
@@ -31,5 +32,6 @@ router.use("/categories", categoryRouter);
 router.use("/cart", cartRouter);
 router.use("/orders", orderRouter);
 router.use("/wishlist", wishlistRouter);
+router.use("/payments", paymentRouter);
 
 export default router;

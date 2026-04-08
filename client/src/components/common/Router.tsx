@@ -100,7 +100,7 @@ const router = createBrowserRouter([
             {
                 path: ROUTES.CHECKOUT,
                 lazy: async () => {
-                    const { default: CheckoutPage } = await import("@pages/Order/Checkout");
+                    const { default: CheckoutPage } = await import("@pages/Cart/Checkout");
                     return {
                         element: (
                             <ProtectedRoute>
@@ -111,16 +111,10 @@ const router = createBrowserRouter([
                 },
             },
             {
-                path: ROUTES.ORDER_HISTORY,
+                path: ROUTES.PAYMENT_RESULT,
                 lazy: async () => {
-                    const { default: OrderHistoryPage } = await import("@pages/Order/OrderHistory");
-                    return {
-                        element: (
-                            <ProtectedRoute>
-                                <OrderHistoryPage />
-                            </ProtectedRoute>
-                        ),
-                    };
+                    const { default: PaymentResultPage } = await import("@pages/Cart/PaymentResult");
+                    return { Component: PaymentResultPage };
                 },
             },
             {
