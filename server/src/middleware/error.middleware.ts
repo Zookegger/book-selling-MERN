@@ -39,6 +39,8 @@ export const notFoundHandler = (req: Request, res: Response, next: NextFunction)
  * - Ngược lại trả về 500 và thông báo chung `Internal Server Error`.
  */
 export const errorHandler = (err: Error | HttpError, _req: Request, res: Response, _next: NextFunction): void => {
+	console.error(`[${Date.now()}] Error:`, err);
+
 	if (err instanceof HttpError && err.isOperational) {
 		res.status(err.statusCode).json({
 			status: err.status,

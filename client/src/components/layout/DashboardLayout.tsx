@@ -60,6 +60,28 @@ const navGroups: DashboardNavGroup[] = [
         title: "Catalog",
         items: [{ label: "Publishers", path: ROUTER_PATHS.ADMIN_PUBLISHERS, hint: "Manage publishing partners", icon: <Building2 /> }],
     },
+    // {
+    //     key: "user-management",
+    //     title: "User Management",
+    //     items: [
+    //         { label: "Users", path: ROUTER_PATHS.ADMIN_USERS, hint: "View and manage user accounts" },
+    //         { label: "Roles & Permissions", path: ROUTER_PATHS.ADMIN_ROLES, hint: "Define roles and access levels" },
+    //     ],
+    // }, 
+    {
+        key: "author-management",
+        title: "Author Management",
+        items: [
+            { label: "Authors", path: ROUTER_PATHS.ADMIN_AUTHORS, hint: "View and manage authors" },
+        ],
+    }, 
+    {
+        key: "category-management",
+        title: "Category Management",
+        items: [
+            { label: "Categories", path: ROUTER_PATHS.ADMIN_CATEGORIES, hint: "View and manage book categories" },
+        ],
+    }
 ];
 
 const DashboardLayout = () => {
@@ -221,7 +243,7 @@ const DashboardLayout = () => {
                                                     <ListItemText
                                                         primary={item.label}
                                                         secondary={item.hint}
-                                                        primaryTypographyProps={{ fontWeight: selected ? 700 : 500 }}
+                                                        slotProps={{ primary: { fontWeight: selected ? 700 : 500 } }}
                                                     />
                                                 )}
                                             </ListItemButton>

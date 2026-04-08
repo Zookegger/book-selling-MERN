@@ -2,8 +2,8 @@ import mongoose, { Document, Schema } from "mongoose";
 import type { BookFormatType } from "./book.model";
 
 export type OrderStatus = "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded";
-export type PaymentMethod = "cod" | "credit_card" | "bank_transfer" | "paypal";
-export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+export type PaymentMethod = "cod" | "vnpay";
+export type PaymentStatus = "pending" | "processing" | "paid" | "failed" | "cancelled" | "expired" | "refunded";
 
 export interface IOrderAddress {
 	recipientName: string;
@@ -89,7 +89,7 @@ const orderSchema = new Schema<IOrder>(
 			enum: ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "refunded"],
 			default: "pending",
 		},
-		paymentMethod: { type: String, enum: ["cod", "credit_card", "bank_transfer", "paypal"], required: true },
+		paymentMethod: { type: String, enum: ["cod", "vnpay"], required: true },
 		paymentStatus: { type: String, enum: ["pending", "paid", "failed", "refunded"], default: "pending" },
 		couponCode: { type: String, trim: true, uppercase: true },
 		discountAmount: { type: Number, default: 0, min: 0 },

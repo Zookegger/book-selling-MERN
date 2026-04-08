@@ -63,20 +63,20 @@ export const listBooks = async (query: {
 	}
 
 	if (query.category) {
-        const isObjectId = mongoose.Types.ObjectId.isValid(query.category);
+		const isObjectId = mongoose.Types.ObjectId.isValid(query.category);
 
-        if (isObjectId) {
-            filter.categories = query.category;
-        } else {
-            const foundCategory = await Category.findOne({ slug: query.category }).select("_id").exec();
-            
-            if (foundCategory) {
-                filter.categories = foundCategory._id;
-            } else {
-                return { data: [], total: 0, page, totalPages: 0 };
-            }
-        }
-    }
+		if (isObjectId) {
+			filter.categories = query.category;
+		} else {
+			const foundCategory = await Category.findOne({ slug: query.category }).select("_id").exec();
+
+			if (foundCategory) {
+				filter.categories = foundCategory._id;
+			} else {
+				return { data: [], total: 0, page, totalPages: 0 };
+			}
+		}
+	}
 
 	const total = await Book.countDocuments(filter);
 
@@ -94,12 +94,17 @@ export const listBooks = async (query: {
 };
 
 /**
- * Lấy chi tiết một cuốn sách theo ID.
+ * Lấy chi tiết một cuốn sách theo ID hoặc slug.
  */
-export const getBook = async (id: string): Promise<IBook | null> => {
-	if (!mongoose.Types.ObjectId.isValid(id)) throw new HttpError("Invalid book ID", 400);
-
-	return await Book.findById(id).populate("publisher").populate("authors").populate("categories").exec();
+export const getBook = async (identifier: string): Promise<IBook | null> => {
+	if (!mongoose.Types.ObjectId.isValid(identifier)) {
+		return await Book.findOne({ slug: identifier })
+			.populate("publisher")
+			.populate("authors")
+			.populate("categories")
+			.exec();
+	}
+	return await Book.findById(identifier).populate("publisher").populate("authors").populate("categories").exec();
 };
 
 /**
@@ -163,7 +168,7 @@ export const deleteBook = async (id: string): Promise<IBook | null> => {
 export const addFormat = async (bookId: string, dto: AddBookFormatInput): Promise<IBook | null> => {
 	if (!mongoose.Types.ObjectId.isValid(bookId)) throw new HttpError("Invalid book ID", 400);
 
-const parsed = createBookFormatSchema.safeParse(dto);
+	const parsed = createBookFormatSchema.safeParse(dto);
 	if (!parsed.success) {
 		const message = parsed.error.issues.map((i) => i.message).join(", ");
 		throw new HttpError(message, 400);

@@ -10,20 +10,22 @@ export const ROUTES = {
 	RESEND_VERIFICATION: "/resend-verification",
 	PROFILE: "/account/profile",
 	CART: "/cart",
+	CHECKOUT: "/checkout",
+	PAYMENT_RESULT: "/payment-result",
+	ORDER_HISTORY: "/orders/history",
 	BOOKS: "/books",
-	BOOK_DETAIL: "/books/:bookId",
+	BOOK: (bookId: string) => `/books/${bookId}`,
+	BOOK_DETAIL: (bookIdentifier: string) => `/books/${bookIdentifier}`,
+	
+	CATEGORY: "/categories",
+	WISHLIST: "/wishlist",
+	CATEGORY_DETAIL: (slug: string) => `/categories/${slug}`,
+
 	
 	ADMIN_DASHBOARD: "/admin",
 	ADMIN_PUBLISHERS: "/admin/publishers",
-	BOOK: (bookId: string) => `/books/${bookId}`,
-<<<<<<< Updated upstream
-
-	CATEGORY: "/categories",
-	CATEGORY_DETAIL: (slug: string) => `/categories/${slug}`,
-=======
 	ADMIN_AUTHORS: "/admin/authors",
 	ADMIN_CATEGORIES: "/admin/categories",
->>>>>>> Stashed changes
 } as const;
 
 export const ROUTER_PATHS = ROUTES;

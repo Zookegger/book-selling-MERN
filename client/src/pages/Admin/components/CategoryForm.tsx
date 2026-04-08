@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import type { CategoryDto } from "@my-types/category.dto";
+import type { CategoryDto, CreateCategoryDto, UpdateCategoryDto } from "@my-types/category.dto";
 import "../components/AuthorForm.css";
 
 interface CategoryFormProps {
   category?: CategoryDto | null;
   categories?: CategoryDto[];
-  onSubmit: (data: Partial<CategoryDto>) => Promise<void>;
+  onSubmit: (data: CreateCategoryDto | UpdateCategoryDto) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -88,7 +88,7 @@ export default function CategoryForm({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -141,7 +141,6 @@ export default function CategoryForm({
             )}
           </div>
 
-          {/* Mô tả */}
           <div className="form-group">
             <label>Mô tả</label>
             <textarea
@@ -154,7 +153,6 @@ export default function CategoryForm({
             />
           </div>
 
-          {/* Số lượng */}
           <div className="form-group">
             <label>Số lượng</label>
             <input
@@ -172,7 +170,6 @@ export default function CategoryForm({
             )}
           </div>
 
-          {/* 🔥 Ngày tạo (có thể chỉnh) */}
           <div className="form-group">
             <label>Ngày tạo</label>
             <input

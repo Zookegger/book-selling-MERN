@@ -5,14 +5,7 @@ import DashboardLoadingSkeleton from "@layout/DashboardLoadingSkeleton";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
-<<<<<<< Updated upstream
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, CartPage } from "@pages";
-
-=======
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage } from "@pages";
-import AuthorManagement from "@pages/Admin/AuthorManagement";
-import CategoryManagement from "@pages/Admin/CategoryManagement";
->>>>>>> Stashed changes
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage } from "@pages";
 
 export const ROUTER_PATHS = ROUTES;
 
@@ -59,23 +52,7 @@ const router = createBrowserRouter([
                 },
             },
             {
-                path: ROUTES.ADMIN_AUTHORS,
-                element: (
-					<RequireAdmin>
-						<AuthorManagement />
-					</RequireAdmin>
-				),
-            },
-            {
-                path: ROUTES.ADMIN_CATEGORIES,
-                element: (
-					<RequireAuth>
-						<CategoryManagement />
-					</RequireAuth>
-				),
-            },
-            {
-                path: ROUTES.BOOK_DETAIL,
+                path: ROUTES.BOOK_DETAIL(":bookId"),
                 lazy: async () => {
                     const { default: BookDetail } = await import("@pages/Book/BookDetail");
                     return { Component: BookDetail };
@@ -113,14 +90,47 @@ const router = createBrowserRouter([
                 path: ROUTES.PROFILE,
                 lazy: async () => {
                     const { default: ProfilePage } = await import("@pages/Profile/Profile");
-                    return { Component: ProfilePage };
+                    return { element: <ProtectedRoute><ProfilePage /></ProtectedRoute> };
                 },
             },
             {
                 path: ROUTES.CART,
                 lazy: async () => {
                     const { default: CartPage } = await import("@pages/Cart/Cart");
-                    return { Component: CartPage };
+                    return {
+                        element: (
+                            <ProtectedRoute>
+                                <CartPage />
+                            </ProtectedRoute>
+                        ),
+                    };
+                },
+            },
+            {
+                path: ROUTES.CHECKOUT,
+                lazy: async () => {
+                    const { default: CheckoutPage } = await import("@pages/Cart/Checkout");
+                    return {
+                        element: (
+                            <ProtectedRoute>
+                                <CheckoutPage />
+                            </ProtectedRoute>
+                        ),
+                    };
+                },
+            },
+            {
+                path: ROUTES.PAYMENT_RESULT,
+                lazy: async () => {
+                    const { default: PaymentResultPage } = await import("@pages/Cart/PaymentResult");
+                    return { Component: PaymentResultPage };
+                },
+            },
+            {
+                path: ROUTES.WISHLIST,
+                lazy: async () => {
+                    const { default: WishlistPage } = await import("@pages/WishlistPage");
+                    return { element: <ProtectedRoute><WishlistPage /></ProtectedRoute> };
                 },
             },
             {
@@ -160,13 +170,26 @@ const router = createBrowserRouter([
                     return { Component: DashboardHome };
                 },
             },
-
             {
                 path: ROUTER_PATHS.ADMIN_PUBLISHERS,
                 lazy: async () => {
-                    const { default: AdminPublishersPage } = await import("@pages/Admin/Publisher/AdminPublishers");
-                    return { Component: AdminPublishersPage }
+                    const { default: PublisherManagement } = await import("@pages/Admin/Publisher/PublisherManagement");
+                    return { Component: PublisherManagement }
                 },
+            },
+            {
+                path: ROUTES.ADMIN_AUTHORS,
+                lazy: async () => {
+                    const { default: AuthorManagement } = await import("@pages/Admin/Author/AuthorManagement");
+                    return { Component: AuthorManagement }
+                }
+            },
+            {
+                path: ROUTES.ADMIN_CATEGORIES,
+                lazy: async () => {
+                    const { default: CategoryManagement } = await import("@pages/Admin/Category/CategoryManagement");
+                    return { Component: CategoryManagement }
+                }
             },
         ]
     },

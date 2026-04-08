@@ -73,10 +73,9 @@ export default function AdminPublishersPage() {
 				search: search.trim() || undefined,
 			});
 			setPublishers(result.data);
-			success("Danh sách nhà xuất bản đã được cập nhật.");
 		} catch (err) {
 			console.error(err);
-			error("Không thể tải danh sách nhà xuất bản.");
+			error("Unable to load publisher list.");
 		} finally {
 			setLoading(false);
 		}
@@ -150,9 +149,9 @@ export default function AdminPublishersPage() {
 			}
 			await fetchPublishers();
 			closeDialog();
-			success(`Nhà xuất bản đã được ${editingPublisher ? "cập nhật" : "tạo"} thành công.`);
+			success(`Publisher ${editingPublisher ? "updated" : "created"} successfully.`);
 		} catch (error: any) {
-			const message = error?.message ?? "Có lỗi xảy ra khi lưu.";
+			const message = error?.message ?? "An error occurred while saving.";
 			setSubmitError(message);
 
 			if (message.includes("Invalid website URL") || message.includes("website")) {
@@ -167,13 +166,14 @@ export default function AdminPublishersPage() {
 	}
 
 	async function handleDelete(id: string) {
-		const confirmed = window.confirm("Bạn có chắc muốn xóa nhà xuất bản này?");
+		const confirmed = window.confirm("Are you sure you want to delete this publisher?");
 		if (!confirmed) return;
 
 		setLoading(true);
 		try {
 			await publisherService.deletePublisher(id);
 			await fetchPublishers();
+			success("Publisher deleted successfully.");
 		} catch (error) {
 			console.error(error);
 		} finally {
@@ -181,7 +181,7 @@ export default function AdminPublishersPage() {
 		}
 	}
 
-	const title = editingPublisher ? "Sửa nhà xuất bản" : "Thêm nhà xuất bản";
+	const title = editingPublisher ? "Edit publisher" : "Add publisher";
 
 	return (
 		<Box>
@@ -189,28 +189,28 @@ export default function AdminPublishersPage() {
 			<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 3 }}>
 				<Box>
 					<Typography variant="h4" component="h1">
-						Quản lý nhà xuất bản
+						Publisher Management
 					</Typography>
 					<Typography variant="body2" color="text.secondary">
-						Thêm, sửa, xóa và tìm kiếm nhà xuất bản.
+						Create, edit, delete, and search publishers.
 					</Typography>
 				</Box>
 
 				<Button variant="contained" onClick={openCreateDialog}>
-					Thêm mới
+					Add New
 				</Button>
 			</Stack>
 
 			<Paper sx={{ p: 3, mb: 3 }}>
 				<Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-end">
 					<TextField
-						label="Tìm kiếm"
+						label="Search"
 						value={search}
 						onChange={(event) => setSearch(event.target.value)}
 						fullWidth
 					/>
 					<Button variant="outlined" onClick={fetchPublishers}>
-						Tìm
+						Search
 					</Button>
 				</Stack>
 			</Paper>
@@ -224,11 +224,11 @@ export default function AdminPublishersPage() {
 					<Table size="small">
 						<TableHead>
 							<TableRow>
-								<TableCell>Tên</TableCell>
-								<TableCell>Email liên hệ</TableCell>
+								<TableCell>Name</TableCell>
+								<TableCell>Contact email</TableCell>
 								<TableCell>Website</TableCell>
-								<TableCell>Trạng thái</TableCell>
-								<TableCell align="right">Hành động</TableCell>
+								<TableCell>Status</TableCell>
+								<TableCell align="right">Actions</TableCell>
 							</TableRow>
 						</TableHead>
 						<TableBody>
@@ -238,11 +238,11 @@ export default function AdminPublishersPage() {
 										<TableCell>{publisher.name}</TableCell>
 										<TableCell>{publisher.contactEmail}</TableCell>
 										<TableCell>{publisher.website || "-"}</TableCell>
-										<TableCell>{publisher.isActive ? "Hoạt động" : "Ngừng"}</TableCell>
+										<TableCell>{publisher.isActive ? "Active" : "Inactive"}</TableCell>
 										<TableCell align="right">
 											<Stack direction="row" spacing={1} justifyContent="flex-end">
 												<Button size="small" variant="outlined" onClick={() => openEditDialog(publisher)}>
-													Sửa
+													Edit
 												</Button>
 												<Button
 													size="small"
@@ -250,7 +250,7 @@ export default function AdminPublishersPage() {
 													color="error"
 													onClick={() => handleDelete(publisher.id)}
 												>
-													Xóa
+													Delete
 												</Button>
 											</Stack>
 										</TableCell>
@@ -260,7 +260,7 @@ export default function AdminPublishersPage() {
 								<TableRow>
 									<TableCell colSpan={5} sx={{ px: 4, py: 5 }}>
 										<Typography align="center" color="text.secondary">
-											Không tìm thấy nhà xuất bản.
+											No publishers found.
 										</Typography>
 									</TableCell>
 								</TableRow>
@@ -282,11 +282,11 @@ export default function AdminPublishersPage() {
 							)}
 							<Stack direction={{ xs: "column", md: "row" }} spacing={2}>
 								<TextField
-									label="Tên nhà xuất bản"
+									label="Publisher name"
 									{...register("name", {
-										required: "Tên nhà xuất bản không được để trống.",
+										required: "Publisher name is required.",
 										validate: (value) =>
-											value.trim().length > 0 || "Tên nhà xuất bản không được để trống.",
+											value.trim().length > 0 || "Publisher name is required.",
 									})}
 									fullWidth
 									required
@@ -294,12 +294,12 @@ export default function AdminPublishersPage() {
 									helperText={formErrors.name?.message ?? " "}
 								/>
 								<TextField
-									label="Email liên hệ"
+									label="Contact email"
 									{...register("contactEmail", {
-										required: "Email liên hệ không được để trống.",
+										required: "Contact email is required.",
 										validate: (value) =>
 											emailRegex.test((value ?? "").trim()) ||
-											"Email liên hệ phải là một địa chỉ hợp lệ.",
+											"Contact email must be a valid email address.",
 									})}
 									fullWidth
 									required
@@ -318,7 +318,7 @@ export default function AdminPublishersPage() {
 												new URL(value.trim());
 												return true;
 											} catch {
-												return "Website phải là một URL hợp lệ.";
+												return "Website must be a valid URL.";
 											}
 										},
 									})}
@@ -333,12 +333,12 @@ export default function AdminPublishersPage() {
 											checked={!!watch("isActive")}
 										/>
 									}
-									label="Hoạt động"
+									label="Active"
 								/>
 							</Stack>
 
 							<TextField
-								label="Mô tả"
+								label="Description"
 								{...register("description")}
 								fullWidth
 								multiline
@@ -347,17 +347,17 @@ export default function AdminPublishersPage() {
 
 							<Stack direction={{ xs: "column", md: "row" }} spacing={2}>
 								<TextField
-									label="Địa chỉ"
+									label="Address"
 									{...register("location.address")}
 									fullWidth
 								/>
 								<TextField
-									label="Thành phố"
+									label="City"
 									{...register("location.city")}
 									fullWidth
 								/>
 								<TextField
-									label="Quốc gia"
+									label="Country"
 									{...register("location.country")}
 									fullWidth
 								/>
@@ -367,10 +367,10 @@ export default function AdminPublishersPage() {
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2 }}>
 					<Button onClick={closeDialog} disabled={isSubmitting}>
-						Hủy
+						Cancel
 					</Button>
 					<Button variant="contained" onClick={handleSubmit(handleSave)} disabled={isSubmitting}>
-						{editingPublisher ? "Cập nhật" : "Tạo mới"}
+						{editingPublisher ? "Update" : "Create"}
 					</Button>
 				</DialogActions>
 			</Dialog>

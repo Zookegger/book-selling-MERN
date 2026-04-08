@@ -1,2 +1,2 @@
-export { default as AuthorManagement } from "./AuthorManagement";
-export { default as CategoryManagement } from "./CategoryManagement";
+export { default as AuthorManagement } from "./Author/AuthorManagement";
+export { default as CategoryManagement } from "./Category/CategoryManagement";

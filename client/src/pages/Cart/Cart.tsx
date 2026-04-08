@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	Alert,
 	Box,
@@ -7,17 +8,24 @@ import {
 	CircularProgress,
 	Divider,
 	Snackbar,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
 	TextField,
 	Typography,
 } from "@mui/material";
 import useOrder from "@hooks/useOrder";
+import { ROUTES } from "@constants/index";
 import type { CartItemDto } from "@my-types/cart.dto";
 import type { BookDto, BookFormatType } from "@my-types/book.dto";
 
 const formatLabel = (format: BookFormatType) => {
 	switch (format) {
 		case "physical":
-			return "Bản in";
+			return "Physical";
 		case "digital":
 			return "Ebook";
 		case "audiobook":
@@ -41,6 +49,7 @@ const getBookInfo = (item: CartItemDto): { title: string; coverImage?: string } 
 const DISPLAY_CURRENCY = "VND";
 
 const CartPage = () => {
+	const navigate = useNavigate();
 	const { cart, setCart, itemCount, isLoading, isMutating, updateItem, removeItem, fetchCart } = useOrder();
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
 		open: false,
@@ -64,11 +73,11 @@ const CartPage = () => {
 				selectedFormat: item.selectedFormat,
 				quantity: nextQuantity,
 			});
-			setSnackbar({ open: true, message: "Đã cập nhật số lượng.", severity: "success" });
+			setSnackbar({ open: true, message: "Quantity updated.", severity: "success" });
 		} catch (error: any) {
 			setSnackbar({
 				open: true,
-				message: error?.message ?? "Không thể cập nhật số lượng.",
+				message: error?.message ?? "Unable to update quantity.",
 				severity: "error",
 			});
 		}
@@ -85,14 +94,18 @@ const CartPage = () => {
 				bookId: String(bookId),
 				selectedFormat: item.selectedFormat,
 			});
-			setSnackbar({ open: true, message: "Đã xoá sản phẩm khỏi giỏ.", severity: "success" });
+			setSnackbar({ open: true, message: "Item removed from cart.", severity: "success" });
 		} catch (error: any) {
 			setSnackbar({
 				open: true,
-				message: error?.message ?? "Không thể xoá sản phẩm.",
+				message: error?.message ?? "Unable to remove item.",
 				severity: "error",
 			});
 		}
+	};
+
+	const handleGoToCheckout = () => {
+		navigate(ROUTES.CHECKOUT);
 	};
 
 	if (isLoading) {
@@ -107,9 +120,9 @@ const CartPage = () => {
 		<>
 			<Box mt={4} mb={2}>
 				<Typography variant="h4" fontWeight={800}>
-					Giỏ hàng
+					Shopping Cart
 				</Typography>
-				<Typography color="text.secondary">Bạn đang có {itemCount} sản phẩm trong giỏ.</Typography>
+				<Typography color="text.secondary">You have {itemCount} items in your cart.</Typography>
 			</Box>
 
 			<Box
@@ -120,88 +133,108 @@ const CartPage = () => {
 			>
 				<Box flex={1} minWidth={0}>
 					{cart && cart.items.length > 0 ? (
-						<Box display="flex" flexDirection="column" gap={2}>
-							{cart.items.map((item, idx) => {
-								const info = getBookInfo(item);
-								return (
-									<Card key={`${idx}-${String((item as any)?.addedAt ?? "")}`} sx={{ p: 2 }}>
-										<Box display="flex" gap={2} alignItems="center">
-											<Box
-												sx={{
-													width: 72,
-													height: 96,
-													borderRadius: 1,
-													bgcolor: "#f2f2f2",
-													overflow: "hidden",
-													flexShrink: 0,
-												}}
-											>
-												{info.coverImage ? (
-													<img
-														src={info.coverImage}
-														alt={info.title}
-														style={{ width: "100%", height: "100%", objectFit: "cover" }}
+						<TableContainer component={Card} sx={{ overflowX: "auto" }}>
+							<Table size="small" sx={{ minWidth: 760 }}>
+								<TableHead>
+									<TableRow>
+										<TableCell>Book</TableCell>
+										<TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Format</TableCell>
+										<TableCell align="right" sx={{ display: { xs: "none", md: "table-cell" } }}>Unit price</TableCell>
+										<TableCell align="right">Quantity</TableCell>
+										<TableCell align="right">Total</TableCell>
+										<TableCell align="right">Actions</TableCell>
+									</TableRow>
+								</TableHead>
+								<TableBody>
+									{cart.items.map((item, idx) => {
+										const info = getBookInfo(item);
+
+										return (
+											<TableRow key={`${idx}-${String((item as any)?.addedAt ?? "")}`}>
+												<TableCell>
+													<Box display="flex" alignItems="center" gap={1.25} minWidth={0}>
+														<Box
+															sx={{
+																width: 44,
+																height: 60,
+																borderRadius: 1,
+																bgcolor: "#f2f2f2",
+																overflow: "hidden",
+																flexShrink: 0,
+															}}
+														>
+															{info.coverImage ? (
+																<img
+																	src={info.coverImage}
+																	alt={info.title}
+																	style={{ width: "100%", height: "100%", objectFit: "cover" }}
+																/>
+															) : null}
+														</Box>
+														<Typography fontWeight={600} noWrap title={info.title}>
+															{info.title}
+														</Typography>
+													</Box>
+												</TableCell>
+
+												<TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+													{formatLabel(item.selectedFormat)}
+												</TableCell>
+
+												<TableCell align="right" sx={{ display: { xs: "none", md: "table-cell" } }}>
+													{Number(item.unitPrice).toLocaleString()} {DISPLAY_CURRENCY}
+												</TableCell>
+
+												<TableCell align="right">
+													<TextField
+														size="small"
+														type="number"
+														label="Qty"
+														value={item.quantity}
+														inputProps={{ min: 1 }}
+														onChange={(e) => {
+															const next = Number(e.target.value);
+															const safe = Number.isNaN(next) || next < 1 ? 1 : next;
+
+															setCart((prev) => {
+																if (!prev) return prev;
+																const items = [...prev.items];
+																items[idx] = { ...items[idx], quantity: safe };
+																return { ...prev, items };
+															});
+														}}
+														onBlur={() => {
+															const safe = item.quantity < 1 ? 1 : item.quantity;
+															void handleUpdateQuantity(item, safe);
+														}}
+														sx={{ width: 90 }}
 													/>
-												) : null}
-											</Box>
+												</TableCell>
 
-											<Box flex={1} minWidth={0}>
-												<Typography fontWeight={700} noWrap title={info.title}>
-													{info.title}
-												</Typography>
-												<Typography variant="body2" color="text.secondary">
-													Định dạng: {formatLabel(item.selectedFormat)}
-												</Typography>
-												<Typography variant="body2" color="text.secondary">
-													Đơn giá: {Number(item.unitPrice).toLocaleString()} {DISPLAY_CURRENCY}
-												</Typography>
-											</Box>
+												<TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+													{Number(item.quantity * item.unitPrice).toLocaleString()} {DISPLAY_CURRENCY}
+												</TableCell>
 
-											<Box display="flex" gap={1} alignItems="center">
-												{/* Cập nhật số lượng sản phẩm trong giỏ (PATCH /cart/items) */}
-												<TextField
-													size="small"
-													type="number"
-													label="SL"
-													value={item.quantity}
-													inputProps={{ min: 1 }}
-													onChange={(e) => {
-														const next = Number(e.target.value);
-														const safe = Number.isNaN(next) || next < 1 ? 1 : next;
-														// Optimistic UI: update local state trước để UX mượt hơn
-														setCart((prev) => {
-															if (!prev) return prev;
-															const items = [...prev.items];
-															items[idx] = { ...items[idx], quantity: safe };
-															return { ...prev, items };
-														});
-													}}
-													onBlur={() => {
-														const safe = item.quantity < 1 ? 1 : item.quantity;
-														void handleUpdateQuantity(item, safe);
-													}}
-													sx={{ width: 90 }}
-												/>
-
-												{/* Xoá sản phẩm khỏi giỏ (DELETE /cart/items) */}
-												<Button
-													variant="outlined"
-													color="error"
-													disabled={isMutating}
-													onClick={() => void handleRemoveItem(item)}
-												>
-													Xoá
-												</Button>
-											</Box>
-										</Box>
-									</Card>
-								);
-							})}
-						</Box>
+												<TableCell align="right">
+													<Button
+														variant="outlined"
+														color="error"
+														disabled={isMutating}
+														onClick={() => void handleRemoveItem(item)}
+													>
+														Remove
+													</Button>
+												</TableCell>
+											</TableRow>
+										);
+									})}
+								</TableBody>
+							</Table>
+						</TableContainer>
 					) : (
 						<Card sx={{ p: 3 }}>
-							<Typography fontWeight={700}>Giỏ hàng trống</Typography>
-							<Typography color="text.secondary">Hãy quay lại trang sách và thêm sản phẩm vào giỏ.</Typography>
+							<Typography fontWeight={700}>Empty Cart</Typography>
+							<Typography color="text.secondary">Please go back to the books page and add items to your cart.</Typography>
 						</Card>
 					)}
 				</Box>
@@ -209,19 +242,19 @@ const CartPage = () => {
 				<Box sx={{ width: { xs: "100%", md: 380 }, flexShrink: 0 }}>
 					<Card sx={{ p: 2 }}>
 						<Typography variant="h6" fontWeight={800} mb={1}>
-							Tổng tiền
+							Order Summary
 						</Typography>
 						<Divider sx={{ mb: 2 }} />
 
 						<Box display="flex" justifyContent="space-between" mb={1}>
-							<Typography color="text.secondary">Tạm tính</Typography>
+							<Typography color="text.secondary">Subtotal</Typography>
 							<Typography fontWeight={700}>
 								{Number(cart?.subtotal ?? 0).toLocaleString()} {DISPLAY_CURRENCY}
 							</Typography>
 						</Box>
 
 						<Box display="flex" justifyContent="space-between" mb={1}>
-							<Typography color="text.secondary">Giảm giá</Typography>
+							<Typography color="text.secondary">Discount</Typography>
 							<Typography fontWeight={700}>
 								- {Number(cart?.discountAmount ?? 0).toLocaleString()} {DISPLAY_CURRENCY}
 							</Typography>
@@ -230,14 +263,19 @@ const CartPage = () => {
 						<Divider sx={{ my: 2 }} />
 
 						<Box display="flex" justifyContent="space-between" mb={2}>
-							<Typography fontWeight={800}>Tổng cộng</Typography>
+							<Typography fontWeight={800}>Total</Typography>
 							<Typography fontWeight={900} color="primary">
 								{Number(cart?.totalAmount ?? 0).toLocaleString()} {DISPLAY_CURRENCY}
 							</Typography>
 						</Box>
 
-						<Button variant="contained" fullWidth disabled={!cart || cart.items.length === 0}>
-							Thanh toán
+						<Button
+							variant="contained"
+							fullWidth
+							disabled={!cart || cart.items.length === 0 || isMutating}
+							onClick={handleGoToCheckout}
+						>
+							Go to Checkout
 						</Button>
 					</Card>
 				</Box>

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { categoryService, type ListCategoriesParams } from "@services/category.services";
 import type { CategoryDto, ListCategoriesResponseDto, CreateCategoryDto, UpdateCategoryDto } from "@my-types/category.dto";
 import { ApiError } from "@services/api";
-import CategoryForm from "./components/CategoryForm";
-import CategoryTable from "./components/CategoryTable";
+import CategoryForm from "../components/CategoryForm";
+import CategoryTable from "../components/CategoryTable";
 import "./CategoryManagement.css";
 
 export default function CategoryManagement() {

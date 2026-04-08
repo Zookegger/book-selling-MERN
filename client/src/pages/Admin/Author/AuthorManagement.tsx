@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { authorService, type ListAuthorsParams } from "@services/author.services";
 import type { AuthorDto, ListAuthorsResponseDto } from "@my-types/author.dto";
 import { ApiError } from "@services/api";
-import AuthorForm from "./components/AuthorForm";
-import AuthorTable from "./components/AuthorTable";
+import AuthorForm from "../components/AuthorForm";
+import AuthorTable from "../components/AuthorTable";
 import "./AuthorManagement.css";
 
 export default function AuthorManagement() {
