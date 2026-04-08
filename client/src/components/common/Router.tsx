@@ -1,10 +1,11 @@
 import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router-dom";
 import { Suspense, type ReactElement } from "react";
 import MainLayout from "@layout/MainLayout";
+import DashboardLoadingSkeleton from "@layout/DashboardLoadingSkeleton";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList } from "@pages";
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList, CartPage } from "@pages";
 
 
 export const ROUTER_PATHS = ROUTES;
@@ -89,21 +90,16 @@ const router = createBrowserRouter([
                 ),
             },
             {
-                path: ROUTES.NOT_FOUND,
-                element: <NotFoundPage />,
+                path: ROUTES.CART,
+                element: (
+					<ProtectedRoute>
+						<CartPage />
+					</ProtectedRoute>
+				),
             },
             {
-                path: ROUTER_PATHS.ADMIN_PUBLISHERS,
-                lazy: async () => {
-                    const { default: AdminPublishersPage } = await import("@pages/AdminPublishers");
-                    return {
-                        element: (
-                            <ProtectedRoute allowedRoles={["admin"]}>
-                                <AdminPublishersPage />
-                            </ProtectedRoute>
-                        ),
-                    };
-                },
+                path: ROUTES.NOT_FOUND,
+                element: <NotFoundPage />,
             },
             {
                 path: "*",
@@ -117,6 +113,37 @@ const router = createBrowserRouter([
                 path: "/the-loai/:slug",
                 element: <CategoryDetail />
             }
+        ]
+    }, {
+        path: ROUTES.ADMIN_DASHBOARD,
+        hydrateFallbackElement: <DashboardLoadingSkeleton />,
+        lazy: async () => {
+            const { default: AdminDashboardPage } = await import("@components/layout/DashboardLayout");
+            return {
+                element: (
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                        <AdminDashboardPage />
+                    </ProtectedRoute>
+                ),
+            };
+        },
+        errorElement: <RootErrorBoundaryPage />,
+        children: [
+            {
+                index: true,
+                lazy: async () => {
+                    const { default: DashboardHome } = await import("@pages/Admin/Home");
+                    return { Component: DashboardHome };
+                },
+            },
+
+            {
+                path: ROUTER_PATHS.ADMIN_PUBLISHERS,
+                lazy: async () => {
+                    const { default: AdminPublishersPage } = await import("@pages/Admin/Publisher/AdminPublishers");
+                    return { Component: AdminPublishersPage }
+                },
+            },
         ]
     }
 ]);

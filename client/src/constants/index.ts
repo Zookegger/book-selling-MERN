@@ -9,8 +9,11 @@ export const ROUTES = {
 	VERIFY_EMAIL: "/verify-email",
 	RESEND_VERIFICATION: "/resend-verification",
 	PROFILE: "/account/profile",
+	CART: "/cart",
 	BOOKS: "/books",
 	BOOK_DETAIL: "/books/:bookId",
+	
+	ADMIN_DASHBOARD: "/admin",
 	ADMIN_PUBLISHERS: "/admin/publishers",
 	BOOK: (bookId: string) => `/books/${bookId}`,
 	CATEGORY: "/categories",

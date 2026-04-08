@@ -1,7 +1,8 @@
 import { ROUTER_PATHS, ROUTES } from "@constants/index";
 import useAuth from "@hooks/useAuth";
-import { AppBar, Box, Button, Container, Menu, MenuItem, Toolbar, Typography } from "@mui/material";
-import { useState, type MouseEvent, type ReactNode } from "react";
+import useOrder from "@hooks/useOrder";
+import { AppBar, Box, Button, Container, Divider, Menu, MenuItem, Toolbar, Typography } from "@mui/material";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { Link, Outlet } from "react-router-dom";
 
 type MainLayoutProps = {
@@ -10,6 +11,7 @@ type MainLayoutProps = {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
 	const { isAuthenticated, user, logout } = useAuth();
+	const { itemCount, fetchItemCount } = useOrder();
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const open = Boolean(anchorEl);
 
@@ -20,6 +22,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 	function handleClose() {
 		setAnchorEl(null);
 	};
+
+	useEffect(() => {
+		if (!isAuthenticated) return;
+		void fetchItemCount();
+	}, [fetchItemCount, isAuthenticated]);
 
 	return (
 		<Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", minWidth: "100vw" }}>
@@ -52,14 +59,24 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 						</Box>
 					) : (
 						<>
+							<Button
+								component={Link}
+								to={ROUTES.CART}
+								style={{ textDecoration: "none", color: "inherit" }}
+							>
+								Giỏ hàng ({itemCount})
+							</Button>
 							<Button onClick={handleClick} sx={{ color: "black" }}>{user?.firstName}</Button>
 							<Menu open={open} anchorEl={anchorEl} onClose={handleClose}>
 								{user?.role === "admin" && (
-									<MenuItem>
-										<Link to={ROUTER_PATHS.ADMIN_PUBLISHERS} style={{ textDecoration: "none", color: "inherit" }}>
-											Admin
-										</Link>
-									</MenuItem>
+									<>
+										<MenuItem>
+											<Link to={ROUTER_PATHS.ADMIN_DASHBOARD} style={{ textDecoration: "none", color: "inherit" }}>
+												Dashboard
+											</Link>
+										</MenuItem>
+										<Divider />
+									</>
 								)}
 								<MenuItem><Link to={ROUTER_PATHS.PROFILE} style={{ textDecoration: "none", color: "inherit" }}>Profile</Link></MenuItem>
 								<MenuItem onClick={async () => {
