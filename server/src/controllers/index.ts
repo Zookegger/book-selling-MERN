@@ -5,3 +5,4 @@ export * as authorController from "./author.controller";
 export * as publisherController from "./publisher.controller";
 export * as categoryController from "./category.controller";
 export * as cartController from "./cart.controller";
+export * as orderController from "./order.controller";

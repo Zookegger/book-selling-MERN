@@ -1,93 +1,90 @@
-import { Box, Typography, Paper, Stack, Divider, Chip } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Alert, Box, Card, CircularProgress, Divider, Stack, Typography } from "@mui/material";
+import OrderService from "@services/order.services";
+import type { OrderDto } from "@my-types/order.dto";
 
-// 🔥 Mock data (sau này thay bằng API)
-const mockOrders = [
-  {
-    id: "ORD001",
-    createdAt: "2026-04-08",
-    total: 250000,
-    status: "Delivered",
-    items: [
-      { title: "Clean Code", quantity: 1, price: 150000 },
-      { title: "Atomic Habits", quantity: 1, price: 100000 },
-    ],
-  },
-  {
-    id: "ORD002",
-    createdAt: "2026-04-07",
-    total: 120000,
-    status: "Processing",
-    items: [
-      { title: "Deep Work", quantity: 1, price: 120000 },
-    ],
-  },
-];
-
-// 🎨 màu theo trạng thái
-function getStatusColor(status: string) {
-  switch (status) {
-    case "Delivered":
-      return "success";
-    case "Processing":
-      return "warning";
-    case "Cancelled":
-      return "error";
-    default:
-      return "default";
-  }
-}
+const STATUS_LABELS: Record<string, string> = {
+	pending: "Chờ xử lý",
+	confirmed: "Đã xác nhận",
+	processing: "Đang xử lý",
+	shipped: "Đang giao",
+	delivered: "Đã giao",
+	cancelled: "Đã hủy",
+	refunded: "Đã hoàn tiền",
+};
 
 export default function OrderHistoryTab() {
-  return (
-    <Box p={3}>
-      <Typography variant="h6" mb={2}>
-        Order History
-      </Typography>
+	const [orders, setOrders] = useState<OrderDto[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
-      <Stack spacing={2}>
-        {mockOrders.map((order) => (
-          <Paper key={order.id} sx={{ p: 2, borderRadius: 2 }}>
-            <Stack spacing={1.5}>
+	useEffect(() => {
+		void (async () => {
+			try {
+				setIsLoading(true);
+				const data = await OrderService.getMyOrders();
+				setOrders(data);
+				setError(null);
+			} catch (err: any) {
+				setError(err?.message ?? "Không thể tải lịch sử đơn hàng.");
+			} finally {
+				setIsLoading(false);
+			}
+		})();
+	}, []);
 
-              {/* Header */}
-              <Stack direction="row" justifyContent="space-between">
-                <Typography fontWeight={600}>
-                  Order: {order.id}
-                </Typography>
+	if (isLoading) {
+		return (
+			<Box display="flex" justifyContent="center" py={4}>
+				<CircularProgress />
+			</Box>
+		);
+	}
 
-                <Chip
-                  label={order.status}
-                  color={getStatusColor(order.status) as any}
-                  size="small"
-                />
-              </Stack>
+	if (error) {
+		return <Alert severity="error">{error}</Alert>;
+	}
 
-              <Typography variant="body2" color="text.secondary">
-                Date: {order.createdAt}
-              </Typography>
+	if (orders.length === 0) {
+		return (
+			<Card sx={{ p: 2 }}>
+				<Typography fontWeight={700}>Chưa có đơn hàng nào</Typography>
+				<Typography color="text.secondary">Bạn hãy mua sản phẩm để hệ thống lưu lịch sử mua hàng.</Typography>
+			</Card>
+		);
+	}
 
-              <Divider />
-
-              {/* Items */}
-              <Stack spacing={0.5}>
-                {order.items.map((item, index) => (
-                  <Typography key={index} variant="body2">
-                    {item.title} × {item.quantity} — {item.price.toLocaleString()}đ
-                  </Typography>
-                ))}
-              </Stack>
-
-              <Divider />
-
-              {/* Total */}
-              <Typography fontWeight={600} textAlign="right">
-                Total: {order.total.toLocaleString()}đ
-              </Typography>
-
-            </Stack>
-          </Paper>
-        ))}
-      </Stack>
-    </Box>
-  );
+	return (
+		<Stack spacing={2}>
+			{orders.map((order) => (
+				<Card key={order.id} sx={{ p: 2 }}>
+					<Box display="flex" justifyContent="space-between" alignItems="center">
+						<Typography fontWeight={700}>Mã đơn: {order.id}</Typography>
+						<Typography color="primary" fontWeight={700}>
+							{STATUS_LABELS[order.status] ?? order.status}
+						</Typography>
+					</Box>
+					<Typography variant="body2" color="text.secondary" mt={0.5}>
+						Ngày đặt: {new Date(order.placedAt).toLocaleString()}
+					</Typography>
+					<Divider sx={{ my: 1.5 }} />
+					{order.items.map((item, idx) => (
+						<Box key={`${order.id}-${idx}`} display="flex" justifyContent="space-between" mb={0.75}>
+							<Typography variant="body2">
+								{item.bookTitle} x {item.quantity}
+							</Typography>
+							<Typography variant="body2">{Number(item.lineTotal).toLocaleString()} VND</Typography>
+						</Box>
+					))}
+					<Divider sx={{ my: 1.5 }} />
+					<Box display="flex" justifyContent="space-between">
+						<Typography fontWeight={700}>Tổng cộng</Typography>
+						<Typography fontWeight={800} color="primary">
+							{Number(order.totalAmount).toLocaleString()} VND
+						</Typography>
+					</Box>
+				</Card>
+			))}
+		</Stack>
+	);
 }

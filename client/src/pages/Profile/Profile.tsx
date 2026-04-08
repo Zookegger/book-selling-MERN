@@ -93,7 +93,7 @@ export default function ProfilePage() {
                         />
                     </CustomTabPanel>
 
-                    {/* 🔥 ORDER HISTORY (FIX Ở ĐÂY) */}
+                    {/* ORDER HISTORY */}
                     <CustomTabPanel value={tabValue} index={1}>
                         <OrderHistoryTab />
                     </CustomTabPanel>

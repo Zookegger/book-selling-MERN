@@ -5,7 +5,6 @@ export { default as RootErrorBoundaryPage } from "./RootErrorBoundary";
 export { default as ProfilePage } from "./Profile/Profile";
 export { default as CategoryList } from "./Category/List";
 export { default as CategoryDetail } from "./Category/Detail";
-export { default as CartPage } from "./Cart/Cart";
 export { default as AdminPublishersPage } from "./Admin/Publisher/AdminPublishers";
 export * from "./Auth";
 export * from "./Book";

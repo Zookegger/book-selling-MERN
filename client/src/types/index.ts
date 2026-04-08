@@ -6,3 +6,4 @@ export * from "./category.dto";
 export * from "./publisher.dto";
 export * from "./user.dto";
 export * from "./cart.dto";
+export * from "./order.dto";

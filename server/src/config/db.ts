@@ -3,13 +3,6 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-/**
- * Kết nối tới MongoDB bằng Mongoose.
- * - Đọc `MONGO_URI` từ biến môi trường.
- * - Nếu không có `MONGO_URI` sẽ ném lỗi.
- *
- * @throws {Error} khi `MONGO_URI` chưa được cấu hình.
- */
 const connectDB = async (): Promise<void> => {
 	const mongoUri = process.env.MONGO_URI;
 	if (!mongoUri) {
@@ -20,3 +13,4 @@ const connectDB = async (): Promise<void> => {
 };
 
 export default connectDB;
+

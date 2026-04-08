@@ -10,6 +10,8 @@ export const ROUTES = {
 	RESEND_VERIFICATION: "/resend-verification",
 	PROFILE: "/account/profile",
 	CART: "/cart",
+	CHECKOUT: "/checkout",
+	ORDER_HISTORY: "/orders/history",
 	BOOKS: "/books",
 
 	ADMIN_DASHBOARD: "/admin",
