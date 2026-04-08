@@ -5,7 +5,7 @@ import DashboardLoadingSkeleton from "@layout/DashboardLoadingSkeleton";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList, CartPage } from "@pages";
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, CartPage } from "@pages";
 
 
 export const ROUTER_PATHS = ROUTES;
@@ -64,10 +64,6 @@ const router = createBrowserRouter([
                 },
             },
             {
-                path: ROUTES.UNAUTHORIZE,
-                element: <UnauthorizePage />,
-            },
-            {
                 path: ROUTES.VERIFY_EMAIL,
                 lazy: async () => {
                     const { default: VerifyEmailPage } = await import("@pages/Auth/VerifyEmail");
@@ -83,36 +79,32 @@ const router = createBrowserRouter([
             },
             {
                 path: ROUTES.PROFILE,
-                element: (
-                    <ProtectedRoute>
-                        <ProfilePage />
-                    </ProtectedRoute>
-                ),
+                lazy: async () => {
+                    const { default: ProfilePage } = await import("@pages/Profile/Profile");
+                    return { Component: ProfilePage };
+                },
             },
             {
                 path: ROUTES.CART,
-                element: (
-					<ProtectedRoute>
-						<CartPage />
-					</ProtectedRoute>
-				),
+                lazy: async () => {
+                    const { default: CartPage } = await import("@pages/Cart/Cart");
+                    return { Component: CartPage };
+                },
             },
             {
-                path: ROUTES.NOT_FOUND,
-                element: <NotFoundPage />,
+                path: ROUTES.CATEGORY,
+                lazy: async () => {
+                    const { default: CategoryList } = await import("@pages/Category/List");
+                    return { Component: CategoryList };
+                },
             },
             {
-                path: "*",
-                element: <Navigate to={ROUTES.NOT_FOUND} replace />,
+                path: ROUTES.CATEGORY_DETAIL(":slug"),
+                lazy: async () => {
+                    const { default: CategoryDetail } = await import("@pages/Category/Detail");
+                    return { Component: CategoryDetail };
+                }
             },
-            {
-                path: "/categories",
-                element: <CategoryList />
-            },
-            {
-                path: "/the-loai/:slug",
-                element: <CategoryDetail />
-            }
         ]
     }, {
         path: ROUTES.ADMIN_DASHBOARD,
@@ -145,7 +137,19 @@ const router = createBrowserRouter([
                 },
             },
         ]
-    }
+    },
+    {
+        path: ROUTES.NOT_FOUND,
+        element: <NotFoundPage />,
+    },
+    {
+        path: "*",
+        element: <Navigate to={ROUTES.NOT_FOUND} replace />,
+    },
+    {
+        path: ROUTES.UNAUTHORIZE,
+        element: <UnauthorizePage />,
+    },
 ]);
 
 export default router;

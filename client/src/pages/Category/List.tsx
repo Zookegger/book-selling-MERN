@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-// Individual imports to optimize performance and avoid TypeScript Overload errors on Grid v6
 import Container from "@mui/material/Container";
-import Grid from "@mui/material/Grid"; 
+import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
@@ -14,6 +13,8 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 // Import service and types
 import { categoryService, type ICategory } from "@services/category.service";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
+import { Paper } from "@mui/material";
+import { ROUTES } from "@constants";
 
 const CategoryList: React.FC = () => {
     const [categories, setCategories] = useState<ICategory[]>([]);
@@ -23,7 +24,6 @@ const CategoryList: React.FC = () => {
         const fetchCategories = async () => {
             setLoading(true);
             try {
-                // Fetch page 1, limit 100 to ensure all flat categories are loaded
                 const res = await categoryService.getList(1, 100, "");
                 setCategories(res.data);
             } catch (error) {
@@ -38,14 +38,13 @@ const CategoryList: React.FC = () => {
     if (loading) return <LoadingSkeleton />;
 
     return (
-        /* STEP 1: Use maxWidth="xl" (1536px) to spread content on large screens. */
-        <Container maxWidth="xl" sx={{ py: 8 }}>
+        <>
             {/* Header section */}
             <Box sx={{ mb: 10, textAlign: "center" }}>
-                <Typography 
-                    variant="h3" 
-                    fontWeight={900} 
-                    gutterBottom 
+                <Typography
+                    variant="h3"
+                    fontWeight={900}
+                    gutterBottom
                     sx={{ letterSpacing: '-0.02em', color: 'text.primary' }}
                 >
                     All Book Categories
@@ -56,47 +55,44 @@ const CategoryList: React.FC = () => {
             </Box>
 
             {/* Grid section */}
-            <Grid 
-                container 
-                spacing={3} 
-                /* IMPORTANT STEP: Center all child elements */
-                sx={{ justifyContent: "center" }} 
+            <Grid
+                container
+                spacing={3}
+                sx={{ justifyContent: "center" }}
             >
                 {categories.map((cat) => (
-                    <Grid 
-                        key={cat.id} 
-                        sx={{ 
-                            // Force 25% for large screens (4 columns), 33.33% for medium (3 columns)
-                            // If screen is not wide enough for 4, it shows 3 and AUTO-CENTERS
-                            width: { xs: '100%', sm: '50%', md: '33.33%', lg: '25%' }, 
+                    <Grid
+                        key={cat.id}
+                        sx={{
+                            minWidth: 280,
                             p: 1.5,
                             display: 'flex',
                             justifyContent: 'center' // Center content inside each Grid cell
                         }}
                     >
-                        <Card sx={{ 
+                        <Card sx={{
                             width: '100%',
                             // Limit max width of Card so it doesn't stretch too much on ultra-wide screens
-                            maxWidth: 340, 
-                            borderRadius: 5, 
+                            maxWidth: 340,
+                            borderRadius: 5,
                             border: '1px solid',
                             borderColor: 'divider',
                             boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                             transition: "all 0.3s ease",
-                            "&:hover": { 
+                            "&:hover": {
                                 transform: "translateY(-5px)",
                                 boxShadow: "0 12px 24px rgba(0,0,0,0.12)",
                                 borderColor: 'primary.main'
                             }
                         }}>
-                            <CardActionArea 
-                                component={Link} 
-                                to={`/the-loai/${cat.slug}`}
+                            <CardActionArea
+                                component={Link}
+                                to={ROUTES.CATEGORY_DETAIL(cat.slug)}
                                 sx={{ height: '100%', p: 1 }}
                             >
                                 <CardContent sx={{ textAlign: 'center', py: 4 }}>
-                                    <Box sx={{ 
-                                        width: 50, height: 50, borderRadius: 2, 
+                                    <Box sx={{
+                                        width: 50, height: 50, borderRadius: 2,
                                         bgcolor: 'primary.main', color: 'white',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         mx: 'auto', mb: 2,
@@ -104,17 +100,17 @@ const CategoryList: React.FC = () => {
                                     }}>
                                         <MenuBookIcon />
                                     </Box>
-                                    
+
                                     <Typography variant="h6" fontWeight={700} sx={{ mb: 1, color: 'text.primary' }}>
                                         {cat.name}
                                     </Typography>
-                                    
+
                                     <Divider sx={{ my: 2, width: '20%', mx: 'auto', borderBottomWidth: 2, borderColor: 'primary.light' }} />
 
-                                    <Typography 
-                                        variant="body2" 
-                                        color="text.secondary" 
-                                        sx={{ 
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                        sx={{
                                             minHeight: '3em',
                                             display: '-webkit-box',
                                             WebkitLineClamp: 2,
@@ -136,7 +132,7 @@ const CategoryList: React.FC = () => {
                     </Grid>
                 ))}
             </Grid>
-        </Container>
+        </>
     );
 };
 

@@ -11,6 +11,7 @@ import { categoryService, type ICategory } from "@services/category.service";
 import { BookService } from "@services/book.services";
 import type { BookDto } from "@my-types/book.dto";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
+import { ROUTES } from "@constants";
 
 const CategoryDetail: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -53,7 +54,7 @@ const CategoryDetail: React.FC = () => {
     if (loading) return <LoadingSkeleton />;
 
     return (
-        <Container maxWidth="xl" sx={{ py: 6 }}>
+        <>
             {/* Breadcrumbs - Navigation bar */}
             <Breadcrumbs sx={{ mb: 4, px: 2 }}>
                 <MuiLink component={Link} to="/categories" underline="hover" color="inherit">
@@ -89,9 +90,10 @@ const CategoryDetail: React.FC = () => {
 
             {/* Book List - Forced to 4 columns on large screens */}
             <Grid 
-                 container 
+                container 
                 spacing={3}
-                sx={{ justifyContent: 'center' }}  
+                sx={{ justifyContent: 'center' }}
+                size="auto"
             >
                 {books.length > 0 ? (
                     books.map((book) => (
@@ -214,13 +216,13 @@ const CategoryDetail: React.FC = () => {
                         <Typography variant="h5" color="text.disabled" fontWeight={600}>
                             There are currently no books in this category.
                         </Typography>
-                        <MuiLink component={Link} to="/categories" sx={{ mt: 2, display: 'inline-block', fontWeight: 700 }}>
+                        <MuiLink component={Link} to={ROUTES.CATEGORY} sx={{ mt: 2, display: 'inline-block', fontWeight: 700 }}>
                             Return to categories page
                         </MuiLink>
                     </Box>
                 )}
             </Grid>
-        </Container>
+        </>
     );
 };
 
