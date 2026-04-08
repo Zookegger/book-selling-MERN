@@ -1,4 +1,4 @@
-import { ROUTES } from "@constants/index";
+import { ROUTER_PATHS, ROUTES } from "@constants/index";
 import useAuth from "@hooks/useAuth";
 import { AppBar, Box, Button, Container, Menu, MenuItem, Toolbar, Typography } from "@mui/material";
 import { useState, type MouseEvent, type ReactNode } from "react";
@@ -39,7 +39,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 						<>
 							<Button onClick={handleClick} sx={{ color: "black" }}>{user?.firstName}</Button>
 							<Menu open={open} anchorEl={anchorEl} onClose={handleClose}>
-								<MenuItem><Link to={ROUTES.PROFILE} style={{ textDecoration: "none", color: "inherit" }}>Profile</Link></MenuItem>
+								{user?.role === "admin" && (
+									<MenuItem>
+										<Link to={ROUTER_PATHS.ADMIN_PUBLISHERS} style={{ textDecoration: "none", color: "inherit" }}>
+											Admin
+										</Link>
+									</MenuItem>
+								)}
+								<MenuItem><Link to={ROUTER_PATHS.PROFILE} style={{ textDecoration: "none", color: "inherit" }}>Profile</Link></MenuItem>
 								<MenuItem onClick={async () => {
 									handleClose();
 									await logout()

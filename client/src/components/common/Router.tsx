@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router-dom";
 import { Suspense, type ReactElement } from "react";
+import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router-dom";
+import { Suspense, type ReactElement } from "react";
 import MainLayout from "@layout/MainLayout";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
@@ -8,12 +10,15 @@ import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage } fro
 
 export const ROUTER_PATHS = ROUTES;
 
-const RequireAuth = ({ children }: { children: ReactElement }) => {
-	const { isLoading, isAuthenticated } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles }: { children: ReactElement, allowedRoles?: string[] }) => {
+	const { isLoading, isAuthenticated, user } = useAuth();
 	const location = useLocation();
 
 	if (isLoading) return <LoadingSkeleton />;
 	if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
+	if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+		return <Navigate to={ROUTES.UNAUTHORIZE} replace />;
+	}
 	return children;
 };
 
@@ -28,10 +33,23 @@ const router = createBrowserRouter([
 				</Suspense>
 			</MainLayout>
 		),
+        path: ROUTES.HOME,
+        hydrateFallbackElement: <LoadingSkeleton />,
+        element: (
+			<MainLayout>
+				<Suspense fallback={<LoadingSkeleton />}>
+					<Outlet />
+				</Suspense>
+			</MainLayout>
+		),
         errorElement: <RootErrorBoundaryPage />,
         children: [
             {
                 index: true,
+                lazy: async () => {
+					const { default: HomePage } = await import("@pages/Home");
+					return { Component: HomePage };
+				},
                 lazy: async () => {
 					const { default: HomePage } = await import("@pages/Home");
 					return { Component: HomePage };
@@ -79,14 +97,27 @@ const router = createBrowserRouter([
             {
                 path: ROUTES.PROFILE,
                 element: (
-					<RequireAuth>
+					<ProtectedRoute>
 						<ProfilePage />
-					</RequireAuth>
+					</ProtectedRoute>
 				),
             },
             {
                 path: ROUTES.NOT_FOUND,
                 element: <NotFoundPage />,
+            },
+            {
+                path: ROUTER_PATHS.ADMIN_PUBLISHERS,
+                lazy: async () => {
+					const { default: AdminPublishersPage } = await import("@pages/AdminPublishers");
+					return { 
+                        element: (
+                            <ProtectedRoute allowedRoles={["admin"]}>
+                                <AdminPublishersPage />
+                            </ProtectedRoute>
+                        ),
+                    };
+				},
             },
             {
                 path: "*",
