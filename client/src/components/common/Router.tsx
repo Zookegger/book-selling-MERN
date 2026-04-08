@@ -5,8 +5,14 @@ import DashboardLoadingSkeleton from "@layout/DashboardLoadingSkeleton";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
+<<<<<<< Updated upstream
 import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, CartPage } from "@pages";
 
+=======
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage } from "@pages";
+import AuthorManagement from "@pages/Admin/AuthorManagement";
+import CategoryManagement from "@pages/Admin/CategoryManagement";
+>>>>>>> Stashed changes
 
 export const ROUTER_PATHS = ROUTES;
 
@@ -20,6 +26,16 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: ReactElement, al
         return <Navigate to={ROUTES.UNAUTHORIZE} replace />;
     }
     return children;
+};
+
+const RequireAdmin = ({ children }: { children: ReactElement }) => {
+	const { isLoading, isAuthenticated, isAdmin } = useAuth();
+	const location = useLocation();
+
+	if (isLoading) return <LoadingSkeleton />;
+	if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
+	if (!isAdmin) return <Navigate to={ROUTES.UNAUTHORIZE} state={{ from: location }} replace />;
+	return children;
 };
 
 const router = createBrowserRouter([
@@ -41,6 +57,22 @@ const router = createBrowserRouter([
                     const { default: HomePage } = await import("@pages/Home");
                     return { Component: HomePage };
                 },
+            },
+            {
+                path: ROUTES.ADMIN_AUTHORS,
+                element: (
+					<RequireAdmin>
+						<AuthorManagement />
+					</RequireAdmin>
+				),
+            },
+            {
+                path: ROUTES.ADMIN_CATEGORIES,
+                element: (
+					<RequireAuth>
+						<CategoryManagement />
+					</RequireAuth>
+				),
             },
             {
                 path: ROUTES.BOOK_DETAIL,
