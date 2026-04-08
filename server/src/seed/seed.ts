@@ -1,7 +1,7 @@
 import mongoose, { Types } from "mongoose";
 import slugify from "slugify";
 import connectDB from "../config/db";
-import { Author, Publisher, Category, Book } from "@models";
+import { Author, Publisher, Category, Book, User } from "@models";
 
 interface CategorySeed {
 	slug: string;
@@ -45,6 +45,16 @@ interface BookSeed {
 	authorNames: string[];
 	categorySlugs: string[];
 	formats: BookFormatSeed[];
+}
+
+interface UserSeed {
+	firstName: string;
+	lastName: string;
+	email: string;
+	phone: string;
+	password: string;
+	role: "customer" | "admin";
+	isEmailVerified: boolean;
 }
 
 const authorSeeds = [
@@ -139,6 +149,72 @@ const categorySeeds: CategorySeed[] = [
 	{ slug: "data-science", name: "Data Science", description: "Data analytics and ML", order: 7, parentSlug: "technology" },
 	{ slug: "biography", name: "Biography", description: "Life stories and profiles", order: 8, parentSlug: "non-fiction" },
 	{ slug: "business", name: "Business", description: "Product, leadership, and strategy", order: 9, parentSlug: "non-fiction" },
+];
+
+const userSeeds: UserSeed[] = [
+	{
+		firstName: "Admin",
+		lastName: "User",
+		email: "admin@luminabooks.local",
+		phone: "+84901234567",
+		password: "AdminPass123!@#",
+		role: "admin",
+		isEmailVerified: true,
+	},
+	{
+		firstName: "John",
+		lastName: "Doe",
+		email: "john.doe@example.com",
+		phone: "+84912345678",
+		password: "JohnPass123!@#",
+		role: "customer",
+		isEmailVerified: true,
+	},
+	{
+		firstName: "Sarah",
+		lastName: "Chen",
+		email: "sarah.chen@example.com",
+		phone: "+84923456789",
+		password: "SarahPass123!@#",
+		role: "customer",
+		isEmailVerified: true,
+	},
+	{
+		firstName: "Michael",
+		lastName: "Smith",
+		email: "michael.smith@example.com",
+		phone: "+84934567890",
+		password: "MichaelPass123!@#",
+		role: "customer",
+		isEmailVerified: true,
+	},
+	{
+		firstName: "Emma",
+		lastName: "Johnson",
+		email: "emma.johnson@example.com",
+		phone: "+84945678901",
+		password: "EmmaPass123!@#",
+		role: "customer",
+		isEmailVerified: true,
+	},
+	{
+		firstName: "David",
+		lastName: "Williams",
+		email: "david.williams@example.com",
+		phone: "+84956789012",
+		password: "DavidPass123!@#",
+		role: "customer",
+		isEmailVerified: true,
+	},
+	{
+		firstName: "Lisa",
+		lastName: "Brown",
+		email: "lisa.brown@example.com",
+		phone: "+84967890123",
+		password: "LisaPass123!@#",
+		role: "customer",
+		isEmailVerified: true,
+	},
 ];
 
 const bookSeeds: BookSeed[] = [
@@ -352,11 +428,11 @@ const seed = async () => {
 
 	try {
 		if (shouldReset) {
-			await Promise.all([Book.deleteMany({}), Category.deleteMany({}), Publisher.deleteMany({}), Author.deleteMany({})]);
-			console.log("Existing books and related entities cleared.");
+			await Promise.all([Book.deleteMany({}), Category.deleteMany({}), Publisher.deleteMany({}), Author.deleteMany({}), User.deleteMany({})]);
+			console.log("Existing books, users, and related entities cleared.");
 		}
 
-		const [authors, publishers] = await Promise.all([Author.create(authorSeeds), Publisher.create(publisherSeeds)]);
+		const [authors, publishers, users] = await Promise.all([Author.create(authorSeeds), Publisher.create(publisherSeeds), User.create(userSeeds)]);
 		const categoryIdsBySlug = await createCategoryHierarchy();
 
 		const authorIdsByName = new Map(authors.map((author) => [author.name, author._id as Types.ObjectId]));
@@ -433,7 +509,7 @@ const seed = async () => {
 		const books = await Book.create(booksPayload);
 
 		console.log(
-			`Seeded ${authors.length} authors, ${publishers.length} publishers, ${categoryIdsBySlug.size} categories, and ${books.length} books.`,
+			`Seeded ${authors.length} authors, ${publishers.length} publishers, ${categoryIdsBySlug.size} categories, ${users.length} users (including 1 admin), and ${books.length} books.`,
 		);
 	} finally {
 		await mongoose.disconnect();

@@ -1,85 +1,136 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-  Box,
-  Typography,
-  Card,
-  CardMedia,
-  Divider
+	Box,
+	Typography,
+	Card,
+	CardMedia,
+	CircularProgress,
+	Divider
 } from "@mui/material";
 import { BookService } from "@services/book.services";
+import type { BookDto } from "@my-types/book.dto";
 
 const BookDetail = () => {
-  const { bookSlug } = useParams();
-  const [book, setBook] = useState<any>(null);
+	const { bookId } = useParams();
+	const [book, setBook] = useState<BookDto | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (bookSlug) {
-      const book = BookService.fetchDetail(bookSlug);
-      setBook(book);
-    }
-  }, [bookSlug]);
+	useEffect(() => {
+		let isMounted = true;
 
+		const loadBook = async () => {
+			if (!bookId) {
+				if (isMounted) setIsLoading(false);
+				return;
+			}
 
-  return (
-    <Box display="flex" justifyContent="center" mt={5}>
-      <Card
-        sx={{
-          display: "flex",
-          width: 900,
-          p: 3,
-          gap: 4,
-          boxShadow: 3,
-          borderRadius: 3
-        }}
-      >
-        <CardMedia
-          component="img"
-          sx={{ width: 280, borderRadius: 2 }}
-          image={book.thumbnail || "https://via.placeholder.com/280"}
-          alt={book.title}
-        />
+			try {
+				const detail = await BookService.fetchDetail(bookId);
+				if (isMounted) setBook(detail);
+			} catch {
+				if (isMounted) setBook(null);
+			} finally {
+				if (isMounted) setIsLoading(false);
+			}
+		};
 
-        <Box flex={1}>
-          <Typography variant="h4" fontWeight="bold" mb={2}>
-            {book.title}
-          </Typography>
+		void loadBook();
+		return () => {
+			isMounted = false;
+		};
+	}, [bookId]);
 
-          <Typography variant="h5" color="primary" mb={2}>
-            {book.price?.toLocaleString()} VND
-          </Typography>
+	if (isLoading) {
+		return (
+			<Box display="flex" justifyContent="center" mt={5}>
+				<CircularProgress />
+			</Box>
+		);
+	}
 
-          <Divider sx={{ my: 2 }} />
+	if (!book) {
+		return (
+			<Box display="flex" justifyContent="center" mt={5}>
+				<Typography color="text.secondary">Book not found.</Typography>
+			</Box>
+		);
+	}
 
-          <Typography mb={1}>
-            <b>Tác giả:</b> {book.author || "Đang cập nhật"}
-          </Typography>
+	const authorText =
+		Array.isArray(book.authors) && book.authors.length > 0
+			? book.authors
+				.map((a) => (typeof a === "string" ? a : (a?.name as string | undefined) ?? ""))
+				.filter(Boolean)
+				.join(", ")
+			: "Đang cập nhật";
 
-          <Typography mb={1}>
-            <b>Đánh giá:</b> {book.rating || "0"} ⭐
-          </Typography>
+	const publisherText =
+		typeof book.publisher === "string"
+			? book.publisher
+			: ((book.publisher as { name?: string } | undefined)?.name ?? "N/A");
 
-          <Typography mb={1}>
-            <b>Năm xuất bản:</b> {book.year || "N/A"}
-          </Typography>
+	const displayPrice = book.formats?.[0]?.price;
 
-          <Typography mb={2}>
-            <b>Nhà xuất bản:</b> {book.publisher || "N/A"}
-          </Typography>
+	return (
+		<Box display="flex" justifyContent="center" mt={5}>
+			<Card
+				sx={{
+					display: "flex",
+					width: 900,
+					p: 3,
+					gap: 4,
+					boxShadow: 3,
+					borderRadius: 3
+				}}
+			>
+				{
+					book.coverImage &&
 
-          <Divider sx={{ my: 2 }} />
+					<CardMedia
+						component="img"
+						sx={{ width: 280, borderRadius: 2 }}
+						image={book.coverImage || "https://via.placeholder.com/280"}
+						alt={book.title}
+					/>
+				}
 
-          <Typography variant="h6" mb={1}>
-            Mô tả
-          </Typography>
+				<Box flex={1}>
+					<Typography variant="h4" fontWeight="bold" mb={2}>
+						{book.title}
+					</Typography>
 
-          <Typography color="text.secondary">
-            {book.description}
-          </Typography>
-        </Box>
-      </Card>
-    </Box>
-  );
+					<Typography variant="h5" color="primary" mb={2}>
+						{displayPrice != null ? `${displayPrice.toLocaleString()} VND` : "N/A"}
+					</Typography>
+
+					<Divider sx={{ my: 2 }} />
+
+					<Typography mb={1}>
+						<b>Tác giả:</b> {authorText}
+					</Typography>
+
+					<Typography mb={1}>
+						<b>Năm xuất bản:</b> {book.publicationDate ? new Date(book.publicationDate).getFullYear() : "N/A"}
+					</Typography>
+
+					<Typography mb={2}>
+						<b>Nhà xuất bản:</b> {publisherText}
+					</Typography>
+
+					<Divider sx={{ my: 2 }} />
+
+					<Typography variant="h6" mb={1}>
+						Mô tả
+					</Typography>
+
+					<Typography color="text.secondary">
+						{book.description}
+					</Typography>
+				</Box>
+			</Card>
+		</Box>
+	);
 };
 
 export default BookDetail;

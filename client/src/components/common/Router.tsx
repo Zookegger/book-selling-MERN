@@ -20,6 +20,7 @@ const RequireAuth = ({ children }: { children: ReactElement }) => {
 const router = createBrowserRouter([
     {
         path: ROUTES.HOME,
+        hydrateFallbackElement: <LoadingSkeleton />,
         element: (
 			<MainLayout>
 				<Suspense fallback={<LoadingSkeleton />}>
