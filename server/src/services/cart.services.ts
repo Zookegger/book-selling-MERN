@@ -49,6 +49,12 @@ const findOrCreateCart = async (userId: string): Promise<ICart> => {
 		cart = await Cart.create({ user: userId, items: [] });
 	}
 
+	// Chuẩn hoá currency về VND cho cả cart cũ đã lưu USD trước đó
+	if (cart.currency !== "VND") {
+		cart.currency = "VND";
+		await cart.save();
+	}
+
 	return cart;
 };
 

@@ -5,7 +5,7 @@ import DashboardLoadingSkeleton from "@layout/DashboardLoadingSkeleton";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage } from "@pages";
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CartPage } from "@pages";
 
 export const ROUTER_PATHS = ROUTES;
 
@@ -87,6 +87,14 @@ const router = createBrowserRouter([
                         <ProfilePage />
                     </ProtectedRoute>
                 ),
+            },
+            {
+                path: ROUTES.CART,
+                element: (
+					<RequireAuth>
+						<CartPage />
+					</RequireAuth>
+				),
             },
             {
                 path: ROUTES.NOT_FOUND,

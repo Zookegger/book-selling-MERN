@@ -3,6 +3,7 @@ import "./App.css";
 import router from "@components/common/Router";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { AuthProvider } from "@contexts/AuthContext";
+import { OrderProvider } from "@contexts/OrderContext";
 import SnackbarProvider from "@contexts/SnackbarContext";
 
 const theme = createTheme({
@@ -26,10 +27,12 @@ function App() {
 	return (
 		<SnackbarProvider>
 			<AuthProvider>
-				<ThemeProvider theme={theme}>
-					<CssBaseline />
-					<RouterProvider router={router} />
-				</ThemeProvider>
+				<OrderProvider>
+					<ThemeProvider theme={theme}>
+						<CssBaseline />
+						<RouterProvider router={router} />
+					</ThemeProvider>
+				</OrderProvider>
 			</AuthProvider>
 		</SnackbarProvider>
 	);
