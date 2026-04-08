@@ -2,6 +2,8 @@ import mongoose, { Types } from "mongoose";
 import slugify from "slugify";
 import connectDB from "../config/db";
 import { Author, Publisher, Category, Book, User } from "@models";
+import { faker } from "@faker-js/faker";
+import Chance from "chance";
 
 interface CategorySeed {
 	slug: string;
@@ -57,88 +59,80 @@ interface UserSeed {
 	isEmailVerified: boolean;
 }
 
-const authorSeeds = [
-	{
-		name: "Maya Nguyen",
-		email: "maya.nguyen@example.com",
-		bio: "Writes literary fiction centered around migration and memory.",
-		website: "https://authors.local/maya-nguyen",
-	},
-	{
-		name: "Jonah Tran",
-		email: "jonah.tran@example.com",
-		bio: "Software engineer and technical author focused on backend systems.",
-		website: "https://authors.local/jonah-tran",
-	},
-	{
-		name: "Elena Pham",
-		email: "elena.pham@example.com",
-		bio: "Data storyteller working at the intersection of analytics and ethics.",
-		website: "https://authors.local/elena-pham",
-	},
-	{
-		name: "Noah Le",
-		email: "noah.le@example.com",
-		bio: "Children's writer creating science-inspired adventure books.",
-		website: "https://authors.local/noah-le",
-	},
-	{
-		name: "Iris Hoang",
-		email: "iris.hoang@example.com",
-		bio: "Historian documenting overlooked stories from Southeast Asia.",
-		website: "https://authors.local/iris-hoang",
-	},
-	{
-		name: "Daniel Vu",
-		email: "daniel.vu@example.com",
-		bio: "Product leader writing practical guides for builders.",
-		website: "https://authors.local/daniel-vu",
-	},
-	{
-		name: "Sophie Dao",
-		email: "sophie.dao@example.com",
-		bio: "Biographer and long-form journalist.",
-		website: "https://authors.local/sophie-dao",
-	},
-];
+const chance = new Chance();
 
-const publisherSeeds: PublisherSeed[] = [
-	{
-		name: "North Harbor Press",
-		description: "Independent publisher of modern fiction and essays.",
-		contactEmail: "editorial@northharborpress.example.com",
-		website: "https://publishers.local/north-harbor-press",
-		location: { address: "14 Lakeview Avenue", city: "Seattle", country: "USA" },
-	},
-	{
-		name: "Orbit Lane Books",
-		description: "Specialized in technology, product, and startup books.",
-		contactEmail: "hello@orbitlanebooks.example.com",
-		website: "https://publishers.local/orbit-lane-books",
-		location: { address: "88 Innovation Street", city: "San Francisco", country: "USA" },
-	},
-	{
-		name: "Little Acorn House",
-		description: "Children's and middle-grade educational publishing house.",
-		contactEmail: "team@littleacornhouse.example.com",
-		website: "https://publishers.local/little-acorn-house",
-		location: { address: "9 Maple Road", city: "Singapore", country: "Singapore" },
-	},
-	{
-		name: "Atlas Chronicle",
-		description: "History, biography, and cultural studies publisher.",
-		contactEmail: "contact@atlaschronicle.example.com",
-		website: "https://publishers.local/atlas-chronicle",
-		location: { address: "21 Heritage Plaza", city: "London", country: "UK" },
-	},
-];
+// Parse numeric CLI args like `--books=25` or `--books 25`
+const parseNumberArg = (key: string, defaultValue: number): number => {
+	const direct = process.argv.find((a) => a.startsWith(`${key}=`));
+	if (direct) {
+		const [, v] = direct.split("=");
+		const n = Number(v);
+		return Number.isFinite(n) && n >= 0 ? Math.max(0, Math.floor(n)) : defaultValue;
+	}
+
+	const idx = process.argv.indexOf(key);
+	if (idx !== -1 && process.argv.length > idx + 1) {
+		const n = Number(process.argv[idx + 1]);
+		return Number.isFinite(n) && n >= 0 ? Math.max(0, Math.floor(n)) : defaultValue;
+	}
+
+	return defaultValue;
+};
+
+// Generate author seeds using faker
+const generateAuthorSeeds = (count: number = 12) => {
+	return Array.from({ length: count }, () => ({
+		name: faker.person.fullName(),
+		email: faker.internet.email().toLowerCase(),
+		bio: faker.lorem.paragraph(),
+		website: faker.internet.url(),
+	}));
+};
+
+// Generate publisher seeds using faker
+const generatePublisherSeeds = (count: number = 8) => {
+	return Array.from({ length: count }, () => ({
+		name: faker.company.name() + " Publications",
+		description: faker.lorem.paragraph(),
+		contactEmail: faker.internet.email().toLowerCase(),
+		website: faker.internet.url(),
+		location: {
+			address: faker.location.streetAddress(),
+			city: faker.location.city(),
+			country: faker.location.country(),
+		},
+	}));
+};
+
+// Generate user seeds using faker (Customers Only)
+const generateCustomerSeeds = (count: number = 8) => {
+	const users = [];
+	for (let i = 0; i < count; i++) {
+		users.push({
+			firstName: faker.person.firstName(),
+			lastName: faker.person.lastName(),
+			email: faker.internet.email().toLowerCase(),
+			phone: chance.phone({ formatted: false }) || faker.phone.number(),
+			password: "Password123!@#",
+			role: "customer" as const,
+			isEmailVerified: true,
+		});
+	}
+	return users;
+};
 
 const categorySeeds: CategorySeed[] = [
 	{ slug: "fiction", name: "Fiction", description: "Narrative and literary works", order: 1 },
 	{ slug: "non-fiction", name: "Non Fiction", description: "Informational and factual works", order: 2 },
 	{ slug: "children", name: "Children", description: "Books for children and young readers", order: 3 },
 	{ slug: "history", name: "History", description: "Historical analysis and narratives", order: 4 },
-	{ slug: "technology", name: "Technology", description: "Technology and software topics", order: 5, parentSlug: "non-fiction" },
+	{
+		slug: "technology",
+		name: "Technology",
+		description: "Technology and software topics",
+		order: 5,
+		parentSlug: "non-fiction",
+	},
 	{
 		slug: "software-engineering",
 		name: "Software Engineering",
@@ -146,273 +140,147 @@ const categorySeeds: CategorySeed[] = [
 		order: 6,
 		parentSlug: "technology",
 	},
-	{ slug: "data-science", name: "Data Science", description: "Data analytics and ML", order: 7, parentSlug: "technology" },
-	{ slug: "biography", name: "Biography", description: "Life stories and profiles", order: 8, parentSlug: "non-fiction" },
-	{ slug: "business", name: "Business", description: "Product, leadership, and strategy", order: 9, parentSlug: "non-fiction" },
-];
-
-const userSeeds: UserSeed[] = [
 	{
-		firstName: "Admin",
-		lastName: "User",
-		email: "admin@luminabooks.local",
-		phone: "+84901234567",
-		password: "AdminPass123!@#",
-		role: "admin",
-		isEmailVerified: true,
+		slug: "data-science",
+		name: "Data Science",
+		description: "Data analytics and ML",
+		order: 7,
+		parentSlug: "technology",
 	},
 	{
-		firstName: "John",
-		lastName: "Doe",
-		email: "john.doe@example.com",
-		phone: "+84912345678",
-		password: "JohnPass123!@#",
-		role: "customer",
-		isEmailVerified: true,
+		slug: "biography",
+		name: "Biography",
+		description: "Life stories and profiles",
+		order: 8,
+		parentSlug: "non-fiction",
 	},
 	{
-		firstName: "Sarah",
-		lastName: "Chen",
-		email: "sarah.chen@example.com",
-		phone: "+84923456789",
-		password: "SarahPass123!@#",
-		role: "customer",
-		isEmailVerified: true,
-	},
-	{
-		firstName: "Michael",
-		lastName: "Smith",
-		email: "michael.smith@example.com",
-		phone: "+84934567890",
-		password: "MichaelPass123!@#",
-		role: "customer",
-		isEmailVerified: true,
-	},
-	{
-		firstName: "Emma",
-		lastName: "Johnson",
-		email: "emma.johnson@example.com",
-		phone: "+84945678901",
-		password: "EmmaPass123!@#",
-		role: "customer",
-		isEmailVerified: true,
-	},
-	{
-		firstName: "David",
-		lastName: "Williams",
-		email: "david.williams@example.com",
-		phone: "+84956789012",
-		password: "DavidPass123!@#",
-		role: "customer",
-		isEmailVerified: true,
-	},
-	{
-		firstName: "Lisa",
-		lastName: "Brown",
-		email: "lisa.brown@example.com",
-		phone: "+84967890123",
-		password: "LisaPass123!@#",
-		role: "customer",
-		isEmailVerified: true,
+		slug: "business",
+		name: "Business",
+		description: "Product, leadership, and strategy",
+		order: 9,
+		parentSlug: "non-fiction",
 	},
 ];
 
-const bookSeeds: BookSeed[] = [
-	{
-		title: "The Quiet Monsoon",
-		subtitle: "Stories Across Three Generations",
-		description: "A family saga exploring identity, language, and belonging.",
-		publicationDate: "2020-03-14",
-		language: "en",
-		pageCount: 356,
-		publisherName: "North Harbor Press",
-		authorNames: ["Maya Nguyen"],
-		categorySlugs: ["fiction"],
-		formats: [
-			{ formatType: "physical", price: 24.99, discountedPrice: 19.99, stockQuantity: 120, weight: 0.62, dimensions: "21x14x2.7 cm" },
-			{ formatType: "digital", price: 11.99, fileFormat: "ePub", fileSize: 2_300_000 },
-		],
-	},
-	{
-		title: "Building Type Safe APIs",
-		description: "A practical guide to resilient backend APIs with TypeScript.",
-		publicationDate: "2023-01-09",
-		language: "en",
-		pageCount: 428,
-		publisherName: "Orbit Lane Books",
-		authorNames: ["Jonah Tran"],
-		categorySlugs: ["technology", "software-engineering"],
-		formats: [
-			{ formatType: "physical", price: 39.0, discountedPrice: 32.0, stockQuantity: 80, weight: 0.88, dimensions: "24x17x3 cm" },
-			{ formatType: "digital", price: 18.5, fileFormat: "PDF", fileSize: 8_500_000 },
-		],
-	},
-	{
-		title: "Data Stories for Humans",
-		subtitle: "How to Explain Complex Findings Clearly",
-		description: "Narrative techniques for making analytics understandable and actionable.",
-		publicationDate: "2022-06-01",
-		language: "en",
-		pageCount: 290,
-		publisherName: "Orbit Lane Books",
-		authorNames: ["Elena Pham"],
-		categorySlugs: ["non-fiction", "data-science"],
-		formats: [
-			{ formatType: "physical", price: 31.5, stockQuantity: 70, weight: 0.71, dimensions: "23x15x2.2 cm" },
-			{ formatType: "digital", price: 15.0, fileFormat: "PDF", fileSize: 6_200_000 },
-		],
-	},
-	{
-		title: "Little Explorers Space Camp",
-		description: "An illustrated STEM adventure for curious young readers.",
-		publicationDate: "2021-08-20",
-		language: "en",
-		pageCount: 84,
-		publisherName: "Little Acorn House",
-		authorNames: ["Noah Le"],
-		categorySlugs: ["children", "technology"],
-		formats: [
-			{ formatType: "physical", price: 16.99, stockQuantity: 250, weight: 0.29, dimensions: "25x20x0.9 cm" },
-			{ formatType: "digital", price: 7.99, fileFormat: "PDF", fileSize: 3_100_000 },
-		],
-	},
-	{
-		title: "Ledger of Empires",
-		description: "Trade routes, diplomacy, and conflict in maritime Asia.",
-		publicationDate: "2019-11-03",
-		language: "en",
-		pageCount: 512,
-		publisherName: "Atlas Chronicle",
-		authorNames: ["Iris Hoang"],
-		categorySlugs: ["history", "non-fiction"],
-		formats: [
-			{ formatType: "physical", price: 42.0, discountedPrice: 35.0, stockQuantity: 50, weight: 1.1, dimensions: "24x16x4 cm" },
-			{ formatType: "digital", price: 20.0, fileFormat: "MOBI", fileSize: 9_300_000 },
-		],
-	},
-	{
-		title: "Product Thinking Handbook",
-		description: "Field-tested methods for building products users keep returning to.",
-		publicationDate: "2024-02-12",
-		language: "en",
-		pageCount: 338,
-		publisherName: "Orbit Lane Books",
-		authorNames: ["Daniel Vu"],
-		categorySlugs: ["business", "non-fiction"],
-		formats: [
-			{ formatType: "physical", price: 33.0, discountedPrice: 27.5, stockQuantity: 95, weight: 0.66, dimensions: "22x14x2.1 cm" },
-			{ formatType: "digital", price: 14.0, fileFormat: "ePub", fileSize: 5_100_000 },
-		],
-	},
-	{
-		title: "From Bug to Blueprint",
-		description: "Debugging habits and architectural patterns for scaling teams.",
-		publicationDate: "2022-10-04",
-		language: "en",
-		pageCount: 374,
-		publisherName: "Orbit Lane Books",
-		authorNames: ["Jonah Tran", "Daniel Vu"],
-		categorySlugs: ["software-engineering", "technology"],
-		formats: [
-			{ formatType: "physical", price: 36.5, stockQuantity: 65, weight: 0.79, dimensions: "23x15x2.6 cm" },
-			{ formatType: "digital", price: 17.0, fileFormat: "PDF", fileSize: 7_900_000 },
-		],
-	},
-	{
-		title: "Women Who Rewired the World",
-		subtitle: "Profiles in Technology Leadership",
-		description: "A collection of biographies highlighting innovators who reshaped technology.",
-		publicationDate: "2023-09-29",
-		language: "en",
-		pageCount: 304,
-		publisherName: "Atlas Chronicle",
-		authorNames: ["Sophie Dao", "Elena Pham"],
-		categorySlugs: ["biography", "technology"],
-		formats: [
-			{ formatType: "physical", price: 29.99, stockQuantity: 85, weight: 0.58, dimensions: "21x14x1.9 cm" },
-			{ formatType: "digital", price: 13.99, fileFormat: "ePub", fileSize: 4_600_000 },
-		],
-	},
-	{
-		title: "Tiny Robots Big Dreams",
-		description: "Hands-on robotics concepts explained for children.",
-		publicationDate: "2025-01-18",
-		language: "en",
-		pageCount: 96,
-		publisherName: "Little Acorn House",
-		authorNames: ["Noah Le", "Elena Pham"],
-		categorySlugs: ["children", "technology"],
-		formats: [
-			{ formatType: "physical", price: 18.5, stockQuantity: 210, weight: 0.34, dimensions: "25x20x1.2 cm" },
-			{ formatType: "digital", price: 8.5, fileFormat: "PDF", fileSize: 3_500_000 },
-		],
-	},
-	{
-		title: "Node at Scale",
-		subtitle: "Production Patterns for Real Traffic",
-		description: "Operational guidance for running high-volume Node.js services safely.",
-		publicationDate: "2024-11-05",
-		language: "en",
-		pageCount: 446,
-		publisherName: "Orbit Lane Books",
-		authorNames: ["Jonah Tran"],
-		categorySlugs: ["software-engineering", "technology"],
-		formats: [
-			{ formatType: "physical", price: 41.99, discountedPrice: 35.99, stockQuantity: 55, weight: 0.94, dimensions: "24x16x3.3 cm" },
-			{ formatType: "digital", price: 19.99, fileFormat: "PDF", fileSize: 10_200_000 },
-		],
-	},
-];
+const generateBookSeeds = (count: number, availableAuthors: string[], availablePublishers: string[]): BookSeed[] => {
+	const books: BookSeed[] = [];
 
-const resolveIds = (keys: string[], idMap: Map<string, Types.ObjectId>, label: string, bookTitle: string): Types.ObjectId[] => {
+	for (let i = 0; i < count; i++) {
+		const numAuthors = chance.integer({ min: 1, max: Math.min(3, availableAuthors.length) });
+		const authorNames = chance.pickset(availableAuthors, numAuthors);
+
+		const publisherName = chance.pickone(availablePublishers);
+		const categoryCount = chance.integer({ min: 1, max: 3 });
+		const allSlugs = categorySeeds.map((c) => c.slug);
+		const categorySlugs = chance.pickset(allSlugs, categoryCount);
+
+		const basePrice = chance.floating({ min: 14.99, max: 49.99, fixed: 2 });
+		const hasDiscount = chance.bool({ likelihood: 60 });
+		const discountedPrice = hasDiscount ? +(basePrice * 0.8).toFixed(2) : undefined;
+
+		const hasPhysical = chance.bool({ likelihood: 85 });
+		const hasDigital = chance.bool({ likelihood: 75 });
+
+		const formats: BookFormatSeed[] = [];
+
+		if (hasPhysical) {
+			formats.push({
+				formatType: "physical",
+				price: basePrice,
+				discountedPrice,
+				stockQuantity: chance.integer({ min: 20, max: 300 }),
+				weight: chance.floating({ min: 0.25, max: 1.5, fixed: 2 }),
+				dimensions: `${chance.integer({ min: 19, max: 25 })}x${chance.integer({ min: 12, max: 16 })}x${chance.floating({ min: 0.8, max: 4.0, fixed: 1 })} cm`,
+			});
+		}
+
+		if (hasDigital) {
+			formats.push({
+				formatType: "digital",
+				price: +(basePrice * 0.5).toFixed(2),
+				discountedPrice: hasDiscount ? +(basePrice * 0.4).toFixed(2) : undefined,
+				fileFormat: chance.pickone(["PDF", "ePub", "MOBI"]) as "PDF" | "ePub" | "MOBI",
+				fileSize: chance.integer({ min: 1_000_000, max: 12_000_000 }),
+			});
+		}
+
+		books.push({
+			title: faker.book.title(),
+			subtitle: chance.bool({ likelihood: 40 }) ? faker.book.title() : undefined,
+			description: faker.lorem.paragraphs(2, "\n"),
+			publicationDate: faker.date.past({ years: 6 }).toISOString().split("T")[0],
+			language: "en",
+			pageCount: chance.integer({ min: 80, max: 600 }),
+			publisherName,
+			authorNames,
+			categorySlugs,
+			formats,
+		});
+	}
+
+	return books;
+};
+
+const resolveIds = (
+	keys: string[],
+	idMap: Map<string, Types.ObjectId>,
+	label: string,
+	bookTitle: string,
+): Types.ObjectId[] => {
 	return keys.map((key) => {
 		const id = idMap.get(key);
 		if (!id) {
-			throw new Error(`${label} \"${key}\" was not found while building \"${bookTitle}\"`);
+			throw new Error(`${label} "${key}" was not found while building "${bookTitle}"`);
 		}
-
 		return id;
 	});
 };
 
-const createCategoryHierarchy = async (): Promise<Map<string, Types.ObjectId>> => {
+const createOrUpdateCategoryHierarchy = async (): Promise<Map<string, Types.ObjectId>> => {
 	const categoryState = new Map<string, { id: Types.ObjectId; ancestors: Types.ObjectId[] }>();
 	const pending = [...categorySeeds];
 
 	while (pending.length > 0) {
-		let createdInPass = 0;
+		let processedInPass = 0;
 
 		for (let i = 0; i < pending.length; i += 1) {
 			const item = pending[i];
 			if (!item) continue;
 
 			if (item.parentSlug && !categoryState.has(item.parentSlug)) {
-				continue;
+				continue; // Wait for parent to be processed
 			}
 
 			const parent = item.parentSlug ? categoryState.get(item.parentSlug) : undefined;
 			const ancestors = parent ? [...parent.ancestors, parent.id] : [];
 
-			const created = new Category({
-				name: item.name,
-				description: item.description,
-				parent: parent?.id,
-				ancestors,
-				order: item.order,
-			});
-			await created.save();
+			// Use findOneAndUpdate with upsert to handle both fresh seeds and appends cleanly
+			const savedCategory = await Category.findOneAndUpdate(
+				{ slug: item.slug },
+				{
+					$set: {
+						name: item.name,
+						description: item.description,
+						parent: parent?.id,
+						ancestors,
+						order: item.order,
+					},
+				},
+				{ upsert: true, new: true },
+			);
 
 			categoryState.set(item.slug, {
-				id: created._id as Types.ObjectId,
-				ancestors: (created.ancestors as Types.ObjectId[]) ?? [],
+				id: savedCategory._id as Types.ObjectId,
+				ancestors: (savedCategory.ancestors as Types.ObjectId[]) ?? [],
 			});
 
 			pending.splice(i, 1);
 			i -= 1;
-			createdInPass += 1;
+			processedInPass += 1;
 		}
 
-		if (createdInPass === 0) {
+		if (processedInPass === 0) {
 			throw new Error("Category hierarchy could not be resolved. Check parentSlug references.");
 		}
 	}
@@ -428,25 +296,67 @@ const seed = async () => {
 
 	try {
 		if (shouldReset) {
-			await Promise.all([Book.deleteMany({}), Category.deleteMany({}), Publisher.deleteMany({}), Author.deleteMany({}), User.deleteMany({})]);
+			await Promise.all([
+				Book.deleteMany({}),
+				Category.deleteMany({}),
+				Publisher.deleteMany({}),
+				Author.deleteMany({}),
+				User.deleteMany({}),
+			]);
 			console.log("Existing books, users, and related entities cleared.");
 		}
 
-		const [authors, publishers, users] = await Promise.all([Author.create(authorSeeds), Publisher.create(publisherSeeds), User.create(userSeeds)]);
-		const categoryIdsBySlug = await createCategoryHierarchy();
+		// 1. Handle Admin User (Upsert to prevent duplicate key errors on append)
+		await User.findOneAndUpdate(
+			{ email: "admin@luminabooks.local" },
+			{
+				$set: {
+					firstName: "Admin",
+					lastName: "User",
+					phone: chance.phone({ formatted: false }).replace(/\D/g, "").slice(0, 15) || "+84901234567",
+					password: "AdminPass123!@#", // In real apps, ensure this gets hashed by your schema middleware
+					role: "admin",
+					isEmailVerified: true,
+				},
+			},
+			{ upsert: true },
+		);
 
-		const authorIdsByName = new Map(authors.map((author) => [author.name, author._id as Types.ObjectId]));
-		const publisherIdsByName = new Map(publishers.map((publisher) => [publisher.name, publisher._id as Types.ObjectId]));
+		// 2. Insert new generic entities
+		const authorCount = parseNumberArg("--author", 18);
+		const publisherCount = parseNumberArg("--publisher", 18);
+		const userCount = parseNumberArg("--user", 18);
 
-		let bookIsbnCounter = 1000;
-		let formatIsbnCounter = 5000;
-		let skuCounter = 1;
+		const [newAuthors, newPublishers, newUsers] = await Promise.all([
+			Author.create(generateAuthorSeeds(authorCount)),
+			Publisher.create(generatePublisherSeeds(publisherCount)),
+			User.create(generateCustomerSeeds(userCount)),
+		]);
+
+		// 3. Upsert Categories (handles both reset and append gracefully)
+		const categoryIdsBySlug = await createOrUpdateCategoryHierarchy();
+
+		// 4. Fetch ALL available Authors & Publishers to blend existing data with new data
+		const allAuthors = await Author.find().select("_id name");
+		const allPublishers = await Publisher.find().select("_id name");
+
+		const availableAuthorNames = allAuthors.map((a) => a.name);
+		const availablePublisherNames = allPublishers.map((p) => p.name);
+
+		const authorIdsByName = new Map(allAuthors.map((a) => [a.name, a._id as Types.ObjectId]));
+		const publisherIdsByName = new Map(allPublishers.map((p) => [p.name, p._id as Types.ObjectId]));
+
+		// 5. Generate and Insert Books
+		const bookCount = parseNumberArg("--books", 18);
+		const bookSeeds = generateBookSeeds(bookCount, availableAuthorNames, availablePublisherNames);
+
+		let bookIsbnCounter = Math.floor(Math.random() * 9000) + 1000;
+		let formatIsbnCounter = Math.floor(Math.random() * 9000) + 5000;
+		let skuCounter = await Book.countDocuments(); // Ensure SKUs continue incrementing
 
 		const booksPayload = bookSeeds.map((book) => {
 			const publisherId = publisherIdsByName.get(book.publisherName);
-			if (!publisherId) {
-				throw new Error(`Publisher \"${book.publisherName}\" was not found while building \"${book.title}\"`);
-			}
+			if (!publisherId) throw new Error(`Publisher "${book.publisherName}" missing.`);
 
 			const authorIds = resolveIds(book.authorNames, authorIdsByName, "Author", book.title);
 			const categoryIds = resolveIds(book.categorySlugs, categoryIdsBySlug, "Category", book.title);
@@ -509,7 +419,7 @@ const seed = async () => {
 		const books = await Book.create(booksPayload);
 
 		console.log(
-			`Seeded ${authors.length} authors, ${publishers.length} publishers, ${categoryIdsBySlug.size} categories, ${users.length} users (including 1 admin), and ${books.length} books.`,
+			`Seeded ${newAuthors.length} new authors, ${newPublishers.length} new publishers, ${categoryIdsBySlug.size} categories validated, ${newUsers.length} new customers, and ${books.length} new books.`,
 		);
 	} finally {
 		await mongoose.disconnect();
