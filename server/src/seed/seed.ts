@@ -304,6 +304,13 @@ const seed = async () => {
 				Author.deleteMany({}),
 				User.deleteMany({}),
 			]);
+			await Promise.all([
+				Book.deleteMany({}),
+				Category.deleteMany({}),
+				Publisher.deleteMany({}),
+				Author.deleteMany({}),
+				User.deleteMany({}),
+			]);
 			console.log("Existing books, users, and related entities cleared.");
 		}
 
