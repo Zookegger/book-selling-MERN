@@ -1,11 +1,13 @@
 import { ROUTER_PATHS } from "@components/common/Router";
 import useAuth from "@hooks/useAuth";
-import { AppBar, Box, Button, Container, Menu, MenuItem, Toolbar, Typography } from "@mui/material";
+import useCart from "@hooks/useCart";
+import { AppBar, Badge, Box, Button, Container, Menu, MenuItem, Toolbar, Typography } from "@mui/material";
 import { useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 
 const MainLayout = () => {
 	const { isAuthenticated, user, logout } = useAuth();
+	const { totalItems } = useCart();
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const open = Boolean(anchorEl);
 
@@ -25,24 +27,34 @@ const MainLayout = () => {
 						<Link to={ROUTER_PATHS.HOME} style={{ textDecoration: "none", color: "black" }}>Book Store</Link>
 					</Typography>
 
+					<Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+						<Button component={Link} to={ROUTER_PATHS.CATEGORIES} style={{ textDecoration: "none", color: "inherit" }}>
+							Thể Loại
+						</Button>
+						<Button component={Link} to={ROUTER_PATHS.CART} style={{ textDecoration: "none", color: "inherit" }}>
+							<Badge badgeContent={totalItems} color="error">
+								Giỏ hàng
+							</Badge>
+						</Button>
 
-					{!isAuthenticated ? (
-						<Box>
-							<Button component={Link} to={ROUTER_PATHS.LOGIN} style={{ textDecoration: "none", color: "inherit" }}>Sign in</Button>
-							<Button component={Link} to={ROUTER_PATHS.REGISTER} style={{ textDecoration: "none", color: "inherit" }}>Sign up</Button>
-						</Box>
-					) : (
-						<>
-							<Button onClick={handleClick} sx={{ color: "black" }}>{user?.firstName}</Button>
-							<Menu open={open} anchorEl={anchorEl} onClose={handleClose}>
-								<MenuItem><Link to={ROUTER_PATHS.PROFILE} style={{ textDecoration: "none", color: "inherit" }}>Profile</Link></MenuItem>
-								<MenuItem onClick={async () => {
-									handleClose();
-									await logout()
-								}}>Sign Out</MenuItem>
-							</Menu>
-						</>
-					)}
+						{!isAuthenticated ? (
+							<Box>
+								<Button component={Link} to={ROUTER_PATHS.LOGIN} style={{ textDecoration: "none", color: "inherit" }}>Sign in</Button>
+								<Button component={Link} to={ROUTER_PATHS.REGISTER} style={{ textDecoration: "none", color: "inherit" }}>Sign up</Button>
+							</Box>
+						) : (
+							<>
+								<Button onClick={handleClick} sx={{ color: "black" }}>{user?.firstName}</Button>
+								<Menu open={open} anchorEl={anchorEl} onClose={handleClose}>
+									<MenuItem><Link to={ROUTER_PATHS.PROFILE} style={{ textDecoration: "none", color: "inherit" }}>Profile</Link></MenuItem>
+									<MenuItem onClick={async () => {
+										handleClose();
+										await logout()
+									}}>Sign Out</MenuItem>
+								</Menu>
+							</>
+						)}
+					</Box>
 				</Toolbar>
 			</AppBar>
 			<Container maxWidth={"xl"}><Outlet /></Container>

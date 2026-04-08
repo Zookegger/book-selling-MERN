@@ -32,6 +32,10 @@ export interface CategoryTreeItemDto extends CategoryDto {
   children?: CategoryTreeItemDto[];
 }
 
+export interface CategoryWithBookCountDto extends CategoryDto {
+  bookCount: number;
+}
+
 export interface ListCategoriesQueryDto {
   page?: number;
   limit?: number;

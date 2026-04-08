@@ -8,3 +8,5 @@ export { default as UnauthorizePage } from "./Unauthorized";
 export { default as RootErrorBoundaryPage } from "./RootErrorBoundary";
 export { default as ResendVerificationPage } from "./ResendVerification";
 export { default as ProfilePage } from "./Profile/Profile";
+export { default as CategoriesPage } from "./Categories";
+export { default as CartPage } from "./Cart";

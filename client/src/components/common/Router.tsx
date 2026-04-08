@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "@layout/MainLayout";
-import { RootErrorBoundaryPage, HomePage, LoginPage, NotFoundPage, RegisterPage, UnauthorizePage, VerifyEmailPage, ResendVerificationPage, ProfilePage } from "@pages";
+import { RootErrorBoundaryPage, HomePage, LoginPage, NotFoundPage, RegisterPage, UnauthorizePage, VerifyEmailPage, ResendVerificationPage, ProfilePage, CategoriesPage, CartPage } from "@pages";
 import ProtectedRoute from "./ProtectedRoute";
 
 export const ROUTER_PATHS = {
@@ -13,6 +13,8 @@ export const ROUTER_PATHS = {
     VERIFY_EMAIL: "/verify-email",
     RESEND_VERIFICATION: "/resend-verification",
     PROFILE: "/account/profile",
+    CATEGORIES: "/categories",
+    CART: "/cart",
 }
 
 const router = createBrowserRouter([
@@ -24,6 +26,14 @@ const router = createBrowserRouter([
             {
                 index: true,
                 element: <HomePage />
+            },
+            {
+                path: ROUTER_PATHS.CATEGORIES,
+                element: <CategoriesPage />
+            },
+            {
+                path: ROUTER_PATHS.CART,
+                element: <CartPage />
             },
             {
                 path: "*",
