@@ -53,7 +53,7 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
             if (err.response?.status === 401 || err.response?.status === 403) {
                 warning("Please log in to use this feature!");
             } else {
-                error("Có lỗi xảy ra, vui lòng thử lại.");
+                error("An error occurred while updating your favorites list. Please try again.");
             }
         } finally {
             setIsLoading(false);
