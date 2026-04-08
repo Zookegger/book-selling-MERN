@@ -8,6 +8,7 @@ import {
 	type ReactNode,
 	type SetStateAction,
 } from "react";
+import useAuth from "@hooks/useAuth";
 import CartService from "@services/cart.services";
 import type {
 	AddCartItemRequestDto,
@@ -29,24 +30,27 @@ type OrderContextType = {
 	removeItem: (payload: RemoveCartItemRequestDto) => Promise<CartDto>;
 };
 
-const ORDER_SESSION_KEY = "order_cart_session_v1";
+const getOrderSessionKey = (userId?: string) => `order_cart_session_v1:${userId ?? "guest"}`;
 
 export const OrderContext = createContext<OrderContextType | null>(null);
 
 export function OrderProvider({ children }: { children: ReactNode }) {
+	const { isAuthenticated, user } = useAuth();
 	const [cart, setCart] = useState<CartDto | null>(null);
 	const [itemCount, setItemCount] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isMutating, setIsMutating] = useState(false);
+	const sessionKey = getOrderSessionKey(user?.userId);
 
 	const syncCountFromCart = useCallback((nextCart: CartDto | null) => {
 		setItemCount(nextCart?.items?.length ?? 0);
 	}, []);
 
-	// Khôi phục trạng thái giỏ hàng trong cùng một session trình duyệt
+	// Khôi phục trạng thái giỏ hàng theo từng tài khoản trong session hiện tại
 	useEffect(() => {
+		if (!isAuthenticated) return;
 		try {
-			const raw = sessionStorage.getItem(ORDER_SESSION_KEY);
+			const raw = sessionStorage.getItem(sessionKey);
 			if (!raw) return;
 			const parsed = JSON.parse(raw) as CartDto | null;
 			setCart(parsed);
@@ -54,16 +58,36 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 		} catch {
 			// Ignore corrupted session data
 		}
-	}, [syncCountFromCart]);
+	}, [isAuthenticated, sessionKey, syncCountFromCart]);
 
-	// Lưu giỏ hàng vào sessionStorage mỗi khi cart thay đổi
+	// Lưu giỏ hàng vào sessionStorage để reload trang không mất trạng thái
 	useEffect(() => {
+		if (!isAuthenticated) return;
 		try {
-			sessionStorage.setItem(ORDER_SESSION_KEY, JSON.stringify(cart));
+			sessionStorage.setItem(sessionKey, JSON.stringify(cart));
 		} catch {
 			// Ignore quota/security errors
 		}
-	}, [cart]);
+	}, [cart, isAuthenticated, sessionKey]);
+
+	// Đồng bộ cart từ server mỗi khi đăng nhập để đảm bảo dữ liệu đa thiết bị
+	useEffect(() => {
+		if (!isAuthenticated || !user?.userId) {
+			setCart(null);
+			setItemCount(0);
+			return;
+		}
+
+		void (async () => {
+			try {
+				const serverCart = await CartService.getCart();
+				setCart(serverCart);
+				syncCountFromCart(serverCart);
+			} catch {
+				// Nếu fetch thất bại thì giữ trạng thái hiện tại từ session (nếu có)
+			}
+		})();
+	}, [isAuthenticated, user?.userId, syncCountFromCart]);
 
 	const fetchCart = useCallback(async () => {
 		setIsLoading(true);
