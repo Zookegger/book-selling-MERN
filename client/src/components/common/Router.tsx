@@ -2,7 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "@layout/MainLayout";
 import { RootErrorBoundaryPage, HomePage, LoginPage, NotFoundPage, RegisterPage, UnauthorizePage, VerifyEmailPage, ResendVerificationPage, ProfilePage } from "@pages";
 import ProtectedRoute from "./ProtectedRoute";
-
+import BookDetail from "@pages/BookDetail";
 export const ROUTER_PATHS = {
     HOME: "/",
     LOGIN: "/account/sign-in",
@@ -25,6 +25,11 @@ const router = createBrowserRouter([
                 index: true,
                 element: <HomePage />
             },
+            {
+                path: "/books/:bookId",
+                element: <BookDetail />
+            },
+
             {
                 path: "*",
                 element: <NotFoundPage />
