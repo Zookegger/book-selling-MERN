@@ -1,4 +1,4 @@
-import { ROUTER_PATHS } from "@components/common/Router";
+import { ROUTES } from "@constants/index";
 import type { ErrorResponseDto } from "@my-types/common.dto";
 import axios from "axios";
 
@@ -43,8 +43,8 @@ api.interceptors.response.use(
 		if (error.response?.status === 401) {
 			localStorage.removeItem("accessToken");
 
-			if (window.location.pathname !== ROUTER_PATHS.LOGIN) {
-				window.location.href = ROUTER_PATHS.LOGIN;
+			if (window.location.pathname !== ROUTES.LOGIN) {
+				window.location.href = ROUTES.LOGIN;
 			}
 		}
 		return Promise.reject(error);

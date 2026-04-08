@@ -5,6 +5,7 @@ import User from '../../models/user.model';
 import { EmailService } from '../../services/email.service';
 import { generateToken, getTokenExpiration, isTokenExpired } from '../../utils/tokenGenerator';
 
+
 describe('Các tính năng email xác thực', () => {
 	let sendVerificationEmailSpy: jest.SpyInstance;
 	let sendPasswordResetEmailSpy: jest.SpyInstance;
@@ -40,6 +41,7 @@ describe('Các tính năng email xác thực', () => {
 					email: 'test@example.com',
 					firstName: 'John',
 					lastName: 'Doe',
+					phone: "0901234567",
 					password: 'Password123!',
 					confirmPassword: 'Password123!',
 				});
@@ -63,15 +65,14 @@ describe('Các tính năng email xác thực', () => {
 		});
 
 		it('không nên cho phép đăng nhập trước khi xác minh email', async () => {
-			await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'unverified@example.com',
-					firstName: 'Jane',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Password123!',
-				});
+			await request(app).post("/api/auth/register").send({
+				email: "unverified@example.com",
+				firstName: "Jane",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Password123!",
+			});
 
 			const loginRes = await request(app)
 				.post('/api/auth/login')
@@ -85,39 +86,36 @@ describe('Các tính năng email xác thực', () => {
 		});
 
 		it('nên thất bại khi mật khẩu không khớp', async () => {
-			const res = await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'test@example.com',
-					firstName: 'John',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Different123!',
-				});
+			const res = await request(app).post("/api/auth/register").send({
+				email: "test@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Different123!",
+			});
 
 			expect(res.status).toBe(400);
 		});
 
 		it('nên thất bại khi email bị trùng lặp', async () => {
-			await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'duplicate@example.com',
-					firstName: 'John',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Password123!',
-				});
+			await request(app).post("/api/auth/register").send({
+				email: "duplicate@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Password123!",
+			});
 
-			const res = await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'duplicate@example.com',
-					firstName: 'Jane',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Password123!',
-				});
+			const res = await request(app).post("/api/auth/register").send({
+				email: "duplicate@example.com",
+				firstName: "Jane",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Password123!",
+			});
 
 			expect(res.status).toBe(409);
 		});
@@ -125,15 +123,14 @@ describe('Các tính năng email xác thực', () => {
 
 	describe('GET /api/auth/verify-email', () => {
 		it('nên xác minh email bằng token hợp lệ', async () => {
-			const registerRes = await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'verify@example.com',
-					firstName: 'John',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Password123!',
-				});
+			const registerRes = await request(app).post("/api/auth/register").send({
+				email: "verify@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Password123!",
+			});
 
 			const user = await User.findOne({ email: 'verify@example.com' });
 			const verificationToken = user?.emailVerificationToken;
@@ -161,15 +158,14 @@ describe('Các tính năng email xác thực', () => {
 		});
 
 		it('nên thất bại với token hết hạn', async () => {
-			const registerRes = await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'expired@example.com',
-					firstName: 'John',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Password123!',
-				});
+			const registerRes = await request(app).post("/api/auth/register").send({
+				email: "expired@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Password123!",
+			});
 
 			const user = await User.findOne({ email: 'expired@example.com' });
 			const verificationToken = user?.emailVerificationToken;
@@ -196,15 +192,14 @@ describe('Các tính năng email xác thực', () => {
 
 	describe('POST /api/auth/forgot-password', () => {
 		it('nên gửi email đặt lại mật khẩu cho người dùng hiện tại', async () => {
-			await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'user@example.com',
-					firstName: 'John',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Password123!',
-				});
+			await request(app).post("/api/auth/register").send({
+				email: "user@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Password123!",
+			});
 
 			const res = await request(app)
 				.post('/api/auth/forgot-password')
@@ -255,15 +250,14 @@ describe('Các tính năng email xác thực', () => {
 
 	describe('POST /api/auth/reset-password', () => {
 		it('nên đặt lại mật khẩu bằng token hợp lệ', async () => {
-			await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'reset@example.com',
-					firstName: 'John',
-					lastName: 'Doe',
-					password: 'OldPassword123!',
-					confirmPassword: 'OldPassword123!',
-				});
+			await request(app).post("/api/auth/register").send({
+				email: "reset@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "OldPassword123!",
+				confirmPassword: "OldPassword123!",
+			});
 
 			// Request password reset
 			await request(app)
@@ -323,15 +317,14 @@ describe('Các tính năng email xác thực', () => {
 		});
 
 		it('nên thất bại với token hết hạn', async () => {
-			await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'expired-reset@example.com',
-					firstName: 'John',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Password123!',
-				});
+			await request(app).post("/api/auth/register").send({
+				email: "expired-reset@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Password123!",
+			});
 
 			await request(app)
 				.post('/api/auth/forgot-password')
@@ -356,15 +349,14 @@ describe('Các tính năng email xác thực', () => {
 		});
 
 		it('nên thất bại với mật khẩu yếu', async () => {
-			await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'weak@example.com',
-					firstName: 'John',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Password123!',
-				});
+			await request(app).post("/api/auth/register").send({
+				email: "weak@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Password123!",
+			});
 
 			await request(app)
 				.post('/api/auth/forgot-password')
@@ -406,15 +398,14 @@ describe('Các tính năng email xác thực', () => {
 
 	describe('POST /api/auth/resend-verification', () => {
 		it('nên gửi lại email xác minh', async () => {
-			await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'resend@example.com',
-					firstName: 'John',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Password123!',
-				});
+			await request(app).post("/api/auth/register").send({
+				email: "resend@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Password123!",
+			});
 
 			jest.clearAllMocks();
 
@@ -437,15 +428,14 @@ describe('Các tính năng email xác thực', () => {
 		});
 
 		it('nên thất bại nếu email đã được xác minh', async () => {
-			await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'verified@example.com',
-					firstName: 'John',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Password123!',
-				});
+			await request(app).post("/api/auth/register").send({
+				email: "verified@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Password123!",
+			});
 
 			const user = await User.findOne({ email: 'verified@example.com' });
 			const verificationToken = user?.emailVerificationToken;
@@ -483,15 +473,14 @@ describe('Các tính năng email xác thực', () => {
 
 	describe('Giả lập Dịch vụ Email', () => {
 		it('không nên gửi email thực tế trong quá trình kiểm tra', async () => {
-			await request(app)
-				.post('/api/auth/register')
-				.send({
-					email: 'mock@example.com',
-					firstName: 'John',
-					lastName: 'Doe',
-					password: 'Password123!',
-					confirmPassword: 'Password123!',
-				});
+			await request(app).post("/api/auth/register").send({
+				email: "mock@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				phone: "0901234567",
+				password: "Password123!",
+				confirmPassword: "Password123!",
+			});
 
 			// Verify the mock was called (not the real transporter)
 			expect(sendVerificationEmailSpy).toHaveBeenCalled();

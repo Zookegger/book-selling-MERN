@@ -212,6 +212,22 @@ describe("getBook()", () => {
 		expect(found!.title).toBe("Nineteen Eighty-Four");
 	});
 
+	it("returns the book when looked up by slug", async () => {
+		const created = await makeBook();
+		const found = await getBook(created.slug);
+
+		expect(found).not.toBeNull();
+		expect(found!.slug).toBe(created.slug);
+	});
+
+	it("returns the book when looked up by ISBN", async () => {
+		const created = await makeBook({ isbn: "978-0451524935" });
+		const found = await getBook("978-0451524935");
+
+		expect(found).not.toBeNull();
+		expect(found!.isbn).toBe("978-0451524935");
+	});
+
 	it("populates author, publisher and category references", async () => {
 		const author = await Author.create({ name: "George Orwell" });
 		const publisher = await Publisher.create({ name: "Secker & Warburg" });
@@ -234,8 +250,8 @@ describe("getBook()", () => {
 		expect(await getBook(fakeId)).toBeNull();
 	});
 
-	it("throws when given an invalid ObjectId", async () => {
-		await expect(getBook("not-an-id")).rejects.toThrow();
+	it("returns null when slug or ISBN does not match any book", async () => {
+		expect(await getBook("not-an-id")).toBeNull();
 	});
 });
 
