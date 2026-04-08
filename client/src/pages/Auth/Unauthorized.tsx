@@ -1,5 +1,5 @@
 import { ShieldAlert } from "lucide-react";
-import ErrorPage from "./Error";
+import ErrorPage from "../Error";
 
 export default function UnauthorizedPage() {
     const handleHomeClick = () => {

@@ -1,11 +1,9 @@
 export { default as HomePage } from "./Home";
-export { default as LoginPage } from "./Login";
-export { default as RegisterPage } from "./Register";
 export { default as ErrorPage } from "./Error";
-export { default as VerifyEmailPage } from "./VerifyEmail";
 export { default as NotFoundPage } from "./NotFound";
-export { default as UnauthorizePage } from "./Unauthorized";
 export { default as RootErrorBoundaryPage } from "./RootErrorBoundary";
-export { default as ResendVerificationPage } from "./ResendVerification";
 export { default as ProfilePage } from "./Profile/Profile";
 export { default as CartPage } from "./Cart/Cart";
+export { default as AdminPublishersPage } from "./Admin/Publisher/AdminPublishers";
+export * from "./Auth";
+export * from "./Book";

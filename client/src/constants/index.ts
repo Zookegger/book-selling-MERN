@@ -12,6 +12,9 @@ export const ROUTES = {
 	CART: "/cart",
 	BOOKS: "/books",
 	BOOK_DETAIL: "/books/:bookId",
+	
+	ADMIN_DASHBOARD: "/admin",
+	ADMIN_PUBLISHERS: "/admin/publishers",
 	BOOK: (bookId: string) => `/books/${bookId}`,
 } as const;
 
