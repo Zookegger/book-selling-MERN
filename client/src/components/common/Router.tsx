@@ -5,7 +5,6 @@ import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
 import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList } from "@pages";
-import ProtectedRoute from "./ProtectedRoute";
 
 
 export const ROUTER_PATHS = ROUTES;

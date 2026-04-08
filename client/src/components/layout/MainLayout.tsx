@@ -25,10 +25,25 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 		<Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", minWidth: "100vw" }}>
 			<AppBar position="static" color="transparent" elevation={0}>
 				<Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-					<Typography variant="h6" sx={{ fontWeight: 700 }}>
-						<Link to={ROUTES.HOME} style={{ textDecoration: "none", color: "black" }}>Book Store</Link>
-					</Typography>
+					<Box sx={{ display: "flex", alignItems: "center", gap: 4 }}>
+						<Typography variant="h6" sx={{ fontWeight: 700 }}>
+							<Link to={ROUTES.HOME} style={{ textDecoration: "none", color: "black" }}>Book Store</Link>
+						</Typography>
 
+						<Button 
+							component={Link} 
+							to="/categories" 
+							sx={{ 
+								color: "text.secondary", 
+								textTransform: "none", 
+								fontSize: "1rem", 
+								fontWeight: 600,
+								'&:hover': { color: 'primary.main', bgcolor: 'transparent' }
+							}}
+						>
+							Categories
+						</Button>
+					</Box>
 
 					{!isAuthenticated ? (
 						<Box>

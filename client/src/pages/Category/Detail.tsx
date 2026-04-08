@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { 
     Container, Typography, Box, Grid, Card, 
     CardMedia, CardContent, Breadcrumbs, 
-    Link as MuiLink, Divider
+    Link as MuiLink, Divider, Chip
 } from "@mui/material";
 
 // Import corresponding Services and Types
@@ -24,13 +24,13 @@ const CategoryDetail: React.FC = () => {
             setLoading(true);
             try {
                 // 1. Fetch all categories (limit 100 to be safe) and find the one matching the slug
-                const catRes = await categoryService.getList(1, 100, ""); // Do not pass slug into the search field
+                const catRes = await categoryService.getList(1, 100, ""); 
                 
                 // Manually filter out the category that matches the URL slug
                 const currentCat = catRes.data?.find((c: any) => c.slug === slug);
 
                 if (currentCat) {
-                    setCategory(currentCat); // At this point, Name and Description are guaranteed
+                    setCategory(currentCat);
                     
                     // 2. Fetch books by slug
                     const bookRes = await BookService.fetchAll({ 
@@ -118,6 +118,7 @@ const CategoryDetail: React.FC = () => {
                                     borderColor: 'primary.light'
                                 }
                             }}>
+                                {/* 1. Image */}
                                 <CardMedia
                                     component="img"
                                     height="380"
@@ -125,20 +126,78 @@ const CategoryDetail: React.FC = () => {
                                     alt={book.title}
                                     sx={{ objectFit: 'cover' }}
                                 />
-                                <CardContent sx={{ textAlign: 'center', p: 3, flexGrow: 1 }}>
-                                    <Typography variant="h6" fontWeight={800} noWrap sx={{ mb: 1.5, color: 'text.primary' }}>
-                                        {book.title}
-                                    </Typography>
+                                
+                                <CardContent sx={{ 
+                                    textAlign: 'center', 
+                                    p: 3, 
+                                    flexGrow: 1, 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    gap: 1.5 
+                                }}>
+                                    <Box>
+                                        {/* 2. Title */}
+                                        <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary', lineHeight: 1.2 }}>
+                                            {book.title}
+                                        </Typography>
+                                        
+                                        {/* 3. Subtitle */}
+                                        {book.subtitle && (
+                                            <Typography variant="subtitle2" color="text.secondary" sx={{ fontStyle: 'italic', mt: 0.5 }}>
+                                                {book.subtitle}
+                                            </Typography>
+                                        )}
+                                    </Box>
+
+                                    {/* 4. Category Tags */}
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 0.5 }}>
+                                        {book.categories && book.categories.map((cat: any, idx) => {
+                                            const catName = typeof cat === 'string' ? cat : cat.name;
+                                            return (
+                                                <Chip 
+                                                    key={idx} 
+                                                    label={catName || "Unknown"} 
+                                                    size="small" 
+                                                    color="primary" 
+                                                    variant="outlined" 
+                                                    sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+                                                />
+                                            );
+                                        })}
+                                    </Box>
+
+                                    {/* Spacer to push the bottom elements down */}
+                                    <Box sx={{ flexGrow: 1 }} />
+
+                                    {/* 5. ISBN (Barcode Style) */}
+                                    <Box sx={{ 
+                                        bgcolor: '#f5f5f5', 
+                                        p: 1, 
+                                        borderRadius: 2, 
+                                        border: '1px dashed #ccc'
+                                    }}>
+                                        <Typography 
+                                            variant="caption" 
+                                            sx={{ 
+                                                fontFamily: 'monospace', 
+                                                letterSpacing: 2, 
+                                                color: 'text.primary',
+                                                display: 'block',
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
+                                            ||||| | ||| || |||
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                                            ISBN: {book.isbn || "N/A"}
+                                        </Typography>
+                                    </Box>
                                     
-                                    {/* Display price from the first format (matches BookDto) */}
-                                    <Typography variant="h5" color="error.main" fontWeight={900} sx={{ mb: 2 }}>
+                                    {/* 6. Price */}
+                                    <Typography variant="h5" color="error.main" fontWeight={900}>
                                         ${book.formats && book.formats.length > 0 
                                             ? Number(book.formats[0].price).toLocaleString() 
-                                            : "0"}
-                                    </Typography>
-                                    
-                                    <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                                        {book.publisher ? `Publisher: ${typeof book.publisher === 'string' ? book.publisher : (book.publisher as any).name}` : "Publisher: Updating"}
+                                            : "0.00"}
                                     </Typography>
                                 </CardContent>
                                 

@@ -1,16 +1,12 @@
 import mongoose, { Types } from "mongoose";
 import slugify from "slugify";
 import connectDB from "../config/db";
-<<<<<<< HEAD
-import { Author, Publisher, Category, Book } from "@models";
-import dotenv from "dotenv";
-dotenv.config();
-=======
 import { Author, Publisher, Category, Book, User } from "@models";
 import { faker } from "@faker-js/faker";
 import Chance from "chance";
 import bcrypt from "bcrypt";
->>>>>>> 89009770016270c772286c7696068713461d6b04
+
+const chance = new Chance();
 
 interface CategorySeed {
 	slug: string;
