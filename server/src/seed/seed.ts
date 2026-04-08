@@ -6,6 +6,8 @@ import { faker } from "@faker-js/faker";
 import Chance from "chance";
 import bcrypt from "bcrypt";
 
+const chance = new Chance();
+
 interface CategorySeed {
 	slug: string;
 	name: string;
