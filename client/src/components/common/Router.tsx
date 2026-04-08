@@ -1,7 +1,5 @@
 import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router-dom";
 import { Suspense, type ReactElement } from "react";
-import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router-dom";
-import { Suspense, type ReactElement } from "react";
 import MainLayout from "@layout/MainLayout";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
