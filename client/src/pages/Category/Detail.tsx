@@ -6,6 +6,7 @@ import {
     Link as MuiLink, Divider, Chip
 } from "@mui/material";
 
+import WishlistButton from "@components/common/WishlistButton";
 // Import corresponding Services and Types
 import { categoryService, type ICategory } from "@services/category.service";
 import { BookService } from "@services/book.services";
@@ -105,6 +106,7 @@ const CategoryDetail: React.FC = () => {
                             }}
                         >
                             <Card sx={{ 
+                                position: 'relative',
                                 width: '100%',
                                 borderRadius: 5,
                                 border: '1px solid',
@@ -118,6 +120,9 @@ const CategoryDetail: React.FC = () => {
                                     borderColor: 'primary.light'
                                 }
                             }}>
+                                <Box sx={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+                                    <WishlistButton bookId={book.id || (book as any)._id} />
+                                </Box>
                                 {/* 1. Image */}
                                 <CardMedia
                                     component="img"

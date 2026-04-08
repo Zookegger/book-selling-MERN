@@ -18,6 +18,8 @@ import bookRouter from "./book.routes";
 import publisherRouter from "./publisher.routes";
 import categoryRouter from "./category.routes";
 import cartRouter from "./cart.routes";
+import wishlistRouter from "./wishlist.route";
+
 
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
@@ -26,5 +28,6 @@ router.use("/authors", authorRouter);
 router.use("/publishers", publisherRouter);
 router.use("/categories", categoryRouter);
 router.use("/cart", cartRouter);
+router.use("/wishlist", wishlistRouter);
 
 export default router;

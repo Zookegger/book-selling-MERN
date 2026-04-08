@@ -6,7 +6,7 @@ import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
 import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList, CartPage } from "@pages";
-
+import WishlistPage from "@pages/WishlistPage";
 
 export const ROUTER_PATHS = ROUTES;
 
@@ -96,6 +96,14 @@ const router = createBrowserRouter([
 						<CartPage />
 					</ProtectedRoute>
 				),
+            },
+            {
+                path: ROUTES.WISHLIST,
+                element: (
+                    <ProtectedRoute>
+                        <WishlistPage />
+                    </ProtectedRoute>
+                ),
             },
             {
                 path: ROUTES.NOT_FOUND,

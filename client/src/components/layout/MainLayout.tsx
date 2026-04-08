@@ -50,6 +50,20 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 						>
 							Categories
 						</Button>
+
+												<Button 
+							component={Link} 
+							to="/wishlist" 
+							sx={{ 
+								color: "text.secondary", 
+								textTransform: "none", 
+								fontSize: "1rem", 
+								fontWeight: 600,
+								'&:hover': { color: 'primary.main', bgcolor: 'transparent' }
+							}}
+						>
+							Wishlist
+						</Button>
 					</Box>
 
 					{!isAuthenticated ? (
