@@ -29,6 +29,8 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import GroupIcon from "@mui/icons-material/Group";
 import { useMemo, useState, type MouseEvent } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { BookCopy, Building2, ListCollapse, List as ListIconLucide } from "lucide-react";
@@ -83,6 +85,20 @@ const navGroups: DashboardNavGroup[] = [
         title: "Category Management",
         items: [
             { label: "Categories", path: ROUTER_PATHS.ADMIN_CATEGORIES, hint: "View and manage book categories", icon: <ListIconLucide /> },
+        ],
+    },
+    {
+        key: "order-management",
+        title: "Order Management",
+        items: [
+            { label: "Orders", path: ROUTER_PATHS.ADMIN_ORDERS, hint: "Track and update customer orders", icon: <ReceiptLongIcon /> },
+        ],
+    },
+    {
+        key: "user-management",
+        title: "User Management",
+        items: [
+            { label: "Users", path: ROUTER_PATHS.ADMIN_USERS, hint: "View and manage user accounts", icon: <GroupIcon /> },
         ],
     }
 ];

@@ -27,6 +27,8 @@ export const ROUTES = {
 	ADMIN_BOOKS: "/admin/books",
 	ADMIN_AUTHORS: "/admin/authors",
 	ADMIN_CATEGORIES: "/admin/categories",
+	ADMIN_ORDERS: "/admin/orders",
+	ADMIN_USERS: "/admin/users",
 } as const;
 
 export const ROUTER_PATHS = ROUTES;

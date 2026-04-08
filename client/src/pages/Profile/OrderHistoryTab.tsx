@@ -107,14 +107,14 @@ export default function OrderHistoryTab() {
 							<Typography variant="body2">
 								{item.bookTitle} x {item.quantity}
 							</Typography>
-							<Typography variant="body2">{Number(item.lineTotal).toLocaleString()} VND</Typography>
+							<Typography variant="body2">${Number(item.lineTotal).toLocaleString()} USD</Typography>
 						</Box>
 					))}
 					<Divider sx={{ my: 1.5 }} />
 					<Box display="flex" justifyContent="space-between">
 						<Typography fontWeight={700}>Total</Typography>
 						<Typography fontWeight={800} color="primary">
-							{Number(order.totalAmount).toLocaleString()} VND
+							${Number(order.totalAmount).toLocaleString()} USD
 						</Typography>
 					</Box>
 					{order.paymentMethod === "vnpay" && order.paymentStatus === "pending" && (

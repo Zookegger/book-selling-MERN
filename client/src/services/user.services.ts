@@ -1,6 +1,7 @@
 // client/src/services/user.services.ts
 import api, { mapApiError } from "@services/api";
 import type {
+	DeleteUserByAdminResponseDto,
 	AddAddressRequestDto,
 	AddAddressResponseDto,
 	ChangePasswordRequestDto,
@@ -9,7 +10,11 @@ import type {
 	DeleteAddressResponseDto,
 	GetAddressResponseDto,
 	GetProfileResponseDto,
+	ListAdminUsersQueryDto,
+	ListAdminUsersResponseDto,
 	SetDefaultAddressResponseDto,
+	UpdateUserRoleByAdminRequestDto,
+	UpdateUserRoleByAdminResponseDto,
 	UpdateAddressRequestDto,
 	UpdateAddressResponseDto,
 	UpdateProfileRequestDto,
@@ -105,6 +110,36 @@ export const userService = {
 			return response.data;
 		} catch (error: any) {
 			throw mapApiError(error, "Network error: Could not delete account.");
+		}
+	},
+
+	listUsersByAdmin: async (params: ListAdminUsersQueryDto = {}): Promise<ListAdminUsersResponseDto> => {
+		try {
+			const response = await api.get<ListAdminUsersResponseDto>("/users/admin", { params });
+			return response.data;
+		} catch (error: any) {
+			throw mapApiError(error, "Network error: Could not fetch users.");
+		}
+	},
+
+	updateUserRoleByAdmin: async (
+		userId: string,
+		data: UpdateUserRoleByAdminRequestDto,
+	): Promise<UpdateUserRoleByAdminResponseDto> => {
+		try {
+			const response = await api.patch<UpdateUserRoleByAdminResponseDto>(`/users/admin/${userId}/role`, data);
+			return response.data;
+		} catch (error: any) {
+			throw mapApiError(error, "Network error: Could not update user role.");
+		}
+	},
+
+	deleteUserByAdmin: async (userId: string): Promise<DeleteUserByAdminResponseDto> => {
+		try {
+			const response = await api.delete<DeleteUserByAdminResponseDto>(`/users/admin/${userId}`);
+			return response.data;
+		} catch (error: any) {
+			throw mapApiError(error, "Network error: Could not delete user.");
 		}
 	},
 };

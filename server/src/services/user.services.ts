@@ -419,3 +419,99 @@ export const setDefaultAddress = async (userId: string, addressId: string): Prom
 
 	return user.addresses;
 };
+
+type AdminUsersQueryInput = {
+	page?: number;
+	limit?: number;
+	search?: string;
+	role?: IUserRole;
+};
+
+const normalizePositiveInteger = (value: number | undefined, fallback: number, max = 100): number => {
+	if (!Number.isFinite(value)) return fallback;
+	const normalized = Math.floor(Number(value));
+	if (normalized < 1) return fallback;
+	return Math.min(normalized, max);
+};
+
+const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const ensureValidObjectId = (value: string, label: string): void => {
+	if (!mongoose.Types.ObjectId.isValid(value)) {
+		throw new HttpError(`Invalid ${label}`, 400);
+	}
+};
+
+const ensureAdminCanBeChanged = async (targetUser: IUser): Promise<void> => {
+	if (targetUser.role !== "admin") return;
+
+	const adminCount = await User.countDocuments({ role: "admin" }).exec();
+	if (adminCount <= 1) {
+		throw new HttpError("Cannot modify the last admin account", 400);
+	}
+};
+
+export const listUsersByAdmin = async (query: AdminUsersQueryInput = {}) => {
+	const page = normalizePositiveInteger(query.page, 1, 1000000);
+	const limit = normalizePositiveInteger(query.limit, 10, 100);
+
+	const filters: Record<string, unknown> = {};
+	if (query.role) {
+		filters.role = query.role;
+	}
+
+	const keyword = query.search?.trim();
+	if (keyword) {
+		const regex = new RegExp(escapeRegex(keyword), "i");
+		filters.$or = [
+			{ firstName: regex },
+			{ lastName: regex },
+			{ email: regex },
+			{ phone: regex },
+		];
+	}
+
+	const [total, users] = await Promise.all([
+		User.countDocuments(filters).exec(),
+		User.find(filters)
+			.select("firstName lastName email phone role isEmailVerified createdAt updatedAt")
+			.sort({ createdAt: -1 })
+			.skip((page - 1) * limit)
+			.limit(limit)
+			.exec(),
+	]);
+
+	return {
+		data: users,
+		total,
+		page,
+		totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+	};
+};
+
+export const updateUserRoleByAdmin = async (targetUserId: string, role: IUserRole): Promise<IUser> => {
+	ensureValidObjectId(targetUserId, "user ID");
+
+	const user = await User.findById(targetUserId).exec();
+	if (!user) throw new HttpError("User not found", 404);
+
+	if (user.role === role) return user;
+	if (user.role === "admin" && role !== "admin") {
+		await ensureAdminCanBeChanged(user);
+	}
+
+	user.role = role;
+	await user.save();
+
+	return user;
+};
+
+export const deleteUserByAdmin = async (targetUserId: string): Promise<void> => {
+	ensureValidObjectId(targetUserId, "user ID");
+
+	const user = await User.findById(targetUserId).exec();
+	if (!user) throw new HttpError("User not found", 404);
+
+	await ensureAdminCanBeChanged(user);
+	await User.findByIdAndDelete(targetUserId).exec();
+};

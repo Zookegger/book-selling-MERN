@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { AuthRequest } from "@middleware/auth.middleware";
 import { userServices } from "@services";
 import { HttpError } from "@middleware/error.middleware";
+import type { IUserRole } from "@models/user.model";
 
 const sanitizeUser = (user: any) => {
 	if (!user) return user;
@@ -145,6 +146,69 @@ export async function deleteAccount(req: AuthRequest, res: Response, next: NextF
 
 		await userServices.removeUser(userId as string);
 		return res.status(200).json({ message: "Account deleted successfully" });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function listUsersByAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+	try {
+		const result = await userServices.listUsersByAdmin({
+			page: req.query.page ? Number(req.query.page) : undefined,
+			limit: req.query.limit ? Number(req.query.limit) : undefined,
+			search: req.query.search as string | undefined,
+			role: req.query.role as IUserRole | undefined,
+		});
+
+		const data = result.data.map((user) => {
+			if (typeof (user as any).toJSON === "function") {
+				const json = (user as any).toJSON();
+				delete json.password;
+				return json;
+			}
+			return sanitizeUser(user);
+		});
+
+		return res.status(200).json({
+			...result,
+			data,
+		});
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function updateUserRoleByAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+	try {
+		const requesterUserId = req.userId;
+		if (!requesterUserId) return next(new HttpError("Unauthorized", 401));
+
+		const targetUserId = req.params.userId as string;
+		const role = req.body.role as IUserRole;
+
+		if (requesterUserId === targetUserId && role !== "admin") {
+			return next(new HttpError("You cannot remove your own admin role", 400));
+		}
+
+		const user = await userServices.updateUserRoleByAdmin(targetUserId, role);
+		return res.status(200).json(sanitizeUser(user));
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function deleteUserByAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+	try {
+		const requesterUserId = req.userId;
+		if (!requesterUserId) return next(new HttpError("Unauthorized", 401));
+
+		const targetUserId = req.params.userId as string;
+		if (requesterUserId === targetUserId) {
+			return next(new HttpError("You cannot delete your own account from admin panel", 400));
+		}
+
+		await userServices.deleteUserByAdmin(targetUserId);
+		return res.status(200).json({ message: "User deleted successfully" });
 	} catch (err) {
 		next(err);
 	}

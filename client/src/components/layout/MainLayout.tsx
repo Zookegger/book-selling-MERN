@@ -3,10 +3,10 @@ import { ROUTER_PATHS, ROUTES } from "@constants/index";
 import useAuth from "@hooks/useAuth";
 import useOrder from "@hooks/useOrder";
 import { Person } from "@mui/icons-material";
-import { AppBar, Box, Button, Container, Divider, Drawer, IconButton, InputBase, List, ListItem, ListItemButton, ListItemText, Menu, MenuItem, Stack, Toolbar, Typography, useMediaQuery, useTheme } from "@mui/material";
-import { MenuIcon, Search, ShoppingCart } from "lucide-react";
-import { useEffect, useState, type MouseEvent, type ReactNode, type SubmitEvent } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { AppBar, Box, Button, Container, Divider, Drawer, IconButton, List, ListItem, ListItemButton, ListItemText, Menu, MenuItem, Stack, Toolbar, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { MenuIcon, ShoppingCart } from "lucide-react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import { Link, Outlet } from "react-router-dom";
 
 type MainLayoutProps = {
 	children?: ReactNode;
@@ -18,11 +18,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const open = Boolean(anchorEl);
 	const [mobileOpen, setMobileOpen] = useState(false);
-	const [searchQuery, setSearchQuery] = useState("");
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-	const navigate = useNavigate();
-	const location = useLocation();
 
 	function handleClick(event: MouseEvent<HTMLElement>) {
 		setAnchorEl(event.currentTarget);
@@ -40,22 +37,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 		if (!isAuthenticated) return;
 		void fetchItemCount();
 	}, [fetchItemCount, isAuthenticated]);
-
-	useEffect(() => {
-		const queryValue = new URLSearchParams(location.search).get("q") ?? "";
-		setSearchQuery(queryValue);
-	}, [location.search]);
-
-	const handleSearchSubmit = (event: SubmitEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		const normalizedQuery = searchQuery.trim();
-		if (!normalizedQuery) {
-			navigate(ROUTES.BOOKS);
-			return;
-		}
-
-		navigate(`${ROUTES.BOOKS}?q=${encodeURIComponent(normalizedQuery)}`);
-	};
 
 	const drawerContent = (
 		<Box onClick={handleDrawerToggle} sx={{ textAlign: "center", display: "flex", flexDirection: "column", flexGrow: 1 }}>

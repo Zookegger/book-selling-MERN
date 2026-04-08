@@ -2,10 +2,49 @@ import { Router } from "express";
 import { userController } from "@controllers";
 import { errorHandler } from "@middleware/error.middleware";
 import { authMiddleware } from "@middleware/auth.middleware";
-import { body, param } from "express-validator";
+import { adminMiddleware } from "@middleware/admin.middleware";
+import { body, param, query } from "express-validator";
 import { validateRequest } from "@middleware/validation.middleware";
 
 const userRouter = Router();
+
+userRouter.get(
+	"/admin",
+	authMiddleware,
+	adminMiddleware,
+	[
+		query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
+		query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Limit must be between 1 and 100"),
+		query("search").optional().isString().withMessage("Search must be a string"),
+		query("role").optional().isIn(["customer", "admin"]).withMessage("Role must be customer or admin"),
+	],
+	validateRequest,
+	userController.listUsersByAdmin,
+	errorHandler,
+);
+
+userRouter.patch(
+	"/admin/:userId/role",
+	authMiddleware,
+	adminMiddleware,
+	[
+		param("userId").isMongoId().withMessage("User ID must be a valid ObjectId"),
+		body("role").isIn(["customer", "admin"]).withMessage("Role must be customer or admin"),
+	],
+	validateRequest,
+	userController.updateUserRoleByAdmin,
+	errorHandler,
+);
+
+userRouter.delete(
+	"/admin/:userId",
+	authMiddleware,
+	adminMiddleware,
+	[param("userId").isMongoId().withMessage("User ID must be a valid ObjectId")],
+	validateRequest,
+	userController.deleteUserByAdmin,
+	errorHandler,
+);
 
 /**
  * PUT /api/users/profile

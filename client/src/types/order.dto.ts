@@ -1,4 +1,5 @@
 import type { BookFormatType } from "./book.dto";
+import type { PaginatedResponseDto } from "./common.dto";
 
 export type OrderStatusDto =
 	| "pending"
@@ -86,5 +87,48 @@ export interface InitiateVNPayPaymentResponseDto {
 		method: PaymentMethodDto;
 		status: PaymentStatusDto;
 	};
+}
+
+export interface ListAdminOrdersQueryDto {
+	page?: number;
+	limit?: number;
+	search?: string;
+	status?: OrderStatusDto;
+	paymentStatus?: PaymentStatusDto;
+	paymentMethod?: PaymentMethodDto;
+}
+
+export type ListAdminOrdersResponseDto = PaginatedResponseDto<OrderDto>;
+
+export interface UpdateOrderStatusRequestDto {
+	status: OrderStatusDto;
+}
+
+export interface StatusCountDto {
+	status: OrderStatusDto;
+	count: number;
+}
+
+export interface PaymentStatusCountDto {
+	status: PaymentStatusDto;
+	count: number;
+}
+
+export interface MonthlyRevenueDto {
+	month: string;
+	revenue: number;
+	orders: number;
+}
+
+export interface OrderDashboardStatisticsDto {
+	totalOrders: number;
+	totalRevenue: number;
+	averageOrderValue: number;
+	recentOrders: number;
+	totalCustomers: number;
+	pendingFulfillment: number;
+	statusBreakdown: StatusCountDto[];
+	paymentStatusBreakdown: PaymentStatusCountDto[];
+	monthlyRevenue: MonthlyRevenueDto[];
 }
 

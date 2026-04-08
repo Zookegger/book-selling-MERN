@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { body } from "express-validator";
+import { body, param, query } from "express-validator";
 import { authMiddleware } from "@middleware/auth.middleware";
+import { adminMiddleware } from "@middleware/admin.middleware";
 import { validateRequest } from "@middleware/validation.middleware";
 import { errorHandler } from "@middleware/error.middleware";
 import * as orderController from "@controllers/order.controller";
@@ -8,6 +9,37 @@ import * as orderController from "@controllers/order.controller";
 const orderRouter = Router();
 
 orderRouter.get("/my", authMiddleware, orderController.getMyOrders, errorHandler);
+
+orderRouter.get(
+	"/admin",
+	authMiddleware,
+	adminMiddleware,
+	[
+		query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
+		query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Limit must be between 1 and 100"),
+		query("search").optional().isString().withMessage("Search must be a string"),
+		query("status")
+			.optional()
+			.isIn(["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "refunded"])
+			.withMessage("Invalid order status"),
+		query("paymentStatus")
+			.optional()
+			.isIn(["pending", "paid", "failed", "refunded"])
+			.withMessage("Invalid payment status"),
+		query("paymentMethod").optional().isIn(["cod", "vnpay"]).withMessage("Invalid payment method"),
+	],
+	validateRequest,
+	orderController.getAdminOrders,
+	errorHandler,
+);
+
+orderRouter.get(
+	"/admin/statistics",
+	authMiddleware,
+	adminMiddleware,
+	orderController.getAdminOrderStatistics,
+	errorHandler,
+);
 
 orderRouter.post(
 	"/confirm",
@@ -45,6 +77,21 @@ orderRouter.post(
 	],
 	validateRequest,
 	orderController.confirmOrder,
+	errorHandler,
+);
+
+orderRouter.patch(
+	"/:orderId/status",
+	authMiddleware,
+	adminMiddleware,
+	[
+		param("orderId").isMongoId().withMessage("Invalid order ID"),
+		body("status")
+			.isIn(["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "refunded"])
+			.withMessage("Invalid order status"),
+	],
+	validateRequest,
+	orderController.updateOrderStatus,
 	errorHandler,
 );
 

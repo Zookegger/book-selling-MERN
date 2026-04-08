@@ -209,6 +209,20 @@ const router = createBrowserRouter([
                     return { Component: CategoryManagement }
                 }
             },
+            {
+                path: ROUTES.ADMIN_ORDERS,
+                lazy: async () => {
+                    const { default: OrderManagement } = await import("@pages/Admin/Order/OrderManagement");
+                    return { Component: OrderManagement }
+                }
+            },
+            {
+                path: ROUTES.ADMIN_USERS,
+                lazy: async () => {
+                    const { default: UserManagement } = await import("@pages/Admin/User/UserManagement");
+                    return { Component: UserManagement }
+                }
+            }
         ]
     },
     {

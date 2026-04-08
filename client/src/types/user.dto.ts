@@ -1,5 +1,5 @@
 import type { BookFormatType } from "./book.dto";
-import type { MessageResponseDto } from "./common.dto";
+import type { MessageResponseDto, PaginatedResponseDto } from "./common.dto";
 
 export type UserRoleDto = "customer" | "admin";
 
@@ -77,3 +77,32 @@ export type SetDefaultAddressResponseDto = AddressDto;
 export type GetAddressResponseDto = AddressDto[];
 
 export interface DeleteAccountResponseDto extends MessageResponseDto {}
+
+export interface ListAdminUsersQueryDto {
+	page?: number;
+	limit?: number;
+	search?: string;
+	role?: UserRoleDto;
+}
+
+export interface AdminUserDto {
+	id: string;
+	firstName: string;
+	lastName: string;
+	email: string;
+	phone: string;
+	role: UserRoleDto;
+	isEmailVerified: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export type ListAdminUsersResponseDto = PaginatedResponseDto<AdminUserDto>;
+
+export interface UpdateUserRoleByAdminRequestDto {
+	role: UserRoleDto;
+}
+
+export type UpdateUserRoleByAdminResponseDto = AdminUserDto;
+
+export interface DeleteUserByAdminResponseDto extends MessageResponseDto {}

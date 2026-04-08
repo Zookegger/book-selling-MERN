@@ -48,7 +48,7 @@ const getBookInfo = (item: CartItemDto): { title: string; coverImage?: string } 
 	};
 };
 
-const DISPLAY_CURRENCY = "VND";
+const DISPLAY_CURRENCY = "USD";
 
 const CartPage = () => {
 	const navigate = useNavigate();

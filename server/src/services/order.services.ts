@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { Book, Cart, Coupon, Order, Payment, User } from "@models";
-import type { PaymentMethod, PaymentStatus } from "@models/order.model";
+import type { OrderStatus, PaymentMethod, PaymentStatus } from "@models/order.model";
 import { HttpError } from "@middleware/error.middleware";
 import { EmailService } from "./email.service";
 
@@ -28,11 +28,60 @@ type ConfirmOrderInput = {
 	};
 };
 
+type AdminOrdersQueryInput = {
+	page?: number;
+	limit?: number;
+	search?: string;
+	status?: OrderStatus;
+	paymentStatus?: PaymentStatus;
+	paymentMethod?: PaymentMethod;
+};
+
+type StatusCount = {
+	status: OrderStatus;
+	count: number;
+};
+
+type PaymentStatusCount = {
+	status: PaymentStatus;
+	count: number;
+};
+
+type MonthlyRevenue = {
+	month: string;
+	revenue: number;
+	orders: number;
+};
+
+export type AdminOrderStatistics = {
+	totalOrders: number;
+	totalRevenue: number;
+	averageOrderValue: number;
+	recentOrders: number;
+	totalCustomers: number;
+	pendingFulfillment: number;
+	statusBreakdown: StatusCount[];
+	paymentStatusBreakdown: PaymentStatusCount[];
+	monthlyRevenue: MonthlyRevenue[];
+};
+
 const ensureValidObjectId = (value: string, label = "ID"): void => {
 	if (!mongoose.Types.ObjectId.isValid(value)) {
 		throw new HttpError(`Invalid ${label}`, 400);
 	}
 };
+
+const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const normalizePositiveInteger = (value: number | undefined, fallback: number, max = 100): number => {
+	if (!Number.isFinite(value)) return fallback;
+	const normalized = Math.floor(Number(value));
+	if (normalized < 1) return fallback;
+	return Math.min(normalized, max);
+};
+
+const NON_REVENUE_STATUSES: OrderStatus[] = ["cancelled", "refunded"];
+const PENDING_FULFILLMENT_STATUSES: OrderStatus[] = ["pending", "confirmed", "processing", "shipped"];
 
 const calculateCouponDiscount = (subtotal: number, coupon: any): number => {
 	if (subtotal < Number(coupon.minOrderAmount ?? 0)) {
@@ -230,5 +279,184 @@ export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) 
 export const getMyOrders = async (userId: string) => {
 	ensureValidObjectId(userId, "user ID");
 	return await Order.find({ user: userId }).sort({ createdAt: -1 }).exec();
+};
+
+export const getAdminOrders = async (query: AdminOrdersQueryInput = {}) => {
+	const page = normalizePositiveInteger(query.page, 1, 1000000);
+	const limit = normalizePositiveInteger(query.limit, 10, 100);
+
+	const filters: Record<string, unknown> = {};
+	if (query.status) filters.status = query.status;
+	if (query.paymentStatus) filters.paymentStatus = query.paymentStatus;
+	if (query.paymentMethod) filters.paymentMethod = query.paymentMethod;
+
+	const keyword = query.search?.trim();
+	if (keyword) {
+		const regex = new RegExp(escapeRegex(keyword), "i");
+		const searchFilters: Record<string, unknown>[] = [
+			{ "shippingAddress.recipientName": regex },
+			{ "shippingAddress.phoneNumber": regex },
+			{ "items.bookTitle": regex },
+			{ couponCode: regex },
+		];
+
+		if (mongoose.Types.ObjectId.isValid(keyword)) {
+			searchFilters.push({ _id: new mongoose.Types.ObjectId(keyword) });
+		}
+
+		filters.$or = searchFilters;
+	}
+
+	const [total, data] = await Promise.all([
+		Order.countDocuments(filters).exec(),
+		Order.find(filters)
+			.sort({ createdAt: -1 })
+			.skip((page - 1) * limit)
+			.limit(limit)
+			.exec(),
+	]);
+
+	return {
+		data,
+		total,
+		page,
+		totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+	};
+};
+
+export const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
+	ensureValidObjectId(orderId, "order ID");
+
+	const order = await Order.findById(orderId).exec();
+	if (!order) throw new HttpError("Order not found", 404);
+
+	order.status = status;
+
+	const now = new Date();
+	if (status === "confirmed") {
+		order.confirmedAt = order.confirmedAt ?? now;
+	}
+	if (status === "shipped") {
+		order.shippedAt = order.shippedAt ?? now;
+	}
+	if (status === "delivered") {
+		order.deliveredAt = order.deliveredAt ?? now;
+	}
+	if (status === "cancelled") {
+		order.cancelledAt = order.cancelledAt ?? now;
+	}
+	if (status === "refunded") {
+		order.paymentStatus = "refunded";
+	}
+
+	await order.save();
+	return order;
+};
+
+export const getAdminOrderStatistics = async (): Promise<AdminOrderStatistics> => {
+	const now = new Date();
+	const recentCutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+	const monthlyStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+	const [summaryRaw, uniqueCustomersRaw, statusRaw, paymentStatusRaw, monthlyRaw] = await Promise.all([
+		Order.aggregate<{ totalOrders: number; totalRevenue: number; recentOrders: number }>([
+			{
+				$group: {
+					_id: null,
+					totalOrders: { $sum: 1 },
+					totalRevenue: {
+						$sum: {
+							$cond: [{ $in: ["$status", NON_REVENUE_STATUSES] }, 0, "$totalAmount"],
+						},
+					},
+					recentOrders: {
+						$sum: {
+							$cond: [{ $gte: ["$createdAt", recentCutoff] }, 1, 0],
+						},
+					},
+				},
+			},
+		]),
+		Order.aggregate<{ totalCustomers: number }>([{ $group: { _id: "$user" } }, { $count: "totalCustomers" }]),
+		Order.aggregate<{ _id: OrderStatus; count: number }>([
+			{ $group: { _id: "$status", count: { $sum: 1 } } },
+			{ $sort: { count: -1 } },
+		]),
+		Order.aggregate<{ _id: PaymentStatus; count: number }>([
+			{ $group: { _id: "$paymentStatus", count: { $sum: 1 } } },
+			{ $sort: { count: -1 } },
+		]),
+		Order.aggregate<{ _id: { year: number; month: number }; revenue: number; orders: number }>([
+			{ $match: { createdAt: { $gte: monthlyStart } } },
+			{
+				$group: {
+					_id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+					revenue: {
+						$sum: {
+							$cond: [{ $in: ["$status", NON_REVENUE_STATUSES] }, 0, "$totalAmount"],
+						},
+					},
+					orders: { $sum: 1 },
+				},
+			},
+			{ $sort: { "_id.year": 1, "_id.month": 1 } },
+		]),
+	]);
+
+	const summary = summaryRaw[0] ?? {
+		totalOrders: 0,
+		totalRevenue: 0,
+		recentOrders: 0,
+	};
+
+	const statusBreakdown: StatusCount[] = statusRaw.map((entry) => ({
+		status: entry._id,
+		count: Number(entry.count ?? 0),
+	}));
+
+	const paymentStatusBreakdown: PaymentStatusCount[] = paymentStatusRaw.map((entry) => ({
+		status: entry._id,
+		count: Number(entry.count ?? 0),
+	}));
+
+	const statusMap = new Map(statusBreakdown.map((entry) => [entry.status, entry.count]));
+	const pendingFulfillment = PENDING_FULFILLMENT_STATUSES.reduce((sum, status) => sum + (statusMap.get(status) ?? 0), 0);
+
+	const revenueByMonthMap = new Map<string, { revenue: number; orders: number }>();
+	for (const item of monthlyRaw) {
+		const monthKey = `${item._id.year}-${String(item._id.month).padStart(2, "0")}`;
+		revenueByMonthMap.set(monthKey, {
+			revenue: Number(item.revenue ?? 0),
+			orders: Number(item.orders ?? 0),
+		});
+	}
+
+	const monthlyRevenue: MonthlyRevenue[] = [];
+	for (let offset = 5; offset >= 0; offset -= 1) {
+		const monthDate = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+		const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`;
+		const monthData = revenueByMonthMap.get(monthKey);
+
+		monthlyRevenue.push({
+			month: monthKey,
+			revenue: Number(monthData?.revenue ?? 0),
+			orders: Number(monthData?.orders ?? 0),
+		});
+	}
+
+	const totalOrders = Number(summary.totalOrders ?? 0);
+	const totalRevenue = Number(summary.totalRevenue ?? 0);
+
+	return {
+		totalOrders,
+		totalRevenue,
+		averageOrderValue: totalOrders > 0 ? Number((totalRevenue / totalOrders).toFixed(2)) : 0,
+		recentOrders: Number(summary.recentOrders ?? 0),
+		totalCustomers: Number(uniqueCustomersRaw[0]?.totalCustomers ?? 0),
+		pendingFulfillment,
+		statusBreakdown,
+		paymentStatusBreakdown,
+		monthlyRevenue,
+	};
 };
 

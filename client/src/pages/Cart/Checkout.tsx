@@ -441,9 +441,9 @@ const CheckoutPage = () => {
 														</TableCell>
 														<TableCell align="right">{item.quantity}</TableCell>
 														<TableCell align="right" sx={{ display: { xs: "none", md: "table-cell" } }}>
-															{Number(item.unitPrice).toLocaleString()} VND
+															${Number(item.unitPrice).toLocaleString()} USD
 														</TableCell>
-														<TableCell align="right">{Number(item.quantity * item.unitPrice).toLocaleString()} VND</TableCell>
+														<TableCell align="right">${Number(item.quantity * item.unitPrice).toLocaleString()} USD</TableCell>
 													</TableRow>
 												);
 											})}
@@ -506,23 +506,23 @@ const CheckoutPage = () => {
 					{cart.items.map((item, idx) => (
 						<Box key={`${idx}-${item.selectedFormat}`} display="flex" justifyContent="space-between" mb={1}>
 							<Typography variant="body2">x{item.quantity}</Typography>
-							<Typography variant="body2">{Number(item.quantity * item.unitPrice).toLocaleString()} VND</Typography>
+							<Typography variant="body2">${Number(item.quantity * item.unitPrice).toLocaleString()} USD</Typography>
 						</Box>
 					))}
 
 					<Divider sx={{ my: 2 }} />
 					<Box display="flex" justifyContent="space-between" mb={1}>
 						<Typography>Subtotal</Typography>
-						<Typography fontWeight={700}>{Number(cart.subtotal).toLocaleString()} VND</Typography>
+						<Typography fontWeight={700}>${Number(cart.subtotal).toLocaleString()} USD</Typography>
 					</Box>
 					<Box display="flex" justifyContent="space-between" mb={1}>
 						<Typography>Discount</Typography>
-						<Typography fontWeight={700}>- {Number(cart.discountAmount).toLocaleString()} VND</Typography>
+						<Typography fontWeight={700}>- ${Number(cart.discountAmount).toLocaleString()} USD</Typography>
 					</Box>
 					<Box display="flex" justifyContent="space-between" mb={2}>
 						<Typography fontWeight={800}>Total</Typography>
 						<Typography fontWeight={900} color="primary">
-							{Number(cart.totalAmount).toLocaleString()} VND
+							${Number(cart.totalAmount).toLocaleString()} USD
 						</Typography>
 					</Box>
 				</Card>
