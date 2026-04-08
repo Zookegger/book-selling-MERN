@@ -1,7 +1,8 @@
 import { ROUTES } from "@constants/index";
 import useAuth from "@hooks/useAuth";
+import useCart from "@hooks/useCart";
 import { AppBar, Box, Button, Container, Menu, MenuItem, Toolbar, Typography } from "@mui/material";
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { Link, Outlet } from "react-router-dom";
 
 type MainLayoutProps = {
@@ -10,6 +11,7 @@ type MainLayoutProps = {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
 	const { isAuthenticated, user, logout } = useAuth();
+	const { itemCount, fetchItemCount } = useCart();
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const open = Boolean(anchorEl);
 
@@ -20,6 +22,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 	function handleClose() {
 		setAnchorEl(null);
 	};
+
+	useEffect(() => {
+		if (!isAuthenticated) return;
+		void fetchItemCount();
+	}, [fetchItemCount, isAuthenticated]);
 
 	return (
 		<Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", minWidth: "100vw" }}>
@@ -37,6 +44,13 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 						</Box>
 					) : (
 						<>
+							<Button
+								component={Link}
+								to={ROUTES.CART}
+								style={{ textDecoration: "none", color: "inherit" }}
+							>
+								Giỏ hàng ({itemCount})
+							</Button>
 							<Button onClick={handleClick} sx={{ color: "black" }}>{user?.firstName}</Button>
 							<Menu open={open} anchorEl={anchorEl} onClose={handleClose}>
 								<MenuItem><Link to={ROUTES.PROFILE} style={{ textDecoration: "none", color: "inherit" }}>Profile</Link></MenuItem>

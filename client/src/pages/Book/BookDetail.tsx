@@ -16,8 +16,8 @@ import {
 	Snackbar,
 	Alert,
 } from "@mui/material";
+import useCart from "@hooks/useCart";
 import { BookService } from "@services/book.services";
-import CartService from "@services/cart.services";
 import type { BookDto, BookFormatType } from "@my-types/book.dto";
 
 const BookDetail = () => {
@@ -26,7 +26,7 @@ const BookDetail = () => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [quantity, setQuantity] = useState<number>(1);
 	const [selectedFormat, setSelectedFormat] = useState<BookFormatType | "">("");
-	const [isAdding, setIsAdding] = useState(false);
+	const { addItem, isMutating } = useCart();
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
 		open: false,
 		message: "",
@@ -66,8 +66,7 @@ const BookDetail = () => {
 		if (!bookId || !selectedFormat) return;
 
 		try {
-			setIsAdding(true);
-			await CartService.addItem({
+			await addItem({
 				bookId,
 				selectedFormat,
 				quantity,
@@ -83,8 +82,6 @@ const BookDetail = () => {
 				message: error?.message ?? "Không thể thêm sản phẩm vào giỏ hàng.",
 				severity: "error",
 			});
-		} finally {
-			setIsAdding(false);
 		}
 	};
 
@@ -205,7 +202,7 @@ const BookDetail = () => {
 							<Button
 								variant="contained"
 								color="primary"
-								disabled={!selectedFormat || isAdding}
+								disabled={!selectedFormat || isMutating}
 								onClick={handleAddToCart}
 							>
 								Thêm vào giỏ

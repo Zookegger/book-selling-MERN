@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import {
 	Alert,
 	Box,
@@ -10,8 +10,8 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-import CartService from "@services/cart.services";
-import type { CartDto, CartItemDto } from "@my-types/cart.dto";
+import useCart from "@hooks/useCart";
+import type { CartItemDto } from "@my-types/cart.dto";
 import type { BookDto, BookFormatType } from "@my-types/book.dto";
 
 const formatLabel = (format: BookFormatType) => {
@@ -38,38 +38,17 @@ const getBookInfo = (item: CartItemDto): { title: string; coverImage?: string } 
 	};
 };
 
+const DISPLAY_CURRENCY = "VND";
+
 const CartPage = () => {
-	const [cart, setCart] = useState<CartDto | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
-	const [isMutating, setIsMutating] = useState(false);
+	const { cart, setCart, itemCount, isLoading, isMutating, updateItem, removeItem } = useCart({
+		autoFetchCart: true,
+	});
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
 		open: false,
 		message: "",
 		severity: "success",
 	});
-
-	const itemCount = useMemo(() => cart?.items?.length ?? 0, [cart]);
-
-	const loadCart = async () => {
-		try {
-			setIsLoading(true);
-			const data = await CartService.getCart();
-			setCart(data);
-		} catch (error: any) {
-			setSnackbar({
-				open: true,
-				message: error?.message ?? "Không thể tải giỏ hàng.",
-				severity: "error",
-			});
-			setCart(null);
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	useEffect(() => {
-		void loadCart();
-	}, []);
 
 	const handleUpdateQuantity = async (item: CartItemDto, nextQuantity: number) => {
 		if (isMutating) return;
@@ -78,13 +57,11 @@ const CartPage = () => {
 		if (!bookId) return;
 
 		try {
-			setIsMutating(true);
-			const updated = await CartService.updateItem({
+			await updateItem({
 				bookId: String(bookId),
 				selectedFormat: item.selectedFormat,
 				quantity: nextQuantity,
 			});
-			setCart(updated);
 			setSnackbar({ open: true, message: "Đã cập nhật số lượng.", severity: "success" });
 		} catch (error: any) {
 			setSnackbar({
@@ -92,8 +69,6 @@ const CartPage = () => {
 				message: error?.message ?? "Không thể cập nhật số lượng.",
 				severity: "error",
 			});
-		} finally {
-			setIsMutating(false);
 		}
 	};
 
@@ -104,12 +79,10 @@ const CartPage = () => {
 		if (!bookId) return;
 
 		try {
-			setIsMutating(true);
-			const updated = await CartService.removeItem({
+			await removeItem({
 				bookId: String(bookId),
 				selectedFormat: item.selectedFormat,
 			});
-			setCart(updated);
 			setSnackbar({ open: true, message: "Đã xoá sản phẩm khỏi giỏ.", severity: "success" });
 		} catch (error: any) {
 			setSnackbar({
@@ -117,8 +90,6 @@ const CartPage = () => {
 				message: error?.message ?? "Không thể xoá sản phẩm.",
 				severity: "error",
 			});
-		} finally {
-			setIsMutating(false);
 		}
 	};
 
@@ -180,8 +151,7 @@ const CartPage = () => {
 													Định dạng: {formatLabel(item.selectedFormat)}
 												</Typography>
 												<Typography variant="body2" color="text.secondary">
-													Đơn giá: {Number(item.unitPrice).toLocaleString()}{" "}
-													{cart.currency === "VND" ? "VND" : cart.currency}
+													Đơn giá: {Number(item.unitPrice).toLocaleString()} {DISPLAY_CURRENCY}
 												</Typography>
 											</Box>
 
@@ -244,14 +214,14 @@ const CartPage = () => {
 						<Box display="flex" justifyContent="space-between" mb={1}>
 							<Typography color="text.secondary">Tạm tính</Typography>
 							<Typography fontWeight={700}>
-								{Number(cart?.subtotal ?? 0).toLocaleString()} {cart?.currency ?? "VND"}
+								{Number(cart?.subtotal ?? 0).toLocaleString()} {DISPLAY_CURRENCY}
 							</Typography>
 						</Box>
 
 						<Box display="flex" justifyContent="space-between" mb={1}>
 							<Typography color="text.secondary">Giảm giá</Typography>
 							<Typography fontWeight={700}>
-								- {Number(cart?.discountAmount ?? 0).toLocaleString()} {cart?.currency ?? "VND"}
+								- {Number(cart?.discountAmount ?? 0).toLocaleString()} {DISPLAY_CURRENCY}
 							</Typography>
 						</Box>
 
@@ -260,7 +230,7 @@ const CartPage = () => {
 						<Box display="flex" justifyContent="space-between" mb={2}>
 							<Typography fontWeight={800}>Tổng cộng</Typography>
 							<Typography fontWeight={900} color="primary">
-								{Number(cart?.totalAmount ?? 0).toLocaleString()} {cart?.currency ?? "VND"}
+								{Number(cart?.totalAmount ?? 0).toLocaleString()} {DISPLAY_CURRENCY}
 							</Typography>
 						</Box>
 
