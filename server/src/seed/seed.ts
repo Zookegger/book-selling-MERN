@@ -314,7 +314,7 @@ const seed = async () => {
 			console.log("Existing books, users, and related entities cleared.");
 		}
 
-		const admin_password = bcrypt.hash("AdminPass123!@#", 10);
+		const admin_password = await bcrypt.hash("AdminPass123!@#", 10);
 
 		// 1. Handle Admin User (Upsert to prevent duplicate key errors on append)
 		await User.findOneAndUpdate(
@@ -324,7 +324,7 @@ const seed = async () => {
 					firstName: "Admin",
 					lastName: "User",
 					phone: chance.phone({ formatted: false }).replace(/\D/g, "").slice(0, 15) || "+84901234567",
-					password: "AdminPass123!@#",
+					password: admin_password,
 					role: "admin",
 					isEmailVerified: true,
 				},
