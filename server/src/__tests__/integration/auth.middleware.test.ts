@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import app from "../../app";
 import { connectTestDB, closeTestDB, clearTestDB } from "../utils/testDb";
 import { initializeAuth } from "@middleware/auth.middleware";
+import User from "@models/user.model";
 
 // ---------------------------------------------------------------------------
 // Token crafting helpers (not mocks — used to exercise real security edge
@@ -60,13 +61,13 @@ describe("authMiddleware()", () => {
 		it("trả về 401 khi header Authorization vắng mặt", async () => {
 			const res = await request(app).get(PROTECTED);
 			expect(res.status).toBe(401);
-			expect(res.body).toEqual({ status: "fail", message: "Unauthorized" });
+			expect(res.body).toEqual({ data: null, status: "fail", message: "Unauthorized" });
 		});
 
 		it("trả về 401 khi chế độ là Basic, không phải Bearer", async () => {
 			const res = await request(app).get(PROTECTED).set("Authorization", "Basic dXNlcjpwYXNz");
 			expect(res.status).toBe(401);
-			expect(res.body).toEqual({ status: "fail", message: "Unauthorized" });
+			expect(res.body).toEqual({ data: null, status: "fail", message: "Unauthorized" });
 		});
 
 		it("trả về 401 khi header Authorization là 'Bearer' không có token", async () => {
@@ -153,24 +154,60 @@ describe("authMiddleware()", () => {
 
 	describe("authMiddleware — successful authorization", () => {
 		it("trả về 200 và userId cho một token hợp lệ có userId claim", async () => {
-			const token = jwt.sign({ userId: "user-abc" }, SECRET, { expiresIn: "1h" });
+			const user = await User.create({
+				email: "authorized-1@example.com",
+				firstName: "Auth",
+				lastName: "One",
+				phone: "0901234567",
+				password: "Password1!",
+				isEmailVerified: true,
+			});
+
+			const token = jwt.sign({ userId: user.id }, SECRET, { expiresIn: "1h" });
 			const res = await request(app).get(PROTECTED).set("Authorization", `Bearer ${token}`);
 
 			expect(res.status).toBe(200);
-			expect(res.body).toHaveProperty("userId", "user-abc");
+			expect(res.body).toHaveProperty("userId", user.id);
 		});
 
 		it("trả về 200 cho token không hết hạn (không có exp claim)", async () => {
-			const token = jwt.sign({ userId: "persist-user" }, SECRET);
+			const user = await User.create({
+				email: "authorized-2@example.com",
+				firstName: "Auth",
+				lastName: "Two",
+				phone: "0901234568",
+				password: "Password1!",
+				isEmailVerified: true,
+			});
+
+			const token = jwt.sign({ userId: user.id }, SECRET);
 			const res = await request(app).get(PROTECTED).set("Authorization", `Bearer ${token}`);
 
 			expect(res.status).toBe(200);
-			expect(res.body.userId).toBe("persist-user");
+			expect(res.body.userId).toBe(user.id);
 		});
 
 		it("handles concurrent requests independently (strategy singleton)", async () => {
-			const tokenA = jwt.sign({ userId: "user-A" }, SECRET, { expiresIn: "1h" });
-			const tokenB = jwt.sign({ userId: "user-B" }, SECRET, { expiresIn: "1h" });
+			const userA = await User.create({
+				email: "authorized-a@example.com",
+				firstName: "User",
+				lastName: "A",
+				phone: "0901234569",
+				password: "Password1!",
+				isEmailVerified: true,
+			});
+
+			const userB = await User.create({
+				email: "authorized-b@example.com",
+				firstName: "User",
+				lastName: "B",
+				phone: "0901234570",
+				password: "Password1!",
+				isEmailVerified: true,
+			});
+
+			const tokenA = jwt.sign({ userId: userA.id }, SECRET, { expiresIn: "1h" });
+			const tokenB = jwt.sign({ userId: userB.id }, SECRET, { expiresIn: "1h" });
 
 			const [resA, resB] = await Promise.all([
 				request(app).get(PROTECTED).set("Authorization", `Bearer ${tokenA}`),
@@ -178,9 +215,9 @@ describe("authMiddleware()", () => {
 			]);
 
 			expect(resA.status).toBe(200);
-			expect(resA.body.userId).toBe("user-A");
+			expect(resA.body.userId).toBe(userA.id);
 			expect(resB.status).toBe(200);
-			expect(resB.body.userId).toBe("user-B");
+			expect(resB.body.userId).toBe(userB.id);
 		});
 	});
 
@@ -189,10 +226,10 @@ describe("authMiddleware()", () => {
 	// ---------------------------------------------------------------------------
 
 	describe("authMiddleware — 401 response contract", () => {
-		it("401 body is exactly { status: 'fail', message: 'Unauthorized' }", async () => {
+		it("401 body is exactly { data: null, status: 'fail', message: 'Unauthorized' }", async () => {
 			const res = await request(app).get(PROTECTED);
 			expect(res.status).toBe(401);
-			expect(res.body).toStrictEqual({ status: "fail", message: "Unauthorized" });
+			expect(res.body).toStrictEqual({ data: null, status: "fail", message: "Unauthorized" });
 		});
 
 		it("401 Content-Type is application/json", async () => {

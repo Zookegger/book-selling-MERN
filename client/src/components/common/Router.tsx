@@ -1,57 +1,95 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router-dom";
+import { Suspense, type ReactElement } from "react";
 import MainLayout from "@layout/MainLayout";
-import { RootErrorBoundaryPage, HomePage, LoginPage, NotFoundPage, RegisterPage, UnauthorizePage, VerifyEmailPage, ResendVerificationPage, ProfilePage } from "@pages";
-import ProtectedRoute from "./ProtectedRoute";
+import LoadingSkeleton from "@components/layout/LoadingSkeleton";
+import useAuth from "@hooks/useAuth";
+import { ROUTES } from "@constants/index";
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage } from "@pages";
 
-export const ROUTER_PATHS = {
-    HOME: "/",
-    LOGIN: "/account/sign-in",
-    REGISTER: "/account/sign-up",
-    FORGOT_PASSWORD: "/account/forgot-password",
-    UNAUTHORIZE: "/unauthorized",
-    ERROR: "/error",
-    VERIFY_EMAIL: "/verify-email",
-    RESEND_VERIFICATION: "/resend-verification",
-    PROFILE: "/account/profile",
-}
+export const ROUTER_PATHS = ROUTES;
+
+const RequireAuth = ({ children }: { children: ReactElement }) => {
+	const { isLoading, isAuthenticated } = useAuth();
+	const location = useLocation();
+
+	if (isLoading) return <LoadingSkeleton />;
+	if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
+	return children;
+};
 
 const router = createBrowserRouter([
     {
-        path: ROUTER_PATHS.HOME,
-        element: <MainLayout />,
+        path: ROUTES.HOME,
+        element: (
+			<MainLayout>
+				<Suspense fallback={<LoadingSkeleton />}>
+					<Outlet />
+				</Suspense>
+			</MainLayout>
+		),
         errorElement: <RootErrorBoundaryPage />,
         children: [
             {
                 index: true,
-                element: <HomePage />
+                lazy: async () => {
+					const { default: HomePage } = await import("@pages/Home");
+					return { Component: HomePage };
+				},
+            },
+            {
+                path: ROUTES.BOOK_DETAIL,
+                lazy: async () => {
+					const { default: BookDetail } = await import("@pages/Book/BookDetail");
+					return { Component: BookDetail };
+				},
+            },
+            {
+                path: ROUTES.LOGIN,
+                lazy: async () => {
+					const { default: LoginPage } = await import("@pages/Login");
+					return { Component: LoginPage };
+				},
+            },
+            {
+                path: ROUTES.REGISTER,
+                lazy: async () => {
+					const { default: RegisterPage } = await import("@pages/Register");
+					return { Component: RegisterPage };
+				},
+            },
+            {
+                path: ROUTES.UNAUTHORIZE,
+                element: <UnauthorizePage />,
+            },
+            {
+                path: ROUTES.VERIFY_EMAIL,
+                lazy: async () => {
+					const { default: VerifyEmailPage } = await import("@pages/VerifyEmail");
+					return { Component: VerifyEmailPage };
+				},
+            },
+            {
+                path: ROUTES.RESEND_VERIFICATION,
+                lazy: async () => {
+					const { default: ResendVerificationPage } = await import("@pages/ResendVerification");
+					return { Component: ResendVerificationPage };
+				},
+            },
+            {
+                path: ROUTES.PROFILE,
+                element: (
+					<RequireAuth>
+						<ProfilePage />
+					</RequireAuth>
+				),
+            },
+            {
+                path: ROUTES.NOT_FOUND,
+                element: <NotFoundPage />,
             },
             {
                 path: "*",
-                element: <NotFoundPage />
-            },
-            {
-                path: ROUTER_PATHS.LOGIN,
-                element: <LoginPage />
-            },
-            {
-                path: ROUTER_PATHS.REGISTER,
-                element: <RegisterPage />
-            },
-            {
-                path: ROUTER_PATHS.UNAUTHORIZE,
-                element: <UnauthorizePage />
-            },
-            {
-                path: ROUTER_PATHS.VERIFY_EMAIL,
-                element: <VerifyEmailPage />
-            },
-            {
-                path: ROUTER_PATHS.RESEND_VERIFICATION,
-                element: <ResendVerificationPage />
-            },
-            {
-                path: ROUTER_PATHS.PROFILE,
-                element: <ProtectedRoute><ProfilePage /></ProtectedRoute>
+                element: <Navigate to={ROUTES.NOT_FOUND} replace />,
             },
         ]
     }
