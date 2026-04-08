@@ -11,11 +11,12 @@ export const ROUTES = {
 	PROFILE: "/account/profile",
 	CART: "/cart",
 	BOOKS: "/books",
-	BOOK_DETAIL: "/books/:bookId",
-	
+
 	ADMIN_DASHBOARD: "/admin",
 	ADMIN_PUBLISHERS: "/admin/publishers",
+
 	BOOK: (bookId: string) => `/books/${bookId}`,
+	BOOK_DETAIL: (bookIdentifier: string) => `/books/${bookIdentifier}`,
 
 	CATEGORY: "/categories",
 	CATEGORY_DETAIL: (slug: string) => `/categories/${slug}`,

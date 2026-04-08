@@ -43,7 +43,7 @@ const router = createBrowserRouter([
                 },
             },
             {
-                path: ROUTES.BOOK_DETAIL,
+                path: ROUTES.BOOK_DETAIL(":bookId"),
                 lazy: async () => {
                     const { default: BookDetail } = await import("@pages/Book/BookDetail");
                     return { Component: BookDetail };

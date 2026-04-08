@@ -95,7 +95,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 	);
 
 	return (
-		<Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", minWidth: "100vw", overflowX: "hidden" }}>
+		<Box sx={{ display: "flex", flexDirection: "column" }}>
 			<AppBar position="static" color="transparent" elevation={0}>
 				<Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
 					{/* Left Side: Hamburger (Mobile) + Logo + Categories (Desktop) */}
