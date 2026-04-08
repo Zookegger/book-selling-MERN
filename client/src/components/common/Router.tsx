@@ -77,6 +77,13 @@ const router = createBrowserRouter([
                 },
             },
             {
+                path: ROUTES.FORGOT_PASSWORD,
+                lazy: async () => {
+                    const { default: ForgotPasswordPage } = await import("@pages/Auth/ForgotPassword");
+                    return { Component: ForgotPasswordPage };
+                },
+            },
+            {
                 path: ROUTES.VERIFY_EMAIL,
                 lazy: async () => {
                     const { default: VerifyEmailPage } = await import("@pages/Auth/VerifyEmail");

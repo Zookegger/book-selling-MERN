@@ -1,5 +1,7 @@
 import api, { mapApiError } from "@services/api";
 import type {
+	ForgotPasswordRequestDto,
+	ForgotPasswordResponseDto,
 	GetMeResponseDto,
 	LoginRequestDto,
 	LoginResponseDto,
@@ -50,6 +52,15 @@ export const authService = {
 			return response.data;
 		} catch (error: any) {
 			throw mapApiError(error, "Network error: Could not retrieve user data.");
+		}
+	},
+
+	forgotPassword: async (data: ForgotPasswordRequestDto): Promise<ForgotPasswordResponseDto> => {
+		try {
+			const response = await api.post<ForgotPasswordResponseDto>("/auth/forgot-password", data);
+			return response.data;
+		} catch (error: any) {
+			throw mapApiError(error, "Network error: Could not process forgot password request.");
 		}
 	},
 
