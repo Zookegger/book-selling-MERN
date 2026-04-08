@@ -35,6 +35,13 @@ const MainLayout = () => {
 						<>
 							<Button onClick={handleClick} sx={{ color: "black" }}>{user?.firstName}</Button>
 							<Menu open={open} anchorEl={anchorEl} onClose={handleClose}>
+								{user?.role === "admin" && (
+									<MenuItem>
+										<Link to={ROUTER_PATHS.ADMIN_PUBLISHERS} style={{ textDecoration: "none", color: "inherit" }}>
+											Admin
+										</Link>
+									</MenuItem>
+								)}
 								<MenuItem><Link to={ROUTER_PATHS.PROFILE} style={{ textDecoration: "none", color: "inherit" }}>Profile</Link></MenuItem>
 								<MenuItem onClick={async () => {
 									handleClose();
