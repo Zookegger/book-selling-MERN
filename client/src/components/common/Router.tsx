@@ -5,18 +5,8 @@ import DashboardLoadingSkeleton from "@layout/DashboardLoadingSkeleton";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList, CartPage } from "@pages";
-import WishlistPage from "@pages/WishlistPage";
-=======
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, CartPage } from "@pages";
-
->>>>>>> 8ea638ad61edf2eacc53ae5a5d6794a943069955
-=======
 import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage } from "@pages";
 
->>>>>>> 613f6eaa6d172c36537106f01bde3b31c8ace5d1
 
 export const ROUTER_PATHS = ROUTES;
 
@@ -109,11 +99,6 @@ const router = createBrowserRouter([
                 },
             },
             {
-<<<<<<< HEAD
-                path: ROUTES.NOT_FOUND,
-                element: <NotFoundPage />,
-=======
->>>>>>> 613f6eaa6d172c36537106f01bde3b31c8ace5d1
                 path: ROUTES.CATEGORY,
                 lazy: async () => {
                     const { default: CategoryList } = await import("@pages/Category/List");
@@ -175,6 +160,3 @@ const router = createBrowserRouter([
 ]);
 
 export default router;
-
-
-

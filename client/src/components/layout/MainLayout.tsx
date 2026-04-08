@@ -116,45 +116,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 							<Link to={ROUTES.HOME} style={{ textDecoration: "none", color: "black" }}>Book Store</Link>
 						</Typography>
 
-<<<<<<< HEAD
-						<Button 
-							component={Link} 
-							to="/categories" 
-							sx={{ 
-								color: "text.secondary", 
-								textTransform: "none", 
-								fontSize: "1rem", 
-								fontWeight: 600,
-								'&:hover': { color: 'primary.main', bgcolor: 'transparent' }
-							}}
-						>
-							Categories
-						</Button>
-
-												<Button 
-							component={Link} 
-							to="/wishlist" 
-							sx={{ 
-								color: "text.secondary", 
-								textTransform: "none", 
-								fontSize: "1rem", 
-								fontWeight: 600,
-								'&:hover': { color: 'primary.main', bgcolor: 'transparent' }
-							}}
-						>
-							Wishlist
-						</Button>
-					</Box>
-
-					{!isAuthenticated ? (
-						<Box>
-							<Button component={Link} to={ROUTES.LOGIN} style={{ textDecoration: "none", color: "inherit" }}>Sign in</Button>
-							<Button component={Link} to={ROUTES.REGISTER} style={{ textDecoration: "none", color: "inherit" }}>Sign up</Button>
-						</Box>
-					) : (
-						<>
-=======
->>>>>>> 613f6eaa6d172c36537106f01bde3b31c8ace5d1
 						{!isMobile && (
 							<Button
 								component={Link}
