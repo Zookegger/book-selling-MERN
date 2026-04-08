@@ -5,7 +5,7 @@ import DashboardLoadingSkeleton from "@layout/DashboardLoadingSkeleton";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList } from "@pages";
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage } from "@pages";
 
 
 export const ROUTER_PATHS = ROUTES;
@@ -43,7 +43,7 @@ const router = createBrowserRouter([
                 },
             },
             {
-                path: ROUTES.BOOK_DETAIL,
+                path: ROUTES.BOOK_DETAIL(":bookId"),
                 lazy: async () => {
                     const { default: BookDetail } = await import("@pages/Book/BookDetail");
                     return { Component: BookDetail };
@@ -64,10 +64,6 @@ const router = createBrowserRouter([
                 },
             },
             {
-                path: ROUTES.UNAUTHORIZE,
-                element: <UnauthorizePage />,
-            },
-            {
                 path: ROUTES.VERIFY_EMAIL,
                 lazy: async () => {
                     const { default: VerifyEmailPage } = await import("@pages/Auth/VerifyEmail");
@@ -83,11 +79,10 @@ const router = createBrowserRouter([
             },
             {
                 path: ROUTES.PROFILE,
-                element: (
-                    <ProtectedRoute>
-                        <ProfilePage />
-                    </ProtectedRoute>
-                ),
+                lazy: async () => {
+                    const { default: ProfilePage } = await import("@pages/Profile/Profile");
+                    return { element: <ProtectedRoute><ProfilePage /></ProtectedRoute> };
+                },
             },
             {
                 path: ROUTES.CART,
@@ -129,21 +124,26 @@ const router = createBrowserRouter([
                 },
             },
             {
-                path: ROUTES.NOT_FOUND,
-                element: <NotFoundPage />,
+                path: ROUTES.WISHLIST,
+                lazy: async () => {
+                    const { default: WishlistPage } = await import("@pages/WishlistPage");
+                    return { element: <ProtectedRoute><WishlistPage /></ProtectedRoute> };
+                },
             },
             {
-                path: "*",
-                element: <Navigate to={ROUTES.NOT_FOUND} replace />,
+                path: ROUTES.CATEGORY,
+                lazy: async () => {
+                    const { default: CategoryList } = await import("@pages/Category/List");
+                    return { Component: CategoryList };
+                },
             },
             {
-                path: "/categories",
-                element: <CategoryList />
+                path: ROUTES.CATEGORY_DETAIL(":slug"),
+                lazy: async () => {
+                    const { default: CategoryDetail } = await import("@pages/Category/Detail");
+                    return { Component: CategoryDetail };
+                }
             },
-            {
-                path: "/the-loai/:slug",
-                element: <CategoryDetail />
-            }
         ]
     }, {
         path: ROUTES.ADMIN_DASHBOARD,
@@ -176,7 +176,19 @@ const router = createBrowserRouter([
                 },
             },
         ]
-    }
+    },
+    {
+        path: ROUTES.NOT_FOUND,
+        element: <NotFoundPage />,
+    },
+    {
+        path: "*",
+        element: <Navigate to={ROUTES.NOT_FOUND} replace />,
+    },
+    {
+        path: ROUTES.UNAUTHORIZE,
+        element: <UnauthorizePage />,
+    },
 ]);
 
 export default router;

@@ -1,8 +1,10 @@
+import type { AuthorDto } from "./author.dto";
+import type { CategoryDto } from "./category.dto";
+import type { PublisherDto } from "./publisher.dto";
+
 export type BookFormatType = "physical" | "digital" | "audiobook";
-export type BookEntityReferenceDto = string | Record<string, unknown>;
 
 export interface BookFormatDto {
-  id?: string;
   _id?: string;
   formatType: BookFormatType;
   sku: string;
@@ -43,8 +45,7 @@ export interface CreateBookDto {
 export type UpdateBookDto = Partial<CreateBookDto>;
 
 export interface BookDto {
-  id?: string;
-  _id?: string;
+  _id: string;
   title: string;
   slug: string;
   subtitle?: string;
@@ -53,9 +54,9 @@ export interface BookDto {
   publicationDate: string;
   language: string;
   pageCount?: number;
-  publisher?: BookEntityReferenceDto;
-  authors: BookEntityReferenceDto[];
-  categories: BookEntityReferenceDto[];
+  publisher?: PublisherDto;
+  authors: AuthorDto[];
+  categories: CategoryDto[];
   coverImage?: string;
   formats: BookFormatDto[];
   createdAt: string;
