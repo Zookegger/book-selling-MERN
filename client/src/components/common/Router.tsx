@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router-dom";
 import { Suspense, type ReactElement } from "react";
+import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router-dom";
+import { Suspense, type ReactElement } from "react";
 import MainLayout from "@layout/MainLayout";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
@@ -31,10 +33,23 @@ const router = createBrowserRouter([
 				</Suspense>
 			</MainLayout>
 		),
+        path: ROUTES.HOME,
+        hydrateFallbackElement: <LoadingSkeleton />,
+        element: (
+			<MainLayout>
+				<Suspense fallback={<LoadingSkeleton />}>
+					<Outlet />
+				</Suspense>
+			</MainLayout>
+		),
         errorElement: <RootErrorBoundaryPage />,
         children: [
             {
                 index: true,
+                lazy: async () => {
+					const { default: HomePage } = await import("@pages/Home");
+					return { Component: HomePage };
+				},
                 lazy: async () => {
 					const { default: HomePage } = await import("@pages/Home");
 					return { Component: HomePage };

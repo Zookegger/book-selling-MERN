@@ -27,11 +27,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 				<Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
 					<Typography variant="h6" sx={{ fontWeight: 700 }}>
 						<Link to={ROUTES.HOME} style={{ textDecoration: "none", color: "black" }}>Book Store</Link>
+						<Link to={ROUTES.HOME} style={{ textDecoration: "none", color: "black" }}>Book Store</Link>
 					</Typography>
 
 
 					{!isAuthenticated ? (
 						<Box>
+							<Button component={Link} to={ROUTES.LOGIN} style={{ textDecoration: "none", color: "inherit" }}>Sign in</Button>
+							<Button component={Link} to={ROUTES.REGISTER} style={{ textDecoration: "none", color: "inherit" }}>Sign up</Button>
 							<Button component={Link} to={ROUTES.LOGIN} style={{ textDecoration: "none", color: "inherit" }}>Sign in</Button>
 							<Button component={Link} to={ROUTES.REGISTER} style={{ textDecoration: "none", color: "inherit" }}>Sign up</Button>
 						</Box>
@@ -56,6 +59,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 					)}
 				</Toolbar>
 			</AppBar>
+			<Container maxWidth={"xl"}>{children ?? <Outlet />}</Container>
 			<Container maxWidth={"xl"}>{children ?? <Outlet />}</Container>
 		</Box>
 	);
