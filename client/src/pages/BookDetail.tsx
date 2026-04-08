@@ -11,17 +11,13 @@ import {
 
 const BookDetail = () => {
   const { bookId } = useParams();
-
   const [book, setBook] = useState<any>(null);
-  const [related, setRelated] = useState<any[]>([]);
 
   useEffect(() => {
     fetch(`http://localhost:5000/api/books/${bookId}`)
       .then(res => res.json())
       .then(data => {
-        // 🔥 backend mới trả { book, relatedBooks }
-        setBook(data.book);
-        setRelated(data.relatedBooks);
+        setBook(data); 
       });
   }, [bookId]);
 
@@ -33,9 +29,7 @@ const BookDetail = () => {
     );
 
   return (
-    <Box display="flex" flexDirection="column" alignItems="center" mt={5}>
-      
-      {/* ================= CHI TIẾT SÁCH ================= */}
+    <Box display="flex" justifyContent="center" mt={5}>
       <Card
         sx={{
           display: "flex",
@@ -46,7 +40,6 @@ const BookDetail = () => {
           borderRadius: 3
         }}
       >
-        {/* ẢNH */}
         <CardMedia
           component="img"
           sx={{ width: 280, borderRadius: 2 }}
@@ -54,7 +47,6 @@ const BookDetail = () => {
           alt={book.title}
         />
 
-        {/* THÔNG TIN */}
         <Box flex={1}>
           <Typography variant="h4" fontWeight="bold" mb={2}>
             {book.title}
@@ -93,38 +85,6 @@ const BookDetail = () => {
           </Typography>
         </Box>
       </Card>
-
-      {/* ================= SÁCH LIÊN QUAN ================= */}
-      <Box mt={5} width="900px">
-        <Typography variant="h5" mb={2}>
-          Sách liên quan
-        </Typography>
-
-        <Box display="flex" gap={2}>
-          {related?.map((item) => (
-            <Card
-              key={item._id}
-              sx={{
-                width: 160,
-                p: 1,
-                cursor: "pointer",
-                boxShadow: 2
-              }}
-              onClick={() => window.location.href = `/books/${item._id}`}
-            >
-              <CardMedia
-                component="img"
-                height="120"
-                image={item.thumbnail || "https://via.placeholder.com/150"}
-              />
-
-              <Typography variant="body2" mt={1}>
-                {item.title}
-              </Typography>
-            </Card>
-          ))}
-        </Box>
-      </Box>
     </Box>
   );
 };

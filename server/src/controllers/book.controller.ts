@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import * as bookServices from "@services/book.services";
 import { HttpError } from "@middleware/error.middleware";
-import Book from "@models/book.model";
 
 type BookIdParam = { bookId: string };
 type BookFormatParam = { bookId: string; formatId: string };
@@ -34,22 +33,14 @@ export const listBooks = async (req: Request, res: Response, next: NextFunction)
 };
 
 export const getBook = async (req: Request<BookIdParam>, res: Response, next: NextFunction) => {
-	try {
-		const book = await bookServices.getBook(req.params.bookId);
-		if (!book) return next(new HttpError("Book not found", 404));
+  try {
+    const book = await bookServices.getBook(req.params.bookId);
+    if (!book) return next(new HttpError("Book not found", 404));
 
-		const relatedBooks = await Book.find({
-      _id: { $ne: book._id }
-    }).limit(4);
-
-    return res.status(200).json({
-      book,
-      relatedBooks
-    });
-
-	} catch (err) {
-		next(err);
-	}
+    return res.status(200).json(book);
+  } catch (err) {
+    next(err);
+  }
 };
 
 export const replaceBook = async (req: Request<BookIdParam>, res: Response, next: NextFunction) => {
