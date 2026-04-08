@@ -19,6 +19,12 @@ orderRouter.post(
 			.withMessage("Payment method must be cod, credit_card, bank_transfer, or paypal"),
 		body("note").optional().isString().withMessage("Note must be a string"),
 		body("couponCode").optional().isString().withMessage("Coupon code must be a string"),
+		body("paymentDetails").optional().isObject().withMessage("Payment details must be an object"),
+		body("paymentDetails.cardHolderName").optional().isString(),
+		body("paymentDetails.cardLast4").optional().isString(),
+		body("paymentDetails.bankCode").optional().isString(),
+		body("paymentDetails.transferReference").optional().isString(),
+		body("paymentDetails.paypalEmail").optional().isEmail().withMessage("PayPal email is invalid"),
 		body("shippingAddress").optional().isObject().withMessage("Shipping address must be an object"),
 		body("shippingAddress.recipientName")
 			.optional()

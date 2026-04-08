@@ -19,6 +19,13 @@ type ConfirmOrderInput = {
 	note?: string;
 	shippingAddress?: ShippingAddressInput;
 	couponCode?: string;
+	paymentDetails?: {
+		cardHolderName?: string;
+		cardLast4?: string;
+		bankCode?: string;
+		transferReference?: string;
+		paypalEmail?: string;
+	};
 };
 
 const ensureValidObjectId = (value: string, label = "ID"): void => {
@@ -49,6 +56,32 @@ const calculateCouponDiscount = (subtotal: number, coupon: any): number => {
 const resolvePaymentStatus = (paymentMethod: PaymentMethod): PaymentStatus => {
 	// Mô phỏng xử lý thanh toán: COD là pending, các phương thức online đánh dấu paid.
 	return paymentMethod === "cod" ? "pending" : "paid";
+};
+
+const validatePaymentDetails = (paymentMethod: PaymentMethod, details?: ConfirmOrderInput["paymentDetails"]) => {
+	if (paymentMethod === "cod") return;
+
+	if (!details) {
+		throw new HttpError("Payment details are required for selected payment method", 400);
+	}
+
+	if (paymentMethod === "credit_card") {
+		if (!details.cardHolderName?.trim()) throw new HttpError("Card holder name is required", 400);
+		if (!details.cardLast4 || !/^\d{4}$/.test(details.cardLast4)) {
+			throw new HttpError("Card last 4 digits are invalid", 400);
+		}
+	}
+
+	if (paymentMethod === "bank_transfer") {
+		if (!details.bankCode?.trim()) throw new HttpError("Bank code is required", 400);
+		if (!details.transferReference?.trim()) throw new HttpError("Transfer reference is required", 400);
+	}
+
+	if (paymentMethod === "paypal") {
+		if (!details.paypalEmail?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.paypalEmail)) {
+			throw new HttpError("PayPal email is invalid", 400);
+		}
+	}
 };
 
 export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) => {
@@ -129,6 +162,7 @@ export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) 
 	const shippingFee = 0;
 	const totalAmount = Number((subtotal - discountAmount + shippingFee).toFixed(2));
 	const paymentMethod = dto.paymentMethod ?? "cod";
+	validatePaymentDetails(paymentMethod, dto.paymentDetails);
 	const paymentStatus = resolvePaymentStatus(paymentMethod);
 
 	const order = await Order.create({
@@ -159,6 +193,7 @@ export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) 
 		paidAt: paymentStatus === "paid" ? new Date() : undefined,
 		metadata: {
 			source: "checkout",
+			paymentDetails: dto.paymentDetails ?? {},
 		},
 	});
 

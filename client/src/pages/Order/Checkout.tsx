@@ -40,6 +40,20 @@ const CheckoutPage = () => {
 	const [savedAddresses, setSavedAddresses] = useState<AddressDto[]>([]);
 	const [selectedAddressId, setSelectedAddressId] = useState<string>("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [checkoutError, setCheckoutError] = useState<string | null>(null);
+	const [paymentDetails, setPaymentDetails] = useState<{
+		cardHolderName: string;
+		cardLast4: string;
+		bankCode: string;
+		transferReference: string;
+		paypalEmail: string;
+	}>({
+		cardHolderName: "",
+		cardLast4: "",
+		bankCode: "",
+		transferReference: "",
+		paypalEmail: "",
+	});
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
 		open: false,
 		message: "",
@@ -84,13 +98,50 @@ const CheckoutPage = () => {
 		);
 	}, [isCartEmpty, shippingAddress]);
 
+	const validatePaymentInputs = (): string | null => {
+		if (paymentMethod === "credit_card") {
+			if (!paymentDetails.cardHolderName.trim()) return "Vui lòng nhập tên chủ thẻ.";
+			if (!/^\d{4}$/.test(paymentDetails.cardLast4)) return "4 số cuối thẻ không hợp lệ.";
+		}
+
+		if (paymentMethod === "bank_transfer") {
+			if (!paymentDetails.bankCode.trim()) return "Vui lòng nhập mã ngân hàng.";
+			if (!paymentDetails.transferReference.trim()) return "Vui lòng nhập mã giao dịch chuyển khoản.";
+		}
+
+		if (paymentMethod === "paypal") {
+			if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paymentDetails.paypalEmail)) {
+				return "Email PayPal không hợp lệ.";
+			}
+		}
+
+		return null;
+	};
+
 	const handleConfirmOrder = async () => {
 		if (!canSubmit) return;
+		setCheckoutError(null);
+
+		const paymentError = validatePaymentInputs();
+		if (paymentError) {
+			setCheckoutError(paymentError);
+			return;
+		}
 
 		const payload: ConfirmOrderRequestDto = {
 			paymentMethod,
 			couponCode: couponCode.trim() || undefined,
 			shippingAddress,
+			paymentDetails:
+				paymentMethod === "cod"
+					? undefined
+					: {
+							cardHolderName: paymentDetails.cardHolderName || undefined,
+							cardLast4: paymentDetails.cardLast4 || undefined,
+							bankCode: paymentDetails.bankCode || undefined,
+							transferReference: paymentDetails.transferReference || undefined,
+							paypalEmail: paymentDetails.paypalEmail || undefined,
+						},
 		};
 
 		try {
@@ -104,6 +155,7 @@ const CheckoutPage = () => {
 			void fetchCart();
 			navigate(ROUTES.ORDER_HISTORY);
 		} catch (error: any) {
+			setCheckoutError(error?.message ?? "Không thể xác nhận đơn hàng.");
 			setSnackbar({
 				open: true,
 				message: error?.message ?? "Không thể xác nhận đơn hàng.",
@@ -144,6 +196,11 @@ const CheckoutPage = () => {
 					<Typography variant="h6" fontWeight={700} mb={2}>
 						Địa chỉ giao hàng
 					</Typography>
+					{checkoutError && (
+						<Alert severity="error" sx={{ mb: 2 }}>
+							{checkoutError}
+						</Alert>
+					)}
 
 					<Stack spacing={2}>
 						<TextField
@@ -210,13 +267,60 @@ const CheckoutPage = () => {
 							select
 							label="Phương thức thanh toán"
 							value={paymentMethod}
-							onChange={(e) => setPaymentMethod(e.target.value as PaymentMethodDto)}
+							onChange={(e) => {
+								setPaymentMethod(e.target.value as PaymentMethodDto);
+								setCheckoutError(null);
+							}}
 						>
 							<MenuItem value="cod">Thanh toán khi nhận hàng (COD)</MenuItem>
 							<MenuItem value="bank_transfer">Chuyển khoản ngân hàng</MenuItem>
 							<MenuItem value="credit_card">Thẻ tín dụng</MenuItem>
 							<MenuItem value="paypal">PayPal</MenuItem>
 						</TextField>
+
+						{paymentMethod === "credit_card" && (
+							<>
+								<TextField
+									label="Tên chủ thẻ"
+									value={paymentDetails.cardHolderName}
+									onChange={(e) => setPaymentDetails((p) => ({ ...p, cardHolderName: e.target.value }))}
+								/>
+								<TextField
+									label="4 số cuối thẻ"
+									value={paymentDetails.cardLast4}
+									inputProps={{ maxLength: 4 }}
+									onChange={(e) =>
+										setPaymentDetails((p) => ({ ...p, cardLast4: e.target.value.replace(/\D/g, "") }))
+									}
+								/>
+							</>
+						)}
+
+						{paymentMethod === "bank_transfer" && (
+							<>
+								<TextField
+									label="Mã ngân hàng"
+									value={paymentDetails.bankCode}
+									onChange={(e) => setPaymentDetails((p) => ({ ...p, bankCode: e.target.value }))}
+								/>
+								<TextField
+									label="Mã giao dịch chuyển khoản"
+									value={paymentDetails.transferReference}
+									onChange={(e) =>
+										setPaymentDetails((p) => ({ ...p, transferReference: e.target.value }))
+									}
+								/>
+							</>
+						)}
+
+						{paymentMethod === "paypal" && (
+							<TextField
+								label="Email PayPal"
+								type="email"
+								value={paymentDetails.paypalEmail}
+								onChange={(e) => setPaymentDetails((p) => ({ ...p, paypalEmail: e.target.value }))}
+							/>
+						)}
 
 						<TextField
 							label="Mã giảm giá (nếu có)"

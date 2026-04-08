@@ -13,6 +13,7 @@ export const confirmOrder = async (req: AuthRequest, res: Response, next: NextFu
 			note: req.body.note,
 			shippingAddress: req.body.shippingAddress,
 			couponCode: req.body.couponCode,
+			paymentDetails: req.body.paymentDetails,
 		});
 
 		return res.status(201).json(order);

@@ -58,5 +58,12 @@ export interface ConfirmOrderRequestDto {
 	note?: string;
 	shippingAddress?: OrderAddressDto;
 	couponCode?: string;
+	paymentDetails?: {
+		cardHolderName?: string;
+		cardLast4?: string;
+		bankCode?: string;
+		transferReference?: string;
+		paypalEmail?: string;
+	};
 }
 
