@@ -1,6 +1,6 @@
 import { ROUTER_PATHS, ROUTES } from "@constants/index";
 import useAuth from "@hooks/useAuth";
-import { AppBar, Box, Button, Container, Menu, MenuItem, Toolbar, Typography } from "@mui/material";
+import { AppBar, Box, Button, Container, Divider, Menu, MenuItem, Toolbar, Typography } from "@mui/material";
 import { useState, type MouseEvent, type ReactNode } from "react";
 import { Link, Outlet } from "react-router-dom";
 
@@ -40,11 +40,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 							<Button onClick={handleClick} sx={{ color: "black" }}>{user?.firstName}</Button>
 							<Menu open={open} anchorEl={anchorEl} onClose={handleClose}>
 								{user?.role === "admin" && (
-									<MenuItem>
-										<Link to={ROUTER_PATHS.ADMIN_PUBLISHERS} style={{ textDecoration: "none", color: "inherit" }}>
-											Admin
-										</Link>
-									</MenuItem>
+									<>
+										<MenuItem>
+											<Link to={ROUTER_PATHS.ADMIN_DASHBOARD} style={{ textDecoration: "none", color: "inherit" }}>
+												Dashboard
+											</Link>
+										</MenuItem>
+										<Divider />
+									</>
 								)}
 								<MenuItem><Link to={ROUTER_PATHS.PROFILE} style={{ textDecoration: "none", color: "inherit" }}>Profile</Link></MenuItem>
 								<MenuItem onClick={async () => {
