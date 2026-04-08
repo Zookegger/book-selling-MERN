@@ -88,7 +88,39 @@ const router = createBrowserRouter([
                 path: ROUTES.CART,
                 lazy: async () => {
                     const { default: CartPage } = await import("@pages/Cart/Cart");
-                    return { element: <ProtectedRoute><CartPage /></ProtectedRoute> };
+                    return {
+                        element: (
+                            <ProtectedRoute>
+                                <CartPage />
+                            </ProtectedRoute>
+                        ),
+                    };
+                },
+            },
+            {
+                path: ROUTES.CHECKOUT,
+                lazy: async () => {
+                    const { default: CheckoutPage } = await import("@pages/Order/Checkout");
+                    return {
+                        element: (
+                            <ProtectedRoute>
+                                <CheckoutPage />
+                            </ProtectedRoute>
+                        ),
+                    };
+                },
+            },
+            {
+                path: ROUTES.ORDER_HISTORY,
+                lazy: async () => {
+                    const { default: OrderHistoryPage } = await import("@pages/Order/OrderHistory");
+                    return {
+                        element: (
+                            <ProtectedRoute>
+                                <OrderHistoryPage />
+                            </ProtectedRoute>
+                        ),
+                    };
                 },
             },
             {

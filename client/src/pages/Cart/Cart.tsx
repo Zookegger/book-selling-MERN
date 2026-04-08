@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	Alert,
 	Box,
@@ -11,6 +12,7 @@ import {
 	Typography,
 } from "@mui/material";
 import useOrder from "@hooks/useOrder";
+import { ROUTES } from "@constants/index";
 import type { CartItemDto } from "@my-types/cart.dto";
 import type { BookDto, BookFormatType } from "@my-types/book.dto";
 
@@ -41,6 +43,7 @@ const getBookInfo = (item: CartItemDto): { title: string; coverImage?: string } 
 const DISPLAY_CURRENCY = "VND";
 
 const CartPage = () => {
+	const navigate = useNavigate();
 	const { cart, setCart, itemCount, isLoading, isMutating, updateItem, removeItem, fetchCart } = useOrder();
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
 		open: false,
@@ -93,6 +96,10 @@ const CartPage = () => {
 				severity: "error",
 			});
 		}
+	};
+
+	const handleGoToCheckout = () => {
+		navigate(ROUTES.CHECKOUT);
 	};
 
 	if (isLoading) {
@@ -200,8 +207,8 @@ const CartPage = () => {
 						</Box>
 					) : (
 						<Card sx={{ p: 3 }}>
-							<Typography fontWeight={700}>Giỏ hàng trống</Typography>
-							<Typography color="text.secondary">Hãy quay lại trang sách và thêm sản phẩm vào giỏ.</Typography>
+							<Typography fontWeight={700}>Empty Cart</Typography>
+							<Typography color="text.secondary">Please go back to the books page and add items to your cart.</Typography>
 						</Card>
 					)}
 				</Box>
@@ -236,8 +243,13 @@ const CartPage = () => {
 							</Typography>
 						</Box>
 
-						<Button variant="contained" fullWidth disabled={!cart || cart.items.length === 0}>
-							Checkout
+						<Button
+							variant="contained"
+							fullWidth
+							disabled={!cart || cart.items.length === 0 || isMutating}
+							onClick={handleGoToCheckout}
+						>
+							Go to Checkout
 						</Button>
 					</Card>
 				</Box>

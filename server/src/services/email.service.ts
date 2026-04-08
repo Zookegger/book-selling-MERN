@@ -35,6 +35,15 @@ export interface EmailServiceOptions {
 	emailFrom?: string;
 }
 
+export interface OrderConfirmationEmailInput {
+	email: string;
+	firstName: string;
+	orderId: string;
+	totalAmount: number;
+	currency: string;
+	itemCount: number;
+}
+
 /**
  * Dịch vụ email dạng class, cho phép tạo nhiều instance độc lập với cấu hình riêng.
  * Không sử dụng singleton mặc định để linh hoạt trong test và đa cấu hình.
@@ -178,6 +187,41 @@ export class EmailService {
 			console.log(`Password reset email sent to ${email}`);
 		} catch (error) {
 			console.error(`Failed to send password reset email to ${email}:`, error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Gửi email xác nhận đơn hàng thành công cho khách hàng.
+	 */
+	public async sendOrderConfirmationEmail(payload: OrderConfirmationEmailInput): Promise<void> {
+		const orderLink = `${this.clientUrl}/orders/history`;
+		const htmlContent = `
+			<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937;">
+				<h2>Xin chào ${payload.firstName},</h2>
+				<p>Đơn hàng của bạn đã được xác nhận thành công.</p>
+				<ul>
+					<li><strong>Mã đơn:</strong> ${payload.orderId}</li>
+					<li><strong>Số sản phẩm:</strong> ${payload.itemCount}</li>
+					<li><strong>Tổng tiền:</strong> ${payload.totalAmount.toLocaleString()} ${payload.currency}</li>
+				</ul>
+				<p>Bạn có thể xem lịch sử mua hàng tại đây:</p>
+				<p><a href="${orderLink}">${orderLink}</a></p>
+				<p>Cảm ơn bạn đã mua sắm tại Book Store.</p>
+			</div>
+		`;
+
+		const mailOptions = {
+			from: this.emailFrom,
+			to: payload.email,
+			subject: "Order Confirmation - Book Store",
+			html: htmlContent,
+		};
+
+		try {
+			await this.transporter.sendMail(mailOptions);
+		} catch (error) {
+			console.error(`Failed to send order confirmation email to ${payload.email}:`, error);
 			throw error;
 		}
 	}
