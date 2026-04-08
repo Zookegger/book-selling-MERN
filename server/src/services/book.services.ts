@@ -1,5 +1,4 @@
-import mongoose from "mongoose";
-import { Book } from "@models";
+import { Book, Category } from "@models";
 import type { IBook } from "@models/book.model";
 import { HttpError } from "@middleware/error.middleware";
 import {
@@ -13,6 +12,7 @@ import {
 	updateBookFormatSchema,
 } from "@schemas/book.schema";
 import { getPagination } from "@utils";
+import mongoose from "mongoose";
 
 /**
  * Tạo sách mới cùng với các định dạng (formats) nếu có.
@@ -47,6 +47,7 @@ export const listBooks = async (query: {
 	limit?: number;
 	search?: string;
 	language?: string;
+	category?: string;
 	order?: "asc" | "desc";
 }): Promise<{ data: IBook[]; total: number; page: number; totalPages: number }> => {
 	const { page, limit, skip } = getPagination({ limit: query.limit, page: query.page });
@@ -60,6 +61,22 @@ export const listBooks = async (query: {
 	if (query.language) {
 		filter.language = query.language;
 	}
+
+	if (query.category) {
+        const isObjectId = mongoose.Types.ObjectId.isValid(query.category);
+
+        if (isObjectId) {
+            filter.categories = query.category;
+        } else {
+            const foundCategory = await Category.findOne({ slug: query.category }).select("_id").exec();
+            
+            if (foundCategory) {
+                filter.categories = foundCategory._id;
+            } else {
+                return { data: [], total: 0, page, totalPages: 0 };
+            }
+        }
+    }
 
 	const total = await Book.countDocuments(filter);
 

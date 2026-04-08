@@ -16,6 +16,7 @@ export const ROUTES = {
 	ADMIN_DASHBOARD: "/admin",
 	ADMIN_PUBLISHERS: "/admin/publishers",
 	BOOK: (bookId: string) => `/books/${bookId}`,
+	CATEGORY: "/categories",
 } as const;
 
 export const ROUTER_PATHS = ROUTES;

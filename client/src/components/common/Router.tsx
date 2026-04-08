@@ -5,7 +5,8 @@ import DashboardLoadingSkeleton from "@layout/DashboardLoadingSkeleton";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CartPage } from "@pages";
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList, CartPage } from "@pages";
+
 
 export const ROUTER_PATHS = ROUTES;
 
@@ -91,9 +92,9 @@ const router = createBrowserRouter([
             {
                 path: ROUTES.CART,
                 element: (
-					<RequireAuth>
+					<ProtectedRoute>
 						<CartPage />
-					</RequireAuth>
+					</ProtectedRoute>
 				),
             },
             {
@@ -104,6 +105,14 @@ const router = createBrowserRouter([
                 path: "*",
                 element: <Navigate to={ROUTES.NOT_FOUND} replace />,
             },
+            {
+                path: "/categories",
+                element: <CategoryList />
+            },
+            {
+                path: "/the-loai/:slug",
+                element: <CategoryDetail />
+            }
         ]
     }, {
         path: ROUTES.ADMIN_DASHBOARD,
@@ -140,3 +149,6 @@ const router = createBrowserRouter([
 ]);
 
 export default router;
+
+
+
