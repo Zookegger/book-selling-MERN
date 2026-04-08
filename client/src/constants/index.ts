@@ -19,6 +19,7 @@ export const ROUTES = {
 	BOOK_DETAIL: (bookIdentifier: string) => `/books/${bookIdentifier}`,
 
 	CATEGORY: "/categories",
+	WISHLIST: "/wishlist",
 	CATEGORY_DETAIL: (slug: string) => `/categories/${slug}`,
 } as const;
 

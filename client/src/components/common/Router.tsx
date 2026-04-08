@@ -5,7 +5,7 @@ import DashboardLoadingSkeleton from "@layout/DashboardLoadingSkeleton";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, CartPage } from "@pages";
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage } from "@pages";
 
 
 export const ROUTER_PATHS = ROUTES;
@@ -81,14 +81,21 @@ const router = createBrowserRouter([
                 path: ROUTES.PROFILE,
                 lazy: async () => {
                     const { default: ProfilePage } = await import("@pages/Profile/Profile");
-                    return { Component: ProfilePage };
+                    return { element: <ProtectedRoute><ProfilePage /></ProtectedRoute> };
                 },
             },
             {
                 path: ROUTES.CART,
                 lazy: async () => {
                     const { default: CartPage } = await import("@pages/Cart/Cart");
-                    return { Component: CartPage };
+                    return { element: <ProtectedRoute><CartPage /></ProtectedRoute> };
+                },
+            },
+            {
+                path: ROUTES.WISHLIST,
+                lazy: async () => {
+                    const { default: WishlistPage } = await import("@pages/WishlistPage");
+                    return { element: <ProtectedRoute><WishlistPage /></ProtectedRoute> };
                 },
             },
             {
