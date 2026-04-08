@@ -5,3 +5,4 @@ export * from "./author.dto";
 export * from "./category.dto";
 export * from "./publisher.dto";
 export * from "./user.dto";
+export * from "./cart.dto";

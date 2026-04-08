@@ -8,3 +8,4 @@ export * as bookServices from "./book.services";
 export * as authorServices from "./author.services";
 export * as publisherServices from "./publisher.services";
 export * as categoryServices from "./category.services";
+export * as cartServices from "./cart.services";

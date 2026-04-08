@@ -10,54 +10,58 @@ import ProtectedRoute from "./ProtectedRoute";
 
 export const ROUTER_PATHS = ROUTES;
 
-const RequireAuth = ({ children }: { children: ReactElement }) => {
-	const { isLoading, isAuthenticated } = useAuth();
-	const location = useLocation();
+const ProtectedRoute = ({ children, allowedRoles }: { children: ReactElement, allowedRoles?: string[] }) => {
+    const { isLoading, isAuthenticated, user } = useAuth();
+    const location = useLocation();
 
-	if (isLoading) return <LoadingSkeleton />;
-	if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
-	return children;
+    if (isLoading) return <LoadingSkeleton />;
+    if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
+    if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+        return <Navigate to={ROUTES.UNAUTHORIZE} replace />;
+    }
+    return children;
 };
 
 const router = createBrowserRouter([
     {
         path: ROUTES.HOME,
+        hydrateFallbackElement: <LoadingSkeleton />,
         element: (
-			<MainLayout>
-				<Suspense fallback={<LoadingSkeleton />}>
-					<Outlet />
-				</Suspense>
-			</MainLayout>
-		),
+            <MainLayout>
+                <Suspense fallback={<LoadingSkeleton />}>
+                    <Outlet />
+                </Suspense>
+            </MainLayout>
+        ),
         errorElement: <RootErrorBoundaryPage />,
         children: [
             {
                 index: true,
                 lazy: async () => {
-					const { default: HomePage } = await import("@pages/Home");
-					return { Component: HomePage };
-				},
+                    const { default: HomePage } = await import("@pages/Home");
+                    return { Component: HomePage };
+                },
             },
             {
                 path: ROUTES.BOOK_DETAIL,
                 lazy: async () => {
-					const { default: BookDetail } = await import("@pages/Book/BookDetail");
-					return { Component: BookDetail };
-				},
+                    const { default: BookDetail } = await import("@pages/Book/BookDetail");
+                    return { Component: BookDetail };
+                },
             },
             {
                 path: ROUTES.LOGIN,
                 lazy: async () => {
-					const { default: LoginPage } = await import("@pages/Login");
-					return { Component: LoginPage };
-				},
+                    const { default: LoginPage } = await import("@pages/Auth/Login");
+                    return { Component: LoginPage };
+                },
             },
             {
                 path: ROUTES.REGISTER,
                 lazy: async () => {
-					const { default: RegisterPage } = await import("@pages/Register");
-					return { Component: RegisterPage };
-				},
+                    const { default: RegisterPage } = await import("@pages/Auth/Register");
+                    return { Component: RegisterPage };
+                },
             },
             {
                 path: ROUTES.UNAUTHORIZE,
@@ -66,28 +70,41 @@ const router = createBrowserRouter([
             {
                 path: ROUTES.VERIFY_EMAIL,
                 lazy: async () => {
-					const { default: VerifyEmailPage } = await import("@pages/VerifyEmail");
-					return { Component: VerifyEmailPage };
-				},
+                    const { default: VerifyEmailPage } = await import("@pages/Auth/VerifyEmail");
+                    return { Component: VerifyEmailPage };
+                },
             },
             {
                 path: ROUTES.RESEND_VERIFICATION,
                 lazy: async () => {
-					const { default: ResendVerificationPage } = await import("@pages/ResendVerification");
-					return { Component: ResendVerificationPage };
-				},
+                    const { default: ResendVerificationPage } = await import("@pages/Auth/ResendVerification");
+                    return { Component: ResendVerificationPage };
+                },
             },
             {
                 path: ROUTES.PROFILE,
                 element: (
-					<RequireAuth>
-						<ProfilePage />
-					</RequireAuth>
-				),
+                    <ProtectedRoute>
+                        <ProfilePage />
+                    </ProtectedRoute>
+                ),
             },
             {
                 path: ROUTES.NOT_FOUND,
                 element: <NotFoundPage />,
+            },
+            {
+                path: ROUTER_PATHS.ADMIN_PUBLISHERS,
+                lazy: async () => {
+                    const { default: AdminPublishersPage } = await import("@pages/AdminPublishers");
+                    return {
+                        element: (
+                            <ProtectedRoute allowedRoles={["admin"]}>
+                                <AdminPublishersPage />
+                            </ProtectedRoute>
+                        ),
+                    };
+                },
             },
             {
                 path: "*",
