@@ -5,8 +5,11 @@ import {
     Link as MuiLink, Divider,
 } from "@mui/material";
 
+<<<<<<< HEAD
 import WishlistButton from "@components/common/WishlistButton";
 // Import corresponding Services and Types
+=======
+>>>>>>> 613f6eaa6d172c36537106f01bde3b31c8ace5d1
 import { categoryService, type ICategory } from "@services/category.service";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import BookGrid from "@pages/Book/BookGrid";
@@ -123,6 +126,7 @@ const CategoryDetail: React.FC = () => {
                 </Typography>
             </Divider>
 
+<<<<<<< HEAD
             {/* Book List - Forced to 4 columns on large screens */}
             <Grid 
                  container 
@@ -261,6 +265,8 @@ const CategoryDetail: React.FC = () => {
                 )}
             </Grid>
         </Container>
+=======
+>>>>>>> 613f6eaa6d172c36537106f01bde3b31c8ace5d1
             <BookGrid categorySlug={slug} pageSize={20} />
         </>
     );

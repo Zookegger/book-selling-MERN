@@ -116,6 +116,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 							<Link to={ROUTES.HOME} style={{ textDecoration: "none", color: "black" }}>Book Store</Link>
 						</Typography>
 
+<<<<<<< HEAD
 						<Button 
 							component={Link} 
 							to="/categories" 
@@ -152,6 +153,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 						</Box>
 					) : (
 						<>
+=======
+>>>>>>> 613f6eaa6d172c36537106f01bde3b31c8ace5d1
 						{!isMobile && (
 							<Button
 								component={Link}
@@ -167,6 +170,20 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 								Categories
 							</Button>
 						)}
+
+						<Button
+							component={Link}
+							to="/wishlist"
+							sx={{
+								color: "text.secondary",
+								textTransform: "none",
+								fontSize: "1rem",
+								fontWeight: 600,
+								'&:hover': { color: 'primary.main', bgcolor: 'transparent' }
+							}}
+						>
+							Wishlist
+						</Button>
 					</Box>
 
 					{!isMobile && (

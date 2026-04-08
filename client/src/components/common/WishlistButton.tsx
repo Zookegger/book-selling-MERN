@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IconButton, CircularProgress, Tooltip } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite"; 
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder"; 
@@ -11,16 +11,22 @@ interface WishlistButtonProps {
     bookId: string;
     initialIsFavorite?: boolean; 
     size?: "small" | "medium" | "large";
+    onFavoriteChange?: (bookId: string, isFavorite: boolean) => void;
 }
 
 const WishlistButton: React.FC<WishlistButtonProps> = ({ 
     bookId, 
     initialIsFavorite = false,
-    size = "medium"
+    size = "medium",
+    onFavoriteChange,
 }) => {
     const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
     const [isLoading, setIsLoading] = useState(false);
     const { success, error, warning } = useSnackbar();
+
+    useEffect(() => {
+        setIsFavorite(initialIsFavorite);
+    }, [initialIsFavorite]);
 
     const handleToggleWishlist = async (e: React.MouseEvent) => {
         // Ngăn sự kiện click lan ra thẻ cha (chặn nhảy trang)
@@ -33,11 +39,13 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
                 // ĐÃ MỞ KHÓA: Gọi API xóa
                 await wishlistService.removeFromWishlist(bookId);
                 setIsFavorite(false);
+                onFavoriteChange?.(bookId, false);
                 success("Removed from favorites list successfully");
             } else {
                 // ĐÃ MỞ KHÓA: Gọi API thêm
                 await wishlistService.addToWishlist(bookId);
                 setIsFavorite(true);
+                onFavoriteChange?.(bookId, true);
                 success("Added to favorites list successfully");
             }
         } catch (err: any) {

@@ -6,12 +6,17 @@ import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList, CartPage } from "@pages";
 import WishlistPage from "@pages/WishlistPage";
 =======
 import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, CartPage } from "@pages";
 
 >>>>>>> 8ea638ad61edf2eacc53ae5a5d6794a943069955
+=======
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage } from "@pages";
+
+>>>>>>> 613f6eaa6d172c36537106f01bde3b31c8ace5d1
 
 export const ROUTER_PATHS = ROUTES;
 
@@ -86,27 +91,29 @@ const router = createBrowserRouter([
                 path: ROUTES.PROFILE,
                 lazy: async () => {
                     const { default: ProfilePage } = await import("@pages/Profile/Profile");
-                    return { Component: ProfilePage };
+                    return { element: <ProtectedRoute><ProfilePage /></ProtectedRoute> };
                 },
             },
             {
                 path: ROUTES.CART,
                 lazy: async () => {
                     const { default: CartPage } = await import("@pages/Cart/Cart");
-                    return { Component: CartPage };
+                    return { element: <ProtectedRoute><CartPage /></ProtectedRoute> };
                 },
             },
             {
                 path: ROUTES.WISHLIST,
-                element: (
-                    <ProtectedRoute>
-                        <WishlistPage />
-                    </ProtectedRoute>
-                ),
+                lazy: async () => {
+                    const { default: WishlistPage } = await import("@pages/WishlistPage");
+                    return { element: <ProtectedRoute><WishlistPage /></ProtectedRoute> };
+                },
             },
             {
+<<<<<<< HEAD
                 path: ROUTES.NOT_FOUND,
                 element: <NotFoundPage />,
+=======
+>>>>>>> 613f6eaa6d172c36537106f01bde3b31c8ace5d1
                 path: ROUTES.CATEGORY,
                 lazy: async () => {
                     const { default: CategoryList } = await import("@pages/Category/List");
