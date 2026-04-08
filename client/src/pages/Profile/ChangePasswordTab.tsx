@@ -13,37 +13,37 @@ export default function ChangePasswordTab({ onSnack }: Props) {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    // validate
+    // validation
     if (!oldPassword || !newPassword || !confirmPassword) {
-      return onSnack("Nhập đầy đủ thông tin", "error");
+      return onSnack("Please fill out all fields.", "error");
     }
 
     if (newPassword.length < 6) {
-      return onSnack("Mật khẩu phải ≥ 6 ký tự", "error");
+      return onSnack("Password must be at least 6 characters.", "error");
     }
 
     if (newPassword !== confirmPassword) {
-      return onSnack("Mật khẩu không khớp", "error");
+      return onSnack("Passwords do not match.", "error");
     }
 
     try {
       setLoading(true);
 
-      // ✅ FIX CHUẨN DTO
+      // ✅ use correct DTO
       await userService.changePassword({
         currentPassword: oldPassword,
         newPassword,
         confirmNewPassword: confirmPassword,
       });
 
-      onSnack("Đổi mật khẩu thành công", "success");
+      onSnack("Password changed successfully.", "success");
 
       // reset form
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
-      onSnack(err.message || "Đổi mật khẩu thất bại", "error");
+      onSnack(err.message || "Password change failed.", "error");
     } finally {
       setLoading(false);
     }
@@ -52,12 +52,12 @@ export default function ChangePasswordTab({ onSnack }: Props) {
   return (
     <Box p={3}>
       <Typography variant="h6" mb={2}>
-        Đổi mật khẩu
+        Change Password
       </Typography>
 
       <Stack spacing={2} maxWidth={400}>
         <TextField
-          label="Mật khẩu cũ"
+          label="Current password"
           type="password"
           value={oldPassword}
           onChange={(e) => setOldPassword(e.target.value)}
@@ -65,7 +65,7 @@ export default function ChangePasswordTab({ onSnack }: Props) {
         />
 
         <TextField
-          label="Mật khẩu mới"
+          label="New password"
           type="password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
@@ -73,7 +73,7 @@ export default function ChangePasswordTab({ onSnack }: Props) {
         />
 
         <TextField
-          label="Xác nhận mật khẩu"
+          label="Confirm password"
           type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -86,7 +86,7 @@ export default function ChangePasswordTab({ onSnack }: Props) {
           disabled={loading}
           fullWidth
         >
-          {loading ? "Đang xử lý..." : "Đổi mật khẩu"}
+          {loading ? "Processing..." : "Change Password"}
         </Button>
       </Stack>
     </Box>
