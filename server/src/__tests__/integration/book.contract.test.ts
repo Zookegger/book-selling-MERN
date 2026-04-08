@@ -216,6 +216,24 @@ describe("Contract Tests: Book Management", () => {
 			const res = await request(app).get(`${BOOKS}/${fakeId}`);
 			expect(res.status).toBe(404);
 		});
+
+		it("returns 200 when looked up by slug", async () => {
+			const { body: created } = await seedBook();
+			const res = await request(app).get(`${BOOKS}/${created.slug}`);
+
+			expect(res.status).toBe(200);
+			expect(res.body._id).toBe(created._id);
+			expect(res.body.slug).toBe(created.slug);
+		});
+
+		it("returns 200 when looked up by ISBN", async () => {
+			const { body: created } = await seedBook({ isbn: "978-0451524935" });
+			const res = await request(app).get(`${BOOKS}/${created.isbn}`);
+
+			expect(res.status).toBe(200);
+			expect(res.body._id).toBe(created._id);
+			expect(res.body.isbn).toBe("978-0451524935");
+		});
 	});
 
 	// ─── PATCH /api/books/:bookId ──────────────────────────────────────────────
@@ -243,9 +261,9 @@ describe("Contract Tests: Book Management", () => {
 			expect(res.status).toBe(404);
 		});
 
-		it("returns 400 for an invalid ObjectId", async () => {
+		it("returns 404 for not found book", async () => {
 			const res = await request(app).get(`${BOOKS}/not-an-id`);
-			expect(res.status).toBe(400);
+			expect(res.status).toBe(404);
 		});
 	});
 
@@ -280,9 +298,9 @@ describe("Contract Tests: Book Management", () => {
 			expect(res.status).toBe(404);
 		});
 
-		it("returns 400 for an invalid ObjectId", async () => {
+		it("returns 404 for not found book", async () => {
 			const res = await request(app).get(`${BOOKS}/not-an-id`);
-			expect(res.status).toBe(400);
+			expect(res.status).toBe(404);
 		});
 	});
 
@@ -308,9 +326,9 @@ describe("Contract Tests: Book Management", () => {
 			expect(res.status).toBe(404);
 		});
 
-		it("returns 400 for an invalid ObjectId", async () => {
+		it("returns 404 for not found book", async () => {
 			const res = await request(app).get(`${BOOKS}/not-an-id`);
-			expect(res.status).toBe(400);
+			expect(res.status).toBe(404);
 		});
 	});
 

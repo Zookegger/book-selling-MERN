@@ -1,15 +1,19 @@
-import { ROUTER_PATHS } from "@components/common/Router";
+import { ROUTER_PATHS, ROUTES } from "@constants/index";
 import useAuth from "@hooks/useAuth";
 import { AppBar, Box, Button, Container, Menu, MenuItem, Toolbar, Typography } from "@mui/material";
-import { useState } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { Link, Outlet } from "react-router-dom";
 
-const MainLayout = () => {
+type MainLayoutProps = {
+	children?: ReactNode;
+};
+
+const MainLayout = ({ children }: MainLayoutProps) => {
 	const { isAuthenticated, user, logout } = useAuth();
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const open = Boolean(anchorEl);
 
-	function handleClick(event: React.MouseEvent<HTMLElement>) {
+	function handleClick(event: MouseEvent<HTMLElement>) {
 		setAnchorEl(event.currentTarget);
 	};
 
@@ -22,14 +26,14 @@ const MainLayout = () => {
 			<AppBar position="static" color="transparent" elevation={0}>
 				<Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
 					<Typography variant="h6" sx={{ fontWeight: 700 }}>
-						<Link to={ROUTER_PATHS.HOME} style={{ textDecoration: "none", color: "black" }}>Book Store</Link>
+						<Link to={ROUTES.HOME} style={{ textDecoration: "none", color: "black" }}>Book Store</Link>
 					</Typography>
 
 
 					{!isAuthenticated ? (
 						<Box>
-							<Button component={Link} to={ROUTER_PATHS.LOGIN} style={{ textDecoration: "none", color: "inherit" }}>Sign in</Button>
-							<Button component={Link} to={ROUTER_PATHS.REGISTER} style={{ textDecoration: "none", color: "inherit" }}>Sign up</Button>
+							<Button component={Link} to={ROUTES.LOGIN} style={{ textDecoration: "none", color: "inherit" }}>Sign in</Button>
+							<Button component={Link} to={ROUTES.REGISTER} style={{ textDecoration: "none", color: "inherit" }}>Sign up</Button>
 						</Box>
 					) : (
 						<>
@@ -52,7 +56,7 @@ const MainLayout = () => {
 					)}
 				</Toolbar>
 			</AppBar>
-			<Container maxWidth={"xl"}><Outlet /></Container>
+			<Container maxWidth={"xl"}>{children ?? <Outlet />}</Container>
 		</Box>
 	);
 };

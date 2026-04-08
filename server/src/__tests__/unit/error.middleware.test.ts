@@ -106,7 +106,7 @@ describe("errorHandler", () => {
 	it("responds with { status, message } JSON for an operational error", () => {
 		const res = mockRes();
 		errorHandler(new HttpError("Unauthorized", 401), mockReq(), res, mockNext());
-		expect(res.json).toHaveBeenCalledWith({ status: "fail", message: "Unauthorized" });
+		expect(res.json).toHaveBeenCalledWith({ data: null, status: "fail", message: "Unauthorized" });
 	});
 
 	it("responds with 500 for a non-operational plain Error", () => {

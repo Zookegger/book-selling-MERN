@@ -284,6 +284,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			firstName: "Login",
 			lastName: "User",
 			email: "loginuser@example.com",
+			phone: "+84943438532",
 			password: "P455word123!@#",
 			confirmPassword: "P455word123!@#",
 		};
@@ -418,6 +419,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Unverified",
 				lastName: "User",
 				email: "unverified@example.com",
+				phone: "+84943438533",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			};
@@ -439,6 +441,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			firstName: "Session",
 			lastName: "User",
 			email: "sessionuser@example.com",
+			phone: "+84943438534",
 			password: "P455word123!@#",
 			confirmPassword: "P455word123!@#",
 		};
@@ -539,6 +542,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 			firstName: "Logout",
 			lastName: "User",
 			email: "logoutuser@example.com",
+			phone: "+84943438535",
 			password: "P455word123!@#",
 			confirmPassword: "P455word123!@#",
 		};
@@ -603,6 +607,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Verify",
 				lastName: "Test",
 				email: "verify@example.com",
+				phone: "+84943438536",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			});
@@ -625,6 +630,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Shape",
 				lastName: "Check",
 				email: "shapecheck@example.com",
+				phone: "+84943438537",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			});
@@ -660,6 +666,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Expired",
 				lastName: "Token",
 				email: "expired@example.com",
+				phone: "+84943438538",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			});
@@ -685,6 +692,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Forgot",
 				lastName: "User",
 				email: "forgot@example.com",
+				phone: "+84943438539",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			});
@@ -747,6 +755,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Reset",
 				lastName: "User",
 				email: "reset@example.com",
+				phone: "+84943438540",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			});
@@ -837,6 +846,7 @@ describe("Kiểm Thử Hợp Đồng: Xác Thực", () => {
 				firstName: "Resend",
 				lastName: "User",
 				email: "resend@example.com",
+				phone: "+84943438541",
 				password: "P455word123!@#",
 				confirmPassword: "P455word123!@#",
 			});

@@ -130,16 +130,17 @@ export const listBooks = async (query: {
 };
 
 /**
- * Lấy thông tin một sách theo ObjectId.
+ * Lấy thông tin một sách theo ObjectId, slug hoặc ISBN.
  *
- * @param identifier - ObjectId của sách.
+ * @param identifier - ObjectId, slug hoặc ISBN của sách.
  * @returns Promise<IBook | null> - Trả về null nếu không tìm thấy.
- * @throws {HttpError} 400 khi identifier không phải là ObjectId hợp lệ.
  */
 export const getBook = async (identifier: string) => {
-	ensureValidObjectId(identifier, "ID");
+	const query = mongoose.Types.ObjectId.isValid(identifier)
+		? { _id: identifier }
+		: { $or: [{ slug: identifier }, { isbn: identifier }] };
 
-	return await Book.findById(identifier).populate("authors").populate("publisher").populate("categories").exec();
+	return await Book.findOne(query).populate("authors").populate("publisher").populate("categories").exec();
 };
 
 /**

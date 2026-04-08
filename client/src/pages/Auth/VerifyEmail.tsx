@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Box, Button, Container, Paper, Typography } from "@mui/material";
 import { CheckCircle, XCircle } from "lucide-react";
-import { ROUTER_PATHS } from "@components/common/Router";
+import { ROUTES } from "@constants/index";
 
 export default function VerifyEmailPage() {
     const [searchParams] = useSearchParams();
@@ -64,7 +64,7 @@ export default function VerifyEmailPage() {
                                 </Typography>
                                 <Button
                                     component={Link}
-                                    to={ROUTER_PATHS.LOGIN}
+                                    to={ROUTES.LOGIN}
                                     replace
                                     variant="contained"
                                     size="large"
@@ -85,7 +85,7 @@ export default function VerifyEmailPage() {
                                 </Typography>
                                 <Button
                                     component={Link}
-                                    to="/resend-verification"
+                                    to={ROUTES.RESEND_VERIFICATION}
                                     variant="outlined"
                                     color="error"
                                     size="large"

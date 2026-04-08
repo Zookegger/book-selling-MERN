@@ -3,7 +3,7 @@ import Loading from "./Loading";
 
 import type { ReactNode } from "react";
 import useAuth from "@hooks/useAuth";
-import { ROUTER_PATHS } from "./Router";
+import { ROUTES } from "@constants/index";
 import type { UserRoleDto } from "@my-types/user.dto";
 
 type ProtectedRouteProps = {
@@ -20,11 +20,11 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     }
 
     if (!isAuthenticated) {
-        return <Navigate to={ROUTER_PATHS.LOGIN} state={{ from: location }} replace />
+        return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />
     }
 
     if (allowedRoles && (!user?.role || !allowedRoles.includes(user.role))) {
-        return <Navigate to={ROUTER_PATHS.UNAUTHORIZE} replace />
+        return <Navigate to={ROUTES.UNAUTHORIZE} replace />
     }
 
     return children;

@@ -43,6 +43,7 @@ const mockUser = {
 const validUserInfo = {
 	firstName: "Jane",
 	lastName: "Doe",
+	phone: "0901234567",
 	email: "jane@example.com",
 };
 
@@ -86,7 +87,9 @@ describe("login", () => {
 		mockedUser.findOne.mockResolvedValueOnce(mockUser as any);
 		(mockedBcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
 
-		await expect(authServices.login({ email: "jane@example.com", password: "wrongpassword" })).rejects.toMatchObject({
+		await expect(
+			authServices.login({ email: "jane@example.com", password: "wrongpassword" }),
+		).rejects.toMatchObject({
 			statusCode: 401,
 			message: "Invalid email or password",
 		});
@@ -121,11 +124,15 @@ describe("login", () => {
 
 	it("không tiết lộ liệu email có tồn tại", async () => {
 		mockedUser.findOne.mockResolvedValueOnce(null);
-		const { message: msgBadEmail } = await authServices.login({ email: "no@user.com", password: "pass" }).catch((e) => e);
+		const { message: msgBadEmail } = await authServices
+			.login({ email: "no@user.com", password: "pass" })
+			.catch((e) => e);
 
 		mockedUser.findOne.mockResolvedValueOnce(mockUser as any);
 		(mockedBcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
-		const { message: msgBadPass } = await authServices.login({ email: "jane@example.com", password: "wrong" }).catch((e) => e);
+		const { message: msgBadPass } = await authServices
+			.login({ email: "jane@example.com", password: "wrong" })
+			.catch((e) => e);
 
 		expect(msgBadEmail).toBe(msgBadPass);
 	});
@@ -158,7 +165,9 @@ describe("login", () => {
 		mockedUser.findOne.mockResolvedValueOnce(mockUser as any);
 		(mockedBcrypt.compare as jest.Mock).mockRejectedValueOnce(new Error("bcrypt failure"));
 
-		await expect(authServices.login({ email: "jane@example.com", password: "pass" })).rejects.toThrow("bcrypt failure");
+		await expect(authServices.login({ email: "jane@example.com", password: "pass" })).rejects.toThrow(
+			"bcrypt failure",
+		);
 	});
 
 	it("không trả về mật khẩu đã hash của người dùng trong kết quả", async () => {
@@ -176,9 +185,12 @@ describe("login", () => {
 		mockedUser.findOne.mockResolvedValueOnce(unverifiedUser as any);
 		(mockedBcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
 
-		await expect(authServices.login({ email: "jane@example.com", password: "correctpassword" })).rejects.toMatchObject({
+		await expect(
+			authServices.login({ email: "jane@example.com", password: "correctpassword" }),
+		).rejects.toMatchObject({
 			statusCode: 403,
-			message: "Please verify your email before logging in, if you haven't receive if click here to resend <a href=`/resend-verification`></a>",
+			message: "Please verify your email before logging in",
+			data: { code: "EMAIL_NOT_VERIFIED" },
 		});
 	});
 });
@@ -246,19 +258,37 @@ describe("register", () => {
 
 	it("thêm HttpError 400 khi firstName bị thiếu", async () => {
 		await expect(
-			authServices.register({ firstName: "", lastName: "Doe", email: "a@b.com", password: "Password1!" }),
+			authServices.register({
+				firstName: "",
+				lastName: "Doe",
+				phone: "0901234567",
+				email: "a@b.com",
+				password: "Password1!",
+			}),
 		).rejects.toMatchObject({ statusCode: 400 });
 	});
 
 	it("thêm HttpError 400 khi lastName bị thiếu", async () => {
 		await expect(
-			authServices.register({ firstName: "Jane", lastName: "", email: "a@b.com", password: "Password1!" }),
+			authServices.register({
+				firstName: "Jane",
+				lastName: "",
+				phone: "0901234567",
+				email: "a@b.com",
+				password: "Password1!",
+			}),
 		).rejects.toMatchObject({ statusCode: 400 });
 	});
 
 	it("thêm HttpError 400 khi email bị thiếu", async () => {
 		await expect(
-			authServices.register({ firstName: "Jane", lastName: "Doe", email: "", password: "Password1!" }),
+			authServices.register({
+				firstName: "Jane",
+				lastName: "Doe",
+				phone: "0901234567",
+				email: "",
+				password: "Password1!",
+			}),
 		).rejects.toMatchObject({
 			statusCode: 400,
 		});
@@ -283,7 +313,9 @@ describe("register", () => {
 		mockedUser.findOne.mockResolvedValueOnce(null);
 		mockedUser.create.mockRejectedValueOnce(new Error("DB write failure"));
 
-		await expect(authServices.register({ ...validUserInfo, password: "Password1!" })).rejects.toThrow("DB write failure");
+		await expect(authServices.register({ ...validUserInfo, password: "Password1!" })).rejects.toThrow(
+			"DB write failure",
+		);
 	});
 
 	it("gọi findOne với email chính xác trước khi cố gắng tạo", async () => {
@@ -307,13 +339,17 @@ describe("register", () => {
 	it("thêm thể HttpError 409 khi email trùng lặp", async () => {
 		mockedUser.findOne.mockResolvedValueOnce(mockUser as any);
 
-		await expect(authServices.register({ ...validUserInfo, password: "Password1!" })).rejects.toBeInstanceOf(HttpError);
+		await expect(authServices.register({ ...validUserInfo, password: "Password1!" })).rejects.toBeInstanceOf(
+			HttpError,
+		);
 	});
 
 	it("truyền lại các lỗi database bất ngờ trong quá trình findOne", async () => {
 		mockedUser.findOne.mockRejectedValueOnce(new Error("DB read failure"));
 
-		await expect(authServices.register({ ...validUserInfo, password: "Password1!" })).rejects.toThrow("DB read failure");
+		await expect(authServices.register({ ...validUserInfo, password: "Password1!" })).rejects.toThrow(
+			"DB read failure",
+		);
 	});
 
 	it("không gọi bcrypt.hash trực tiếp (việc hash thuộc về model pre-save hook)", async () => {
@@ -327,13 +363,25 @@ describe("register", () => {
 
 	it("thêm HttpError 400 khi firstName chỉ là khoảng trắng", async () => {
 		await expect(
-			authServices.register({ firstName: "   ", lastName: "Doe", email: "a@b.com", password: "Password1!" }),
+			authServices.register({
+				firstName: "   ",
+				lastName: "Doe",
+				phone: "0901234567",
+				email: "a@b.com",
+				password: "Password1!",
+			}),
 		).rejects.toMatchObject({ statusCode: 400 });
 	});
 
 	it("thêm HttpError 400 khi lastName chỉ là khoảng trắng", async () => {
 		await expect(
-			authServices.register({ firstName: "Jane", lastName: "   ", email: "a@b.com", password: "Password1!" }),
+			authServices.register({
+				firstName: "Jane",
+				lastName: "   ",
+				phone: "0901234567",
+				email: "a@b.com",
+				password: "Password1!",
+			}),
 		).rejects.toMatchObject({ statusCode: 400 });
 	});
 
@@ -634,7 +682,9 @@ describe("resetPassword", () => {
 	it("thêm HttpError 400 khi token không hợp lệ", async () => {
 		mockedUser.findOne.mockResolvedValueOnce(null);
 
-		await expect(authServices.resetPassword({ token: "invalid-token", newPassword: "NewPassword123!" })).rejects.toMatchObject({
+		await expect(
+			authServices.resetPassword({ token: "invalid-token", newPassword: "NewPassword123!" }),
+		).rejects.toMatchObject({
 			statusCode: 400,
 			message: "Invalid reset token",
 		});
@@ -649,7 +699,9 @@ describe("resetPassword", () => {
 		mockedUser.findOne.mockResolvedValueOnce(mockUserWithExpiredToken as any);
 		mockedIsTokenExpired.mockReturnValue(true);
 
-		await expect(authServices.resetPassword({ token: "expired-token", newPassword: "NewPassword123!" })).rejects.toMatchObject({
+		await expect(
+			authServices.resetPassword({ token: "expired-token", newPassword: "NewPassword123!" }),
+		).rejects.toMatchObject({
 			statusCode: 400,
 			message: "Reset token has expired",
 		});

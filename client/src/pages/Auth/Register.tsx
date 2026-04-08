@@ -1,5 +1,5 @@
 import Loading from "@components/common/Loading";
-import { ROUTER_PATHS } from "@components/common/Router";
+import { ROUTES } from "@constants/index";
 import { COUNTRY_CODES } from "@constants/CountryCodes";
 import useAuth from "@hooks/useAuth";
 import {
@@ -89,7 +89,7 @@ const RegisterPage = () => {
 
                 setSuccessMessage(res?.message || "Account created! Redirecting...");
                 setTimeout(() => {
-                    navigate(ROUTER_PATHS.LOGIN, { replace: true });
+                    navigate(ROUTES.LOGIN, { replace: true });
                 }, 5000);
             } catch (error: any) {
                 setErrorMessage(error.message || "An unexpected error occurred");
