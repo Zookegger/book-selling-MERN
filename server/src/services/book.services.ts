@@ -55,7 +55,8 @@ export const listBooks = async (query: {
 	const filter: any = {};
 
 	if (query.search) {
-		filter.$text = { $search: query.search };
+		// filter.$text = { $search: query.search };
+		filter.title = { $regex: query.search, $options: "i" };
 	}
 
 	if (query.language) {

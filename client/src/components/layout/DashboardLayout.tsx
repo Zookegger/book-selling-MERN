@@ -31,7 +31,7 @@ import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import { useMemo, useState, type MouseEvent } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Building2, ListCollapse, List as ListIconLucide } from "lucide-react";
+import { BookCopy, Building2, ListCollapse, List as ListIconLucide } from "lucide-react";
 
 const SIDEBAR_WIDTH = 320;
 const COLLAPSED_WIDTH = 80;
@@ -58,8 +58,33 @@ const navGroups: DashboardNavGroup[] = [
     {
         key: "catalog",
         title: "Catalog",
-        items: [{ label: "Publishers", path: ROUTER_PATHS.ADMIN_PUBLISHERS, hint: "Manage publishing partners", icon: <Building2 /> }],
+        items: [
+            { label: "Publishers", path: ROUTER_PATHS.ADMIN_PUBLISHERS, hint: "Manage publishing partners", icon: <Building2 /> },
+            { label: "Books", path: ROUTER_PATHS.ADMIN_BOOKS, hint: "Create and maintain book catalog", icon: <BookCopy /> },
+        ],
     },
+    // {
+    //     key: "user-management",
+    //     title: "User Management",
+    //     items: [
+    //         { label: "Users", path: ROUTER_PATHS.ADMIN_USERS, hint: "View and manage user accounts" },
+    //         { label: "Roles & Permissions", path: ROUTER_PATHS.ADMIN_ROLES, hint: "Define roles and access levels" },
+    //     ],
+    // }, 
+    {
+        key: "author-management",
+        title: "Author Management",
+        items: [
+            { label: "Authors", path: ROUTER_PATHS.ADMIN_AUTHORS, hint: "View and manage authors", icon: <LocalLibraryIcon /> },
+        ],
+    }, 
+    {
+        key: "category-management",
+        title: "Category Management",
+        items: [
+            { label: "Categories", path: ROUTER_PATHS.ADMIN_CATEGORIES, hint: "View and manage book categories", icon: <ListIconLucide /> },
+        ],
+    }
 ];
 
 const DashboardLayout = () => {
@@ -123,7 +148,7 @@ const DashboardLayout = () => {
                 {!isCollapsed && (
                     <Box flex={1} sx={{ minWidth: 0, whiteSpace: "nowrap" }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
-                            Lumina Books
+                            LuminaBook
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                             Admin Dashboard
@@ -221,7 +246,7 @@ const DashboardLayout = () => {
                                                     <ListItemText
                                                         primary={item.label}
                                                         secondary={item.hint}
-                                                        primaryTypographyProps={{ fontWeight: selected ? 700 : 500 }}
+                                                        slotProps={{ primary: { fontWeight: selected ? 700 : 500 } }}
                                                     />
                                                 )}
                                             </ListItemButton>
@@ -281,7 +306,7 @@ const DashboardLayout = () => {
     );
 
     return (
-        <Box sx={{ display: "flex", flexGrow: 1, maxHeight: "100vh", bgcolor: "#f1f5f9" }}>
+        <Box sx={{ display: "flex", flexGrow: 1, minHeight: "100vh", bgcolor: "#f1f5f9" }}>
             <Box component="nav" sx={{ width: { md: currentWidth }, flexShrink: { md: 0 }, transition: "width 0.3s ease", }}>
                 <Drawer
                     variant="temporary"

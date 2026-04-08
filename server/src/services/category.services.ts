@@ -6,6 +6,94 @@ import { CreateCategoryInput, createCategorySchema, UpdateCategoryInput, updateC
 import { getPagination } from "@utils";
 
 /**
+ * Kiểm tra MongoDB instance hiện tại có hỗ trợ transaction hay không.
+ *
+ * - MongoDB chỉ hỗ trợ transaction khi chạy dưới dạng replica set hoặc sharded cluster.
+ * - Lệnh `hello` (hoặc `isMaster` cũ) trả về thông tin topology của server.
+ *
+ * @returns {Promise<boolean>}
+ *  - true: hỗ trợ transaction
+ *  - false: không hỗ trợ (standalone)
+ */
+const supportsMongoTransactions = async (): Promise<boolean> => {
+	const db = mongoose.connection.db;
+	if (!db) return false;
+
+	try {
+		const hello = await db.admin().command({ hello: 1 });
+		return Boolean(hello?.setName || hello?.msg === "isdbgrid");
+	} catch {
+		return false;
+	}
+};
+
+/**
+ * Di chuyển một danh mục sang parent mới và cập nhật toàn bộ descendants.
+ *
+ * Đây là hàm core để đảm bảo:
+ * - ancestors của node hiện tại được cập nhật đúng
+ * - tất cả descendants cũng được cập nhật lại đường dẫn ancestors
+ *
+ * Ví dụ:
+ * A > B > C
+ * Move B -> D
+ * => ancestors của C phải đổi từ [A, B] -> [D, B]
+ *
+ * @param params.categoryId   ID dạng string của category cần update
+ * @param params.existingId   ObjectId hiện tại của category
+ * @param params.newParentId  ObjectId của parent mới (hoặc null nếu root)
+ * @param params.updateData   Dữ liệu update (name, slug, ...)
+ * @param params.session      MongoDB session (optional - dùng cho transaction)
+ *
+ * @returns {Promise<void>}
+ */
+const moveCategoryWithDescendants = async ({
+	categoryId,
+	existingId,
+	newParentId,
+	updateData,
+	session,
+}: {
+	categoryId: string;
+	existingId: mongoose.Types.ObjectId;
+	newParentId: mongoose.Types.ObjectId | null;
+	updateData: UpdateCategoryInput;
+	session?: mongoose.ClientSession;
+}): Promise<void> => {
+	const parentQuery = Category.findById(newParentId);
+	if (session) parentQuery.session(session);
+
+	const parentDoc = newParentId ? await parentQuery : null;
+	const newAncestors = newParentId ? [...(parentDoc?.ancestors ?? []), newParentId] : [];
+
+	await Category.findByIdAndUpdate(
+		categoryId,
+		{ ...updateData, parent: newParentId, ancestors: newAncestors },
+		session ? { returnDocument: "after", session } : { returnDocument: "after" },
+	);
+
+	const descendantsQuery = Category.find({ ancestors: existingId });
+	if (session) descendantsQuery.session(session);
+	const descendants = await descendantsQuery;
+
+	if (descendants.length > 0) {
+		const bulkOps = descendants.map((desc) => {
+			const pos = desc.ancestors.findIndex((a: mongoose.Types.ObjectId) => a.equals(existingId));
+			const suffix = desc.ancestors.slice(pos + 1);
+
+			return {
+				updateOne: {
+					filter: { _id: desc._id },
+					update: { $set: { ancestors: [...newAncestors, existingId, ...suffix] } },
+				},
+			};
+		});
+
+		await Category.bulkWrite(bulkOps, session ? { session } : undefined);
+	}
+};
+
+/**
  * Tạo danh mục mới.
  *
  * - Validate dữ liệu đầu vào bằng `createCategorySchema`.
@@ -209,52 +297,39 @@ export const updateCategory = async (id: string, dto: UpdateCategoryInput): Prom
 			if (isDescendant) throw new HttpError("Cannot move category under its descendant", 400);
 		}
 
-		const session = await mongoose.startSession();
-		session.startTransaction();
+		const canUseTransactions = await supportsMongoTransactions();
 
-		try {
-			// Compute the new ancestors array for the node being moved.
-			// If newParentId is null, ancestors should be empty.
-			const newAncestors = newParentId
-				? [...(await Category.findById(newParentId).session(session))!.ancestors, newParentId]
-				: [];
-			// Update the node itself inside the transaction
-			await Category.findByIdAndUpdate(
-				id,
-				{ ...parsed.data, parent: newParentId, ancestors: newAncestors },
-				{ returnDocument: "after", session },
-			);
+		if (canUseTransactions) {
+			const session = await mongoose.startSession();
+			session.startTransaction();
 
-			// Update all descendants: replace the prefix of their `ancestors`
-			// that referenced `existing._id` with the new prefix (newAncestors + existing._id).
-			const descendants = await Category.find({ ancestors: existing._id }).session(session);
-
-			if (descendants.length > 0) {
-				const bulkOps = descendants.map((desc) => {
-					const pos = desc.ancestors.findIndex((a: mongoose.Types.ObjectId) => a.equals(existing._id));
-					const suffix = desc.ancestors.slice(pos + 1);
-
-					return {
-						updateOne: {
-							filter: { _id: desc._id },
-							// New ancestor path: newAncestors + existing node id + old suffix
-							update: { $set: { ancestors: [...newAncestors, existing._id, ...suffix] } },
-						},
-					};
+			try {
+				await moveCategoryWithDescendants({
+					categoryId: id,
+					existingId: existing._id,
+					newParentId,
+					updateData: parsed.data,
+					session,
 				});
 
-				await Category.bulkWrite(bulkOps, { session });
+				await session.commitTransaction();
+				return await Category.findById(id).exec();
+			} catch (err) {
+				await session.abortTransaction();
+				throw err;
+			} finally {
+				await session.endSession();
 			}
-
-			await session.commitTransaction();
-			// Return the updated node (outside transaction is fine since we've committed)
-			return await Category.findById(id).exec();
-		} catch (err) {
-			await session.abortTransaction();
-			throw err;
-		} finally {
-			await session.endSession();
 		}
+
+		await moveCategoryWithDescendants({
+			categoryId: id,
+			existingId: existing._id,
+			newParentId,
+			updateData: parsed.data,
+		});
+
+		return await Category.findById(id).exec();
 	}
 
 	// No parent change: simple update of given fields

@@ -7,7 +7,6 @@ import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
 import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage } from "@pages";
 
-
 export const ROUTER_PATHS = ROUTES;
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: ReactElement, allowedRoles?: string[] }) => {
@@ -43,10 +42,24 @@ const router = createBrowserRouter([
                 },
             },
             {
+                path: ROUTES.BOOKS,
+                lazy: async () => {
+                    const { default: BooksPage } = await import("@pages/Book/BooksPage");
+                    return { Component: BooksPage };
+                },
+            },
+            {
                 path: ROUTES.BOOK_DETAIL(":bookId"),
                 lazy: async () => {
                     const { default: BookDetail } = await import("@pages/Book/BookDetail");
                     return { Component: BookDetail };
+                },
+            },
+            {
+                path: ROUTES.SEARCH,
+                lazy: async () => {
+                    const { default: SearchResults } = await import("@pages/Book/SearchResults");
+                    return { Component: SearchResults };
                 },
             },
             {
@@ -161,13 +174,33 @@ const router = createBrowserRouter([
                     return { Component: DashboardHome };
                 },
             },
-
             {
                 path: ROUTER_PATHS.ADMIN_PUBLISHERS,
                 lazy: async () => {
-                    const { default: AdminPublishersPage } = await import("@pages/Admin/Publisher/AdminPublishers");
-                    return { Component: AdminPublishersPage }
+                    const { default: PublisherManagement } = await import("@pages/Admin/Publisher/PublisherManagement");
+                    return { Component: PublisherManagement }
                 },
+            },
+            {
+                path: ROUTES.ADMIN_BOOKS,
+                lazy: async () => {
+                    const { default: BookManagement } = await import("@pages/Admin/Book/BookManagement");
+                    return { Component: BookManagement }
+                }
+            },
+            {
+                path: ROUTES.ADMIN_AUTHORS,
+                lazy: async () => {
+                    const { default: AuthorManagement } = await import("@pages/Admin/Author/AuthorManagement");
+                    return { Component: AuthorManagement }
+                }
+            },
+            {
+                path: ROUTES.ADMIN_CATEGORIES,
+                lazy: async () => {
+                    const { default: CategoryManagement } = await import("@pages/Admin/Category/CategoryManagement");
+                    return { Component: CategoryManagement }
+                }
             },
         ]
     },

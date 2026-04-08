@@ -7,6 +7,7 @@ type AuthContextType = {
     user: GetMeResponseDto | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    isAdmin: boolean;
     login: (data: LoginRequestDto) => Promise<LoginResponseDto | undefined>;
     register: (data: RegisterRequestDto) => Promise<RegisterResponseDto | undefined>;
     logout: () => Promise<void>;
@@ -15,7 +16,7 @@ type AuthContextType = {
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState<GetMeResponseDto | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -30,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const userData = await userService.getCurrentUser();
             if (userData) {
-                setUser(userData as any);
+                setUser(userData);
                 setIsAuthenticated(true);
             }
         } catch (err) {
@@ -95,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isAuthenticated,
         isLoading,
+        isAdmin: user?.role === "admin",
         login,
         register,
         logout,
