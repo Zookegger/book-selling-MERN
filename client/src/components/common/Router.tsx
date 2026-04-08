@@ -47,14 +47,14 @@ const router = createBrowserRouter([
             {
                 path: ROUTES.LOGIN,
                 lazy: async () => {
-					const { default: LoginPage } = await import("@pages/Login");
+					const { default: LoginPage } = await import("@pages/Auth/Login");
 					return { Component: LoginPage };
 				},
             },
             {
                 path: ROUTES.REGISTER,
                 lazy: async () => {
-					const { default: RegisterPage } = await import("@pages/Register");
+					const { default: RegisterPage } = await import("@pages/Auth/Register");
 					return { Component: RegisterPage };
 				},
             },
@@ -65,14 +65,14 @@ const router = createBrowserRouter([
             {
                 path: ROUTES.VERIFY_EMAIL,
                 lazy: async () => {
-					const { default: VerifyEmailPage } = await import("@pages/VerifyEmail");
+					const { default: VerifyEmailPage } = await import("@pages/Auth/VerifyEmail");
 					return { Component: VerifyEmailPage };
 				},
             },
             {
                 path: ROUTES.RESEND_VERIFICATION,
                 lazy: async () => {
-					const { default: ResendVerificationPage } = await import("@pages/ResendVerification");
+					const { default: ResendVerificationPage } = await import("@pages/Auth/ResendVerification");
 					return { Component: ResendVerificationPage };
 				},
             },
