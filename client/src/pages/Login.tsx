@@ -3,7 +3,7 @@ import useAuth from "@hooks/useAuth";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Loading from "@components/common/Loading";
-import { ROUTER_PATHS } from "@components/common/Router";
+import { ROUTES } from "@constants/index";
 
 const Login = () => {
 	const [email, setEmail] = useState<string>("");
@@ -118,7 +118,7 @@ const Login = () => {
 							{errorCode === "EMAIL_NOT_VERIFIED" && (
 								<>
 									{" "}
-									<Button component={Link} to="/resend-verification" variant="contained" sx={{ mt: 1 }} color="error">
+									<Button component={Link} to={ROUTES.RESEND_VERIFICATION} variant="contained" sx={{ mt: 1 }} color="error">
 										Resend verification email
 									</Button>
 								</>
@@ -170,7 +170,7 @@ const Login = () => {
 						/>
 
 						<Typography mb={2} >
-							<Link to={ROUTER_PATHS.FORGOT_PASSWORD} style={{ color: "#000", textDecoration: "none" }}>
+							<Link to={ROUTES.FORGOT_PASSWORD} style={{ color: "#000", textDecoration: "none" }}>
 								Forgot your password?
 							</Link>
 						</Typography>
@@ -179,7 +179,7 @@ const Login = () => {
 							Sign in
 						</Button>
 
-						<Button variant="outlined" fullWidth component={Link} to={ROUTER_PATHS.REGISTER} replace>
+						<Button variant="outlined" fullWidth component={Link} to={ROUTES.REGISTER} replace>
 							Sign Up
 						</Button>
 					</Box>
