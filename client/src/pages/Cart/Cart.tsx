@@ -13,7 +13,6 @@ import {
 } from "@mui/material";
 import useOrder from "@hooks/useOrder";
 import { ROUTES } from "@constants/index";
-import OrderService from "@services/order.services";
 import type { CartItemDto } from "@my-types/cart.dto";
 import type { BookDto, BookFormatType } from "@my-types/book.dto";
 
@@ -99,23 +98,8 @@ const CartPage = () => {
 		}
 	};
 
-	const handleConfirmOrder = async () => {
-		try {
-			await OrderService.confirmOrder({ paymentMethod: "cod" });
-			await fetchCart();
-			setSnackbar({
-				open: true,
-				message: "Đặt hàng thành công. Đơn hàng đã được xác nhận và gửi email cho bạn.",
-				severity: "success",
-			});
-			navigate(ROUTES.ORDER_HISTORY);
-		} catch (error: any) {
-			setSnackbar({
-				open: true,
-				message: error?.message ?? "Không thể xác nhận đơn hàng.",
-				severity: "error",
-			});
-		}
+	const handleGoToCheckout = () => {
+		navigate(ROUTES.CHECKOUT);
 	};
 
 	if (isLoading) {
@@ -263,9 +247,9 @@ const CartPage = () => {
 							variant="contained"
 							fullWidth
 							disabled={!cart || cart.items.length === 0 || isMutating}
-							onClick={handleConfirmOrder}
+							onClick={handleGoToCheckout}
 						>
-							Thanh toán
+							Đi tới checkout
 						</Button>
 					</Card>
 				</Box>

@@ -103,6 +103,19 @@ const router = createBrowserRouter([
                 },
             },
             {
+                path: ROUTES.CHECKOUT,
+                lazy: async () => {
+                    const { default: CheckoutPage } = await import("@pages/Order/Checkout");
+                    return {
+                        element: (
+                            <ProtectedRoute>
+                                <CheckoutPage />
+                            </ProtectedRoute>
+                        ),
+                    };
+                },
+            },
+            {
                 path: ROUTES.ORDER_HISTORY,
                 lazy: async () => {
                     const { default: OrderHistoryPage } = await import("@pages/Order/OrderHistory");

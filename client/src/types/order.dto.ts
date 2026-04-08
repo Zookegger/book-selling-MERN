@@ -56,5 +56,6 @@ export interface OrderDto {
 export interface ConfirmOrderRequestDto {
 	paymentMethod?: PaymentMethodDto;
 	note?: string;
+	shippingAddress?: OrderAddressDto;
 }
 

@@ -4,9 +4,20 @@ import type { PaymentMethod } from "@models/order.model";
 import { HttpError } from "@middleware/error.middleware";
 import { EmailService } from "./email.service";
 
+type ShippingAddressInput = {
+	recipientName: string;
+	phoneNumber: string;
+	provinceOrCity: string;
+	district: string;
+	ward: string;
+	streetDetails: string;
+	country?: string;
+};
+
 type ConfirmOrderInput = {
 	paymentMethod?: PaymentMethod;
 	note?: string;
+	shippingAddress?: ShippingAddressInput;
 };
 
 const ensureValidObjectId = (value: string, label = "ID"): void => {
@@ -27,7 +38,18 @@ export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) 
 	}
 
 	const defaultAddress = user.addresses?.find((a) => a.isDefault) ?? user.addresses?.[0];
-	if (!defaultAddress) {
+	const shippingAddress = dto.shippingAddress ?? (defaultAddress
+		? {
+				recipientName: defaultAddress.recipientName,
+				phoneNumber: defaultAddress.phoneNumber,
+				provinceOrCity: defaultAddress.provinceOrCity,
+				district: defaultAddress.district,
+				ward: defaultAddress.ward,
+				streetDetails: defaultAddress.streetDetails,
+				country: defaultAddress.country ?? "Vietnam",
+			}
+		: null);
+	if (!shippingAddress) {
 		throw new HttpError("Please add a shipping address before confirming order", 400);
 	}
 
@@ -57,15 +79,7 @@ export const confirmOrder = async (userId: string, dto: ConfirmOrderInput = {}) 
 	const order = await Order.create({
 		user: user._id,
 		items: orderItems,
-		shippingAddress: {
-			recipientName: defaultAddress.recipientName,
-			phoneNumber: defaultAddress.phoneNumber,
-			provinceOrCity: defaultAddress.provinceOrCity,
-			district: defaultAddress.district,
-			ward: defaultAddress.ward,
-			streetDetails: defaultAddress.streetDetails,
-			country: defaultAddress.country ?? "Vietnam",
-		},
+		shippingAddress,
 		status: "confirmed",
 		confirmedAt: new Date(),
 		paymentMethod: dto.paymentMethod ?? "cod",
