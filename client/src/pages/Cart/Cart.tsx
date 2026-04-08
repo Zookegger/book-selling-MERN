@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	Alert,
 	Box,
@@ -11,6 +12,8 @@ import {
 	Typography,
 } from "@mui/material";
 import useOrder from "@hooks/useOrder";
+import { ROUTES } from "@constants/index";
+import OrderService from "@services/order.services";
 import type { CartItemDto } from "@my-types/cart.dto";
 import type { BookDto, BookFormatType } from "@my-types/book.dto";
 
@@ -41,6 +44,7 @@ const getBookInfo = (item: CartItemDto): { title: string; coverImage?: string } 
 const DISPLAY_CURRENCY = "VND";
 
 const CartPage = () => {
+	const navigate = useNavigate();
 	const { cart, setCart, itemCount, isLoading, isMutating, updateItem, removeItem, fetchCart } = useOrder();
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
 		open: false,
@@ -90,6 +94,25 @@ const CartPage = () => {
 			setSnackbar({
 				open: true,
 				message: error?.message ?? "Không thể xoá sản phẩm.",
+				severity: "error",
+			});
+		}
+	};
+
+	const handleConfirmOrder = async () => {
+		try {
+			await OrderService.confirmOrder({ paymentMethod: "cod" });
+			await fetchCart();
+			setSnackbar({
+				open: true,
+				message: "Đặt hàng thành công. Đơn hàng đã được xác nhận và gửi email cho bạn.",
+				severity: "success",
+			});
+			navigate(ROUTES.ORDER_HISTORY);
+		} catch (error: any) {
+			setSnackbar({
+				open: true,
+				message: error?.message ?? "Không thể xác nhận đơn hàng.",
 				severity: "error",
 			});
 		}
@@ -236,7 +259,12 @@ const CartPage = () => {
 							</Typography>
 						</Box>
 
-						<Button variant="contained" fullWidth disabled={!cart || cart.items.length === 0}>
+						<Button
+							variant="contained"
+							fullWidth
+							disabled={!cart || cart.items.length === 0 || isMutating}
+							onClick={handleConfirmOrder}
+						>
 							Thanh toán
 						</Button>
 					</Card>

@@ -5,7 +5,7 @@ import DashboardLoadingSkeleton from "@layout/DashboardLoadingSkeleton";
 import LoadingSkeleton from "@components/layout/LoadingSkeleton";
 import useAuth from "@hooks/useAuth";
 import { ROUTES } from "@constants/index";
-import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList, CartPage } from "@pages";
+import { RootErrorBoundaryPage, NotFoundPage, UnauthorizePage, ProfilePage, CategoryDetail, CategoryList } from "@pages";
 
 
 export const ROUTER_PATHS = ROUTES;
@@ -91,11 +91,29 @@ const router = createBrowserRouter([
             },
             {
                 path: ROUTES.CART,
-                element: (
-					<ProtectedRoute>
-						<CartPage />
-					</ProtectedRoute>
-				),
+                lazy: async () => {
+                    const { default: CartPage } = await import("@pages/Cart/Cart");
+                    return {
+                        element: (
+                            <ProtectedRoute>
+                                <CartPage />
+                            </ProtectedRoute>
+                        ),
+                    };
+                },
+            },
+            {
+                path: ROUTES.ORDER_HISTORY,
+                lazy: async () => {
+                    const { default: OrderHistoryPage } = await import("@pages/Order/OrderHistory");
+                    return {
+                        element: (
+                            <ProtectedRoute>
+                                <OrderHistoryPage />
+                            </ProtectedRoute>
+                        ),
+                    };
+                },
             },
             {
                 path: ROUTES.NOT_FOUND,

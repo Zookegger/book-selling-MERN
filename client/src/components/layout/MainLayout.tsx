@@ -79,6 +79,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 									</>
 								)}
 								<MenuItem><Link to={ROUTER_PATHS.PROFILE} style={{ textDecoration: "none", color: "inherit" }}>Profile</Link></MenuItem>
+								<MenuItem><Link to={ROUTER_PATHS.ORDER_HISTORY} style={{ textDecoration: "none", color: "inherit" }}>Order History</Link></MenuItem>
 								<MenuItem onClick={async () => {
 									handleClose();
 									await logout()

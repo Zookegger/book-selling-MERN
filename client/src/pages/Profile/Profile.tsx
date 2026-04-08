@@ -11,6 +11,7 @@ import {
 import React, { useState } from "react";
 import ProfileTab from "./ProfileTab";
 import AddressesTab from "./AddressesTab";
+import OrderHistoryTab from "./OrderHistoryTab";
 
 // ─── CustomTabPanel ───────────────────────────────────────────────────────────
 
@@ -91,7 +92,7 @@ export default function ProfilePage() {
                     </CustomTabPanel>
 
                     <CustomTabPanel value={tabValue} index={1}>
-                        {/* TODO: OrderHistoryTab */}
+                        <OrderHistoryTab />
                     </CustomTabPanel>
 
                     <CustomTabPanel value={tabValue} index={2}>
